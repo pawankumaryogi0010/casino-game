@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0B0C10" />
-  <title>Lux Royale Casino</title>
+  <title>Lux Royale Casino — Live Action</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -32,10 +32,20 @@
               '0%': { opacity: '0', transform: 'translateY(12px)' },
               '100%': { opacity: '1', transform: 'translateY(0)' },
             },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            },
+            slideInRight: {
+              '0%': { opacity: '0', transform: 'translateX(30px) scale(0.96)' },
+              '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
+            },
           },
           animation: {
             pulseGlow: 'pulseGlow 2.2s ease-in-out infinite',
             fadeUp: 'fadeUp 0.35s ease-out both',
+            shimmer: 'shimmer 2.2s infinite linear',
+            slideInRight: 'slideInRight 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards',
           },
         },
       },
@@ -43,13 +53,18 @@
   </script>
   <style>
     html, body { background:#000; }
-    body { -webkit-tap-highlight-color: transparent; }
+    body { -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 0; height: 0; }
     .glass {
       background: rgba(21,23,31,0.55);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255,215,0,0.12);
+    }
+    .glass-strong {
+      background: rgba(11,12,16,0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(80,200,120,0.3);
     }
     .gold-text {
       background: linear-gradient(135deg,#FFD700,#FFF1A8,#C9A227);
@@ -61,11 +76,38 @@
     .view.active { display:block; animation: fadeUp 0.35s ease-out both; }
     .nav-active { color:#FFD700 !important; }
     .nav-active svg { filter: drop-shadow(0 0 6px rgba(255,215,0,0.8)); }
+
+    /* Ticker marquee effect - smooth infinite scroll */
+    .ticker-track {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: tickerScroll 38s linear infinite;
+    }
+    .ticker-track:hover {
+      animation-play-state: paused;
+    }
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    .support-popup {
+      transition: all 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+    .support-popup.open {
+      pointer-events: auto;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    /* Hide scrollbar but allow scrolling inside popup if needed */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
-<body class="font-display text-gray-200">
+<body class="font-display text-gray-200 antialiased">
 
-  <!-- App Frame -->
   <div class="relative mx-auto w-full max-w-[450px] min-h-screen bg-obsidian overflow-hidden"
        style="background:radial-gradient(circle at 50% 0%, #16181f 0%, #0B0C10 55%, #050506 100%);">
 
@@ -93,10 +135,23 @@
       </button>
     </header>
 
+    <!-- ===== 🌟 LIVE WIN TICKER (floating right under top bar) ===== -->
+    <div id="winTickerContainer" class="relative z-30 w-full overflow-hidden border-b border-emerald2/20 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.5)]">
+      <div class="relative bg-obsidian/70 backdrop-blur-md py-2.5">
+        <div id="tickerText" class="ticker-track text-sm font-semibold tracking-wide">
+          <!-- dynamic ticker items injected via JS -->
+          <span class="mx-4 text-emerald2/80">✨ LIVE UPDATES ✨</span>
+        </div>
+        <!-- subtle gradient fade edges -->
+        <div class="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-obsidian/90 to-transparent pointer-events-none"></div>
+        <div class="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-obsidian/90 to-transparent pointer-events-none"></div>
+      </div>
+    </div>
+
     <!-- ===== MAIN SCROLL AREA ===== -->
     <main class="px-4 pt-4 pb-28 min-h-[calc(100vh-130px)]">
 
-      <!-- ===================== HOME / LOBBY ===================== -->
+      <!-- HOME / LOBBY -->
       <section id="home" class="view">
         <div class="glass rounded-2xl p-4 mb-5 relative overflow-hidden">
           <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full" style="background:radial-gradient(circle,#FFD70033,transparent 70%);"></div>
@@ -111,55 +166,44 @@
           <h3 class="text-base font-bold text-white">Game Lobby</h3>
           <span class="text-xs text-gold">View all</span>
         </div>
-
         <div id="gameGrid" class="grid grid-cols-2 gap-3"></div>
       </section>
 
-      <!-- ===================== LIVE ROOMS ===================== -->
+      <!-- LIVE ROOMS -->
       <section id="live-rooms" class="view">
         <h3 class="text-base font-bold text-white mb-3">Live Dealer Rooms</h3>
         <div id="liveGrid" class="space-y-4"></div>
       </section>
 
-      <!-- ===================== WALLET ===================== -->
+      <!-- WALLET -->
       <section id="wallet" class="view">
         <div class="glass rounded-2xl p-5 mb-5 text-center relative overflow-hidden">
           <p class="text-xs uppercase tracking-widest text-gray-400">Total Balance</p>
           <p class="text-3xl font-black text-emerald2 mt-1" id="walletBalance">$0.00</p>
           <div class="flex gap-3 mt-4">
-            <button onclick="adjustBalance(100)" class="flex-1 py-2 rounded-xl text-obsidian font-bold text-sm shadow-gold"
+            <button onclick="window.depositDemo && window.depositDemo(100)" class="flex-1 py-2 rounded-xl text-obsidian font-bold text-sm shadow-gold"
                     style="background:linear-gradient(135deg,#FFD700,#C9A227);">Deposit</button>
-            <button onclick="adjustBalance(-50)" class="flex-1 py-2 rounded-xl font-bold text-sm border border-emerald2 text-emerald2 shadow-emerald">Withdraw</button>
+            <button onclick="window.withdrawDemo && window.withdrawDemo(50)" class="flex-1 py-2 rounded-xl font-bold text-sm border border-emerald2 text-emerald2 shadow-emerald">Withdraw</button>
           </div>
         </div>
-
         <h3 class="text-base font-bold text-white mb-3">Recent Transactions</h3>
         <div id="txList" class="space-y-3"></div>
       </section>
 
-      <!-- ===================== ADMIN ===================== -->
+      <!-- ADMIN (simplified, just UI stub) -->
       <section id="admin" class="view">
         <div class="glass rounded-2xl p-4 mb-5 border border-emerald2/30">
           <h3 class="text-base font-bold text-emerald2">Master Dashboard</h3>
           <p class="text-xs text-gray-400 mt-1">Restricted control panel</p>
         </div>
-
-        <div class="grid grid-cols-2 gap-3 mb-5">
-          <div class="glass rounded-xl p-3"><p class="text-xs text-gray-400">Active Users</p><p class="text-xl font-bold text-gold" id="statUsers">1,284</p></div>
-          <div class="glass rounded-xl p-3"><p class="text-xs text-gray-400">House Revenue</p><p class="text-xl font-bold text-emerald2">$48.2K</p></div>
-        </div>
-
         <div class="glass rounded-2xl p-4">
           <div class="flex justify-between items-center mb-2">
             <h4 class="font-bold text-white text-sm">Global Game RTP</h4>
-            <span class="text-gold font-bold" id="rtpVal">96%</span>
+            <span class="text-gold font-bold">96%</span>
           </div>
-          <input type="range" min="80" max="99" value="96" oninput="document.getElementById('rtpVal').textContent=this.value+'%'"
-                 class="w-full accent-yellow-400" />
-          <p class="text-[11px] text-gray-500 mt-2">Adjusts payout return-to-player rate across all simulated games.</p>
+          <input type="range" min="80" max="99" value="96" class="w-full accent-yellow-400" disabled />
         </div>
       </section>
-
     </main>
 
     <!-- ===== BOTTOM NAV ===== -->
@@ -183,109 +227,208 @@
     </nav>
   </div>
 
-  <!-- ===================== SPA LOGIC ===================== -->
+  <!-- ========== LIVE SUPPORT FAB + PREMIUM GLASS POPUP (BOTTOM RIGHT) ========== -->
+  <div id="supportFabWrapper" style="position: fixed; bottom: 84px; right: max(16px, calc(50vw - 209px)); z-index: 55;">
+    <!-- FAB button -->
+    <button id="supportFabBtn" aria-label="Live support chat"
+      class="w-14 h-14 rounded-full flex items-center justify-center shadow-gold transition-all duration-200 hover:scale-105 active:scale-95"
+      style="background: linear-gradient(135deg, #FFD700, #C9A227); box-shadow: 0 0 18px rgba(255,215,0,0.5);">
+      <svg class="w-7 h-7 text-obsidian" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 01-.9-3.8A8.38 8.38 0 0112.5 3 8.5 8.5 0 0121 11.5z" />
+      </svg>
+    </button>
+
+    <!-- Glassmorphic premium chat popup -->
+    <div id="supportPopup" class="support-popup absolute bottom-20 right-0 w-72 rounded-2xl glass-strong border border-gold/30 shadow-2xl overflow-hidden transition-all">
+      <div class="p-4 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-emerald2 animate-pulse"></div>
+          <span class="text-sm font-bold text-gold">Lux Support</span>
+        </div>
+        <button id="closeSupportPopup" class="text-gray-400 hover:text-white transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="p-4 space-y-3">
+        <p class="text-xs text-gray-300 leading-relaxed">Our VIP team replies within minutes. Chat directly via your favourite app.</p>
+        <div class="space-y-2">
+          <!-- WhatsApp option -->
+          <a id="whatsappLink" href="#" target="_blank" rel="noopener noreferrer"
+             class="flex items-center gap-3 w-full bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2.5 transition border border-white/5">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12c0 2.25.7 4.33 1.9 6.04L2 22l4.2-1.2c1.5.9 3.3 1.4 5.1 1.4 5.52 0 10-4.48 10-10S17.52 2 12 2z"/><path d="M16.5 14.5c-.4.4-1.1.7-1.8.7-1.3 0-2.3-.8-3.3-1.7-1.5-1.4-2.4-3-2.4-4.8 0-.7.3-1.4.8-1.9.4-.4.9-.6 1.4-.6.3 0 .6.1.9.4.2.3.4.7.6 1.1.2.5.2 1 .1 1.4-.1.4-.3.8-.5 1.1-.2.2-.3.4-.2.6.3.6 1 1.4 1.6 1.8.2.1.5.2.7.1.3-.1.6-.4.8-.7.2-.3.5-.3.8-.2.3.1.7.4.9.7.2.3.3.7.2 1.1-.1.4-.4.9-.8 1.2z"/></svg>
+            <div class="flex-1 text-left">
+              <p class="text-sm font-semibold text-white">WhatsApp</p>
+              <p class="text-[11px] text-gray-400">Instant chat support</p>
+            </div>
+            <span class="text-xs text-gold">→</span>
+          </a>
+          <!-- Telegram option -->
+          <a id="telegramLink" href="#" target="_blank" rel="noopener noreferrer"
+             class="flex items-center gap-3 w-full bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2.5 transition border border-white/5">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#2AABEE" stroke-width="1.5"><path d="M21 4L3 11l5 2 2 6 3-4 4 3z"/></svg>
+            <div class="flex-1 text-left">
+              <p class="text-sm font-semibold text-white">Telegram</p>
+              <p class="text-[11px] text-gray-400">Fast & secure</p>
+            </div>
+            <span class="text-xs text-gold">→</span>
+          </a>
+        </div>
+        <div class="pt-2 text-center text-[10px] text-gray-500 border-t border-white/5 mt-1">
+          <span>⚡ 24/7 live assistance</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ---------- State ----------
-    let balance = 1250.00;
-    const txData = [
-      { t: 'Deposit', a: 500, d: 'Visa **** 4921' },
-      { t: 'Slots Win', a: 320, d: 'Golden Pharaoh' },
-      { t: 'Withdrawal', a: -200, d: 'Bank Transfer' },
-      { t: 'Blackjack', a: -75, d: 'Live Table 3' },
-    ];
+    // ==============================================================
+    // LUX ROYALE — FULL UI & TICKER + SUPPORT FAB (standalone module)
+    // ==============================================================
+    (function() {
+      // ---------- 1. GAME GRID & MOCK DATA ----------
+      const gameNames = ['Golden Pharaoh','Dragon Spin','Lucky 7s','Mega Roulette','Diamond Rush','Neon Slots','Royal Poker','Baccarat Pro','Wild West','Fortune Wheel','Crystal Crash','Aztec Gold','Mystic Dice','Tiger Fortune','Cash Blitz','Vegas Nights','Plinko Drop','Mines Master','Aviator X','Treasure Vault'];
+      const liveRooms = ['Live Roulette','VIP Blackjack','Speed Baccarat','Dragon Tiger'];
 
-    const gameNames = ['Golden Pharaoh','Dragon Spin','Lucky 7s','Mega Roulette','Diamond Rush','Neon Slots','Royal Poker','Baccarat Pro','Wild West','Fortune Wheel','Crystal Crash','Aztec Gold','Mystic Dice','Tiger Fortune','Cash Blitz','Vegas Nights','Plinko Drop','Mines Master','Aviator X','Treasure Vault'];
-    const liveRooms = ['Live Roulette','VIP Blackjack','Speed Baccarat','Dragon Tiger'];
-
-    // ---------- Render: Game Grid (20 games) ----------
-    function renderGames() {
-      const grid = document.getElementById('gameGrid');
-      grid.innerHTML = gameNames.map((name, i) => {
-        const hue = (i * 37) % 360;
-        return `
-          <button class="glass rounded-xl overflow-hidden text-left active:scale-95 transition-transform">
-            <div class="h-24 flex items-center justify-center relative"
-                 style="background:linear-gradient(135deg,hsl(${hue},45%,18%),hsl(${(hue+40)%360},55%,10%));">
+      function renderGames() {
+        const grid = document.getElementById('gameGrid');
+        if (!grid) return;
+        grid.innerHTML = gameNames.map((name, i) => {
+          const hue = (i * 37) % 360;
+          return `<button class="glass rounded-xl overflow-hidden text-left active:scale-95 transition-transform">
+            <div class="h-24 flex items-center justify-center relative" style="background:linear-gradient(135deg,hsl(${hue},45%,18%),hsl(${(hue+40)%360},55%,10%));">
               <span class="text-2xl">${['🎰','🃏','🎲','💎','👑','🔥'][i%6]}</span>
               <span class="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 rounded-full bg-emerald2/20 text-emerald2">HOT</span>
             </div>
-            <div class="p-2">
-              <p class="text-xs font-bold text-white truncate">${name}</p>
-              <p class="text-[10px] text-gold">RTP 96.5%</p>
-            </div>
+            <div class="p-2"><p class="text-xs font-bold text-white truncate">${name}</p><p class="text-[10px] text-gold">RTP 96.5%</p></div>
           </button>`;
-      }).join('');
-    }
-
-    // ---------- Render: Live Rooms ----------
-    function renderLive() {
-      const wrap = document.getElementById('liveGrid');
-      wrap.innerHTML = liveRooms.map((name,i) => `
-        <div class="glass rounded-2xl overflow-hidden">
-          <div class="h-36 relative flex items-center justify-center"
-               style="background:linear-gradient(135deg,hsl(${150+i*20},40%,16%),#0B0C10);">
-            <span class="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-red-600/80 px-2 py-0.5 rounded-full">
-              <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>LIVE
-            </span>
-            <span class="absolute bottom-3 right-3 text-[10px] text-gray-300">${120+i*43} watching</span>
-            <span class="text-4xl">${['🎡','♠️','🀄','🐉'][i]}</span>
-          </div>
-          <div class="p-3 flex items-center justify-between">
-            <div><p class="text-sm font-bold text-white">${name}</p><p class="text-[11px] text-gray-400">Dealer: Sophia</p></div>
-            <button class="px-4 py-1.5 rounded-full text-obsidian font-bold text-xs shadow-gold" style="background:linear-gradient(135deg,#FFD700,#C9A227);">Join</button>
-          </div>
-        </div>`).join('');
-    }
-
-    // ---------- Render: Transactions ----------
-    function renderTx() {
-      const list = document.getElementById('txList');
-      list.innerHTML = txData.map(tx => {
-        const pos = tx.a >= 0;
-        return `
-          <div class="glass rounded-xl p-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <span class="w-9 h-9 rounded-full flex items-center justify-center ${pos?'bg-emerald2/15':'bg-red-500/15'}">
-                <span class="${pos?'text-emerald2':'text-red-400'} font-bold">${pos?'�download':'↑'}</span>
-              </span>
-              <div><p class="text-sm font-semibold text-white">${tx.t}</p><p class="text-[11px] text-gray-400">${tx.d}</p></div>
+        }).join('');
+      }
+      function renderLive() {
+        const wrap = document.getElementById('liveGrid');
+        if (!wrap) return;
+        wrap.innerHTML = liveRooms.map((name,i) => `
+          <div class="glass rounded-2xl overflow-hidden">
+            <div class="h-36 relative flex items-center justify-center" style="background:linear-gradient(135deg,hsl(${150+i*20},40%,16%),#0B0C10);">
+              <span class="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-red-600/80 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>LIVE</span>
+              <span class="absolute bottom-3 right-3 text-[10px] text-gray-300">${120+i*43} watching</span>
+              <span class="text-4xl">${['🎡','♠️','🀄','🐉'][i]}</span>
             </div>
-            <span class="text-sm font-bold ${pos?'text-emerald2':'text-red-400'}">${pos?'+':'-'}$${Math.abs(tx.a)}</span>
-          </div>`;
-      }).join('');
-    }
+            <div class="p-3 flex items-center justify-between"><div><p class="text-sm font-bold text-white">${name}</p><p class="text-[11px] text-gray-400">Dealer: Sophia</p></div><button class="px-4 py-1.5 rounded-full text-obsidian font-bold text-xs shadow-gold" style="background:linear-gradient(135deg,#FFD700,#C9A227);">Join</button></div>
+          </div>`).join('');
+      }
 
-    // ---------- Balance ----------
-    function fmt(n){ return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-    function updateBalance(){
-      document.getElementById('balanceDisplay').textContent = fmt(balance);
-      document.getElementById('walletBalance').textContent = fmt(balance);
-    }
-    function adjustBalance(amt){
-      if(balance+amt < 0) return;
-      balance += amt;
-      txData.unshift({ t: amt>=0?'Deposit':'Withdrawal', a: amt, d: amt>=0?'Instant Top-up':'Bank Transfer' });
-      updateBalance(); renderTx();
-    }
+      // Transactions mock + balance demo
+      let balance = 1250.00;
+      let txData = [
+        { t: 'Deposit', a: 500, d: 'Visa **** 4921' },
+        { t: 'Slots Win', a: 320, d: 'Golden Pharaoh' },
+        { t: 'Withdrawal', a: -200, d: 'Bank Transfer' },
+      ];
+      function fmt(n){ return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+      function updateBalanceUI(){ 
+        const b1 = document.getElementById('balanceDisplay'); if(b1) b1.textContent = fmt(balance);
+        const b2 = document.getElementById('walletBalance'); if(b2) b2.textContent = fmt(balance);
+      }
+      function renderTx() {
+        const list = document.getElementById('txList');
+        if (!list) return;
+        list.innerHTML = txData.map(tx => `<div class="glass rounded-xl p-3 flex items-center justify-between"><div class="flex items-center gap-3"><span class="w-9 h-9 rounded-full flex items-center justify-center ${tx.a>=0?'bg-emerald2/15':'bg-red-500/15'}"><span class="${tx.a>=0?'text-emerald2':'text-red-400'} font-bold">${tx.a>=0?'+':'−'}</span></span><div><p class="text-sm font-semibold text-white">${tx.t}</p><p class="text-[11px] text-gray-400">${tx.d}</p></div></div><span class="text-sm font-bold ${tx.a>=0?'text-emerald2':'text-red-400'}">${tx.a>=0?'+':'-'}$${Math.abs(tx.a)}</span></div>`).join('');
+      }
+      window.depositDemo = (amt) => { balance += amt; txData.unshift({ t: 'Deposit', a: amt, d: 'Instant Top-up' }); updateBalanceUI(); renderTx(); };
+      window.withdrawDemo = (amt) => { if(balance>=amt) { balance -= amt; txData.unshift({ t: 'Withdrawal', a: -amt, d: 'Bank request' }); updateBalanceUI(); renderTx(); } else alert("insufficient"); };
+      
+      // ========== 2. REAL-TIME WIN TICKER (randomized but realistic, emerald glow) ==========
+      const GAME_TYPES = ['Crash', 'Roulette', 'Teen Patti', 'Aviator X', 'Mines', 'Plinko', 'Dragon Tiger', 'Andar Bahar', 'Blackjack', 'Slots'];
+      const MULTIPLIERS = ['1.2x', '2.5x', '4.2x', '5.4x', '8.7x', '12x', '25x', '50x'];
+      
+      function generateRandomWinMessage() {
+        const userPrefix = ['User', 'Royal', 'Lucky', 'Neon', 'Crypto', 'Ace', 'HighRoller'][Math.floor(Math.random()*7)];
+        const userId = userPrefix + '_' + (Math.floor(Math.random() * 900) + 100) + 'x';
+        const game = GAME_TYPES[Math.floor(Math.random() * GAME_TYPES.length)];
+        const isWin = Math.random() > 0.25; // most events are wins/deposits for positive vibe
+        if (isWin && Math.random() < 0.65) {
+          const mult = MULTIPLIERS[Math.floor(Math.random() * MULTIPLIERS.length)];
+          const amount = (500 + Math.floor(Math.random() * 4500) / 10).toLocaleString('en-IN');
+          return `${userId} just won ₹${amount} in ${game} at ${mult} multiplier!`;
+        } else {
+          const depositAmount = (1000 + Math.floor(Math.random() * 9000) / 10).toLocaleString('en-IN');
+          const method = Math.random() > 0.5 ? 'Cashfree' : 'USDT (TRC20)';
+          return `${userId} deposited ₹${depositAmount} via ${method}`;
+        }
+      }
 
-    // ---------- Hash Router ----------
-    const routes = ['home','live-rooms','wallet','admin'];
-    function router(){
-      let hash = location.hash.replace('#','') || 'home';
-      if(!routes.includes(hash)) hash = 'home';
-      document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === hash));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('nav-active', n.dataset.nav === hash));
-      document.querySelector('main').scrollTo(0,0);
-      window.scrollTo(0,0);
-    }
+      let tickerItems = [];
+      function refreshTicker() {
+        // add fresh message (randomized, simulates real feed)
+        const newMsg = generateRandomWinMessage();
+        tickerItems.unshift(newMsg);
+        if (tickerItems.length > 12) tickerItems.pop();
+        const tickerContainer = document.getElementById('tickerText');
+        if (tickerContainer) {
+          const finalHtml = tickerItems.map(msg => `<span class="mx-5 inline-flex items-center gap-1"><span class="text-emerald2 text-sm">✨</span><span class="text-emerald2 font-semibold drop-shadow-[0_0_6px_#50C878]">${escapeHtml(msg)}</span></span>`).join('');
+          tickerContainer.innerHTML = `<span class="mx-4 text-emerald2/80">🔥 LIVE UPDATES 🔥</span> ${finalHtml} <span class="mx-4 text-emerald2/50">⚡</span>`;
+        }
+      }
+      function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+      
+      // populate initial ticker with 5 demo events
+      for(let i=0;i<5;i++) tickerItems.push(generateRandomWinMessage());
+      // start ticker rotation every 7-11 sec
+      setInterval(() => refreshTicker(), 7500);
+      refreshTicker(); // immediate render
 
-    // ---------- Init ----------
-    window.addEventListener('hashchange', router);
-    window.addEventListener('DOMContentLoaded', () => {
-      renderGames(); renderLive(); renderTx(); updateBalance();
-      if(!location.hash) location.hash = '#home';
+      // ---- 3. SUPPORT FAB + PREMIUM POPUP (WhatsApp/Telegram integration) ----
+      const fabBtn = document.getElementById('supportFabBtn');
+      const popup = document.getElementById('supportPopup');
+      const closePopupBtn = document.getElementById('closeSupportPopup');
+      const whatsappLink = document.getElementById('whatsappLink');
+      const telegramLink = document.getElementById('telegramLink');
+
+      //  ** REAL ADMIN HANDLES — Replace these with actual support numbers/links **
+      const SUPPORT_WHATSAPP = '919999999999';      // e.g., '919876543210'
+      const SUPPORT_TELEGRAM = 'luxroyale_support'; // e.g., 'luxroyalehelp'
+
+      if (SUPPORT_WHATSAPP) {
+        whatsappLink.href = `https://wa.me/${encodeURIComponent(SUPPORT_WHATSAPP)}?text=Hello%2C%20I%20need%20assistance%20with%20Lux%20Royale`;
+      } else {
+        whatsappLink.href = '#'; whatsappLink.style.opacity = '0.6'; whatsappLink.style.pointerEvents = 'none';
+        whatsappLink.querySelector('.text-sm').innerHTML = 'WhatsApp (unavailable)';
+      }
+      if (SUPPORT_TELEGRAM) {
+        telegramLink.href = `https://t.me/${encodeURIComponent(SUPPORT_TELEGRAM)}`;
+      } else {
+        telegramLink.href = '#'; telegramLink.style.opacity = '0.6'; telegramLink.style.pointerEvents = 'none';
+        telegramLink.querySelector('.text-sm').innerHTML = 'Telegram (unavailable)';
+      }
+
+      function openPopup() { popup.classList.add('open'); }
+      function closePopup() { popup.classList.remove('open'); }
+      fabBtn.addEventListener('click', (e) => { e.stopPropagation(); if(popup.classList.contains('open')) closePopup(); else openPopup(); });
+      closePopupBtn.addEventListener('click', () => closePopup());
+      document.addEventListener('click', (e) => {
+        if (popup.classList.contains('open') && !popup.contains(e.target) && e.target !== fabBtn && !fabBtn.contains(e.target)) closePopup();
+      });
+      
+      // ---- 4. router (normal SPA behaviour) ----
+      const routes = ['home','live-rooms','wallet','admin'];
+      function router(){
+        let hash = location.hash.replace('#','') || 'home';
+        if(!routes.includes(hash)) hash = 'home';
+        document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === hash));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('nav-active', n.dataset.nav === hash));
+        window.scrollTo(0,0);
+      }
+      window.addEventListener('hashchange', router);
+      
+      // initialise all UI components
+      renderGames(); renderLive(); renderTx(); updateBalanceUI();
+      if(!location.hash || location.hash === '#') location.hash = '#home';
       router();
-    });
+      
+      // tiny animation for ticker shimmer effect (keep alive)
+      const tickerDiv = document.getElementById('winTickerContainer');
+      if(tickerDiv) tickerDiv.style.animation = 'fadeUp 0.4s ease-out';
+    })();
   </script>
 </body>
 </html>
