@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0B0C10" />
+  <title>Lux Royale Casino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0B0C10',
+            obsidian2: '#15171F',
+            gold: '#FFD700',
+            emerald2: '#50C878',
+          },
+          fontFamily: {
+            display: ['"Segoe UI"', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            gold: '0 0 12px rgba(255,215,0,0.55)',
+            emerald: '0 0 12px rgba(80,200,120,0.55)',
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%,100%': { boxShadow: '0 0 6px rgba(255,215,0,0.4)' },
+              '50%': { boxShadow: '0 0 18px rgba(255,215,0,0.85)' },
+            },
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(12px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+          },
+          animation: {
+            pulseGlow: 'pulseGlow 2.2s ease-in-out infinite',
+            fadeUp: 'fadeUp 0.35s ease-out both',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html, body { background:#000; }
+    body { -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+    .glass {
+      background: rgba(21,23,31,0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,215,0,0.12);
+    }
+    .gold-text {
+      background: linear-gradient(135deg,#FFD700,#FFF1A8,#C9A227);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .view { display:none; }
+    .view.active { display:block; animation: fadeUp 0.35s ease-out both; }
+    .nav-active { color:#FFD700 !important; }
+    .nav-active svg { filter: drop-shadow(0 0 6px rgba(255,215,0,0.8)); }
+  </style>
+</head>
+<body class="font-display text-gray-200">
+
+  <!-- App Frame -->
+  <div class="relative mx-auto w-full max-w-[450px] min-h-screen bg-obsidian overflow-hidden"
+       style="background:radial-gradient(circle at 50% 0%, #16181f 0%, #0B0C10 55%, #050506 100%);">
+
+    <!-- ===== TOP BAR ===== -->
+    <header class="sticky top-0 z-40 glass px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+             style="background:linear-gradient(135deg,#FFD700,#C9A227);">
+          <span class="text-obsidian font-black text-lg">L</span>
+        </div>
+        <div class="leading-tight">
+          <p class="text-[10px] uppercase tracking-widest text-gray-400">Lux Royale</p>
+          <p class="text-sm font-bold gold-text">Casino</p>
+        </div>
+      </div>
+
+      <button onclick="location.hash='#wallet'"
+              class="flex items-center gap-2 glass rounded-full pl-3 pr-1 py-1 animate-pulseGlow">
+        <span class="text-sm font-bold text-emerald2" id="balanceDisplay">$0.00</span>
+        <span class="w-8 h-8 rounded-full flex items-center justify-center" style="background:rgba(255,215,0,0.12);">
+          <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h15a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm0 0a2 2 0 012-2h11M16 13h.01"/>
+          </svg>
+        </span>
+      </button>
+    </header>
+
+    <!-- ===== MAIN SCROLL AREA ===== -->
+    <main class="px-4 pt-4 pb-28 min-h-[calc(100vh-130px)]">
+
+      <!-- ===================== HOME / LOBBY ===================== -->
+      <section id="home" class="view">
+        <div class="glass rounded-2xl p-4 mb-5 relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full" style="background:radial-gradient(circle,#FFD70033,transparent 70%);"></div>
+          <p class="text-xs text-gray-400">Welcome back, high roller</p>
+          <h2 class="text-2xl font-black gold-text">Daily Mega Bonus</h2>
+          <p class="text-sm text-emerald2 mt-1">Spin the wheel for up to 5000 coins</p>
+          <button class="mt-3 px-5 py-2 rounded-full text-obsidian font-bold text-sm shadow-gold"
+                  style="background:linear-gradient(135deg,#FFD700,#C9A227);">Claim Now</button>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-bold text-white">Game Lobby</h3>
+          <span class="text-xs text-gold">View all</span>
+        </div>
+
+        <div id="gameGrid" class="grid grid-cols-2 gap-3"></div>
+      </section>
+
+      <!-- ===================== LIVE ROOMS ===================== -->
+      <section id="live-rooms" class="view">
+        <h3 class="text-base font-bold text-white mb-3">Live Dealer Rooms</h3>
+        <div id="liveGrid" class="space-y-4"></div>
+      </section>
+
+      <!-- ===================== WALLET ===================== -->
+      <section id="wallet" class="view">
+        <div class="glass rounded-2xl p-5 mb-5 text-center relative overflow-hidden">
+          <p class="text-xs uppercase tracking-widest text-gray-400">Total Balance</p>
+          <p class="text-3xl font-black text-emerald2 mt-1" id="walletBalance">$0.00</p>
+          <div class="flex gap-3 mt-4">
+            <button onclick="adjustBalance(100)" class="flex-1 py-2 rounded-xl text-obsidian font-bold text-sm shadow-gold"
+                    style="background:linear-gradient(135deg,#FFD700,#C9A227);">Deposit</button>
+            <button onclick="adjustBalance(-50)" class="flex-1 py-2 rounded-xl font-bold text-sm border border-emerald2 text-emerald2 shadow-emerald">Withdraw</button>
+          </div>
+        </div>
+
+        <h3 class="text-base font-bold text-white mb-3">Recent Transactions</h3>
+        <div id="txList" class="space-y-3"></div>
+      </section>
+
+      <!-- ===================== ADMIN ===================== -->
+      <section id="admin" class="view">
+        <div class="glass rounded-2xl p-4 mb-5 border border-emerald2/30">
+          <h3 class="text-base font-bold text-emerald2">Master Dashboard</h3>
+          <p class="text-xs text-gray-400 mt-1">Restricted control panel</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="glass rounded-xl p-3"><p class="text-xs text-gray-400">Active Users</p><p class="text-xl font-bold text-gold" id="statUsers">1,284</p></div>
+          <div class="glass rounded-xl p-3"><p class="text-xs text-gray-400">House Revenue</p><p class="text-xl font-bold text-emerald2">$48.2K</p></div>
+        </div>
+
+        <div class="glass rounded-2xl p-4">
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="font-bold text-white text-sm">Global Game RTP</h4>
+            <span class="text-gold font-bold" id="rtpVal">96%</span>
+          </div>
+          <input type="range" min="80" max="99" value="96" oninput="document.getElementById('rtpVal').textContent=this.value+'%'"
+                 class="w-full accent-yellow-400" />
+          <p class="text-[11px] text-gray-500 mt-2">Adjusts payout return-to-player rate across all simulated games.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] z-40 glass px-2 py-2 flex justify-around">
+      <a href="#home" data-nav="home" class="nav-item flex flex-col items-center gap-0.5 text-gray-400 text-[10px] px-3 py-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>
+        Lobby
+      </a>
+      <a href="#live-rooms" data-nav="live-rooms" class="nav-item flex flex-col items-center gap-0.5 text-gray-400 text-[10px] px-3 py-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.55-2.28A1 1 0 0121 8.6v6.8a1 1 0 01-1.45.89L15 14M4 6h9a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg>
+        Live
+      </a>
+      <a href="#wallet" data-nav="wallet" class="nav-item flex flex-col items-center gap-0.5 text-gray-400 text-[10px] px-3 py-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h15a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm0 0a2 2 0 012-2h11M16 13h.01"/></svg>
+        Wallet
+      </a>
+      <a href="#admin" data-nav="admin" class="nav-item flex flex-col items-center gap-0.5 text-gray-400 text-[10px] px-3 py-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/></svg>
+        Admin
+      </a>
+    </nav>
+  </div>
+
+  <!-- ===================== SPA LOGIC ===================== -->
+  <script>
+    // ---------- State ----------
+    let balance = 1250.00;
+    const txData = [
+      { t: 'Deposit', a: 500, d: 'Visa **** 4921' },
+      { t: 'Slots Win', a: 320, d: 'Golden Pharaoh' },
+      { t: 'Withdrawal', a: -200, d: 'Bank Transfer' },
+      { t: 'Blackjack', a: -75, d: 'Live Table 3' },
+    ];
+
+    const gameNames = ['Golden Pharaoh','Dragon Spin','Lucky 7s','Mega Roulette','Diamond Rush','Neon Slots','Royal Poker','Baccarat Pro','Wild West','Fortune Wheel','Crystal Crash','Aztec Gold','Mystic Dice','Tiger Fortune','Cash Blitz','Vegas Nights','Plinko Drop','Mines Master','Aviator X','Treasure Vault'];
+    const liveRooms = ['Live Roulette','VIP Blackjack','Speed Baccarat','Dragon Tiger'];
+
+    // ---------- Render: Game Grid (20 games) ----------
+    function renderGames() {
+      const grid = document.getElementById('gameGrid');
+      grid.innerHTML = gameNames.map((name, i) => {
+        const hue = (i * 37) % 360;
+        return `
+          <button class="glass rounded-xl overflow-hidden text-left active:scale-95 transition-transform">
+            <div class="h-24 flex items-center justify-center relative"
+                 style="background:linear-gradient(135deg,hsl(${hue},45%,18%),hsl(${(hue+40)%360},55%,10%));">
+              <span class="text-2xl">${['🎰','🃏','🎲','💎','👑','🔥'][i%6]}</span>
+              <span class="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 rounded-full bg-emerald2/20 text-emerald2">HOT</span>
+            </div>
+            <div class="p-2">
+              <p class="text-xs font-bold text-white truncate">${name}</p>
+              <p class="text-[10px] text-gold">RTP 96.5%</p>
+            </div>
+          </button>`;
+      }).join('');
+    }
+
+    // ---------- Render: Live Rooms ----------
+    function renderLive() {
+      const wrap = document.getElementById('liveGrid');
+      wrap.innerHTML = liveRooms.map((name,i) => `
+        <div class="glass rounded-2xl overflow-hidden">
+          <div class="h-36 relative flex items-center justify-center"
+               style="background:linear-gradient(135deg,hsl(${150+i*20},40%,16%),#0B0C10);">
+            <span class="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-red-600/80 px-2 py-0.5 rounded-full">
+              <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>LIVE
+            </span>
+            <span class="absolute bottom-3 right-3 text-[10px] text-gray-300">${120+i*43} watching</span>
+            <span class="text-4xl">${['🎡','♠️','🀄','🐉'][i]}</span>
+          </div>
+          <div class="p-3 flex items-center justify-between">
+            <div><p class="text-sm font-bold text-white">${name}</p><p class="text-[11px] text-gray-400">Dealer: Sophia</p></div>
+            <button class="px-4 py-1.5 rounded-full text-obsidian font-bold text-xs shadow-gold" style="background:linear-gradient(135deg,#FFD700,#C9A227);">Join</button>
+          </div>
+        </div>`).join('');
+    }
+
+    // ---------- Render: Transactions ----------
+    function renderTx() {
+      const list = document.getElementById('txList');
+      list.innerHTML = txData.map(tx => {
+        const pos = tx.a >= 0;
+        return `
+          <div class="glass rounded-xl p-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-full flex items-center justify-center ${pos?'bg-emerald2/15':'bg-red-500/15'}">
+                <span class="${pos?'text-emerald2':'text-red-400'} font-bold">${pos?'�download':'↑'}</span>
+              </span>
+              <div><p class="text-sm font-semibold text-white">${tx.t}</p><p class="text-[11px] text-gray-400">${tx.d}</p></div>
+            </div>
+            <span class="text-sm font-bold ${pos?'text-emerald2':'text-red-400'}">${pos?'+':'-'}$${Math.abs(tx.a)}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // ---------- Balance ----------
+    function fmt(n){ return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function updateBalance(){
+      document.getElementById('balanceDisplay').textContent = fmt(balance);
+      document.getElementById('walletBalance').textContent = fmt(balance);
+    }
+    function adjustBalance(amt){
+      if(balance+amt < 0) return;
+      balance += amt;
+      txData.unshift({ t: amt>=0?'Deposit':'Withdrawal', a: amt, d: amt>=0?'Instant Top-up':'Bank Transfer' });
+      updateBalance(); renderTx();
+    }
+
+    // ---------- Hash Router ----------
+    const routes = ['home','live-rooms','wallet','admin'];
+    function router(){
+      let hash = location.hash.replace('#','') || 'home';
+      if(!routes.includes(hash)) hash = 'home';
+      document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === hash));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('nav-active', n.dataset.nav === hash));
+      document.querySelector('main').scrollTo(0,0);
+      window.scrollTo(0,0);
+    }
+
+    // ---------- Init ----------
+    window.addEventListener('hashchange', router);
+    window.addEventListener('DOMContentLoaded', () => {
+      renderGames(); renderLive(); renderTx(); updateBalance();
+      if(!location.hash) location.hash = '#home';
+      router();
+    });
+  </script>
+</body>
+</html>
