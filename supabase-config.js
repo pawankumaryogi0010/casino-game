@@ -1,168 +1,229 @@
-// =============================================================
-// supabase-config.js  -  Lux Royale Casino
-// Zero-API: the browser talks directly to Supabase via the SDK.
-//
-// Load the SDK first (in index.html, before this file):
-//   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-//   <script src="supabase-config.js"></script>
-//
-// SECURITY: only ever expose the ANON (publishable) key here.
-// Never put the service_role key in client code. RLS + the
-// process_transaction RPC enforce all real security server-side.
-// =============================================================
+// =====================================================================
+// SUPABASE CONFIG — Client SDK init + Realtime + RPC helpers (v2)
+// Load via CDN BEFORE this file:
+// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+// =====================================================================
 
-// Credentials are injected at deploy time via env.js (see env.example.js
-// and DEPLOY.md). env.js is generated from Vercel env vars and is NOT
-// committed. The ANON key is safe to expose in the client (RLS enforces
-// access) but should still come from config, never be hardcoded in source.
-const ENV = (typeof window !== 'undefined' && window.env) ? window.env : {};
-const SUPABASE_URL = ENV.SUPABASE_URL;
-const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY;
+const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('[supabase-config] Missing window.env.SUPABASE_URL / SUPABASE_ANON_KEY. ' +
-    'Ensure env.js is generated from your Vercel environment variables and loaded before this file.');
-}
-
-// `supabase` global comes from the CDN UMD bundle.
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true },
-  realtime: { params: { eventsPerSecond: 10 } },
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  realtime: { params: { eventsPerSecond: 10 } }
 });
 
-// -------------------------------------------------------------
-// AUTH (phone OTP example)
-// -------------------------------------------------------------
+// ---------------------------------------------------------------------
+// AUTH HELPERS
+// ---------------------------------------------------------------------
 async function signInWithPhone(phone) {
-  const { data, error } = await sb.auth.signInWithOtp({ phone });
-  if (error) console.error('OTP send failed:', error.message);
+  const { data, error } = await supabase.auth.signInWithOtp({ phone });
+  if (error) console.error("OTP send error:", error.message);
   return { data, error };
 }
 
 async function verifyOtp(phone, token) {
-  const { data, error } = await sb.auth.verifyOtp({ phone, token, type: 'sms' });
-  if (error) console.error('OTP verify failed:', error.message);
+  const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
+  if (error) console.error("OTP verify error:", error.message);
   return { data, error };
 }
 
-async function signOut() {
-  return sb.auth.signOut();
-}
-
 async function getCurrentUser() {
-  const { data: { user } } = await sb.auth.getUser();
-  return user;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) console.error("getUser error:", error.message);
+  return data?.user || null;
 }
 
-// -------------------------------------------------------------
+async function signOut() {
+  await supabase.auth.signOut();
+}
+
+// ---------------------------------------------------------------------
 // PROFILE / BALANCE
-// -------------------------------------------------------------
-async function getMyProfile() {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  const { data, error } = await sb
-    .from('profiles')
-    .select('id, phone_number, balance, role, created_at')
-    .eq('id', user.id)
+// ---------------------------------------------------------------------
+async function getProfile(userId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
     .single();
-  if (error) { console.error('getMyProfile:', error.message); return null; }
+  if (error) console.error("getProfile error:", error.message);
   return data;
 }
 
-// Balance changes go through the secure RPC, never a direct UPDATE.
-async function processTransaction(type, amount) {
-  const { data, error } = await sb.rpc('process_transaction', {
-    p_type: type,
-    p_amount: amount,
-  });
-  if (error) { console.error('processTransaction:', error.message); return { error }; }
-  return { data }; // returns the updated profile row
-}
-
-async function getMyTransactions(limit = 20) {
-  const { data, error } = await sb
-    .from('transactions')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  if (error) { console.error('getMyTransactions:', error.message); return []; }
-  return data;
-}
-
-// Live balance: listen to my own profile row changing.
 function subscribeToBalance(userId, onChange) {
-  return sb
-    .channel('profile:' + userId)
-    .on('postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
-      (payload) => onChange(payload.new))
+  return supabase
+    .channel(`profile-balance-${userId}`)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
+      (payload) => onChange(payload.new)
+    )
     .subscribe();
 }
 
-// -------------------------------------------------------------
-// GAME SESSIONS - shared realtime state for all players
-// -------------------------------------------------------------
-
-// Fetch the current state of a session once (e.g. on page load).
-async function getGameSession(sessionId) {
-  const { data, error } = await sb
-    .from('game_sessions')
-    .select('*')
-    .eq('id', sessionId)
-    .single();
-  if (error) { console.error('getGameSession:', error.message); return null; }
-  return data;
-}
-
-// Subscribe to ALL changes on one game session. Every connected
-// client receives the new row instantly, so state stays in sync.
-//
-//   const channel = subscribeToGameSession(id, (state, evt) => render(state));
-//   ...later...  unsubscribe(channel);
-function subscribeToGameSession(sessionId, onUpdate) {
-  return sb
-    .channel('game_session:' + sessionId)
-    .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'game_sessions', filter: `id=eq.${sessionId}` },
-      (payload) => onUpdate(payload.new, payload.eventType))
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') console.log('Live on session', sessionId);
-    });
-}
-
-// Subscribe to the whole table (lobby view: all active games).
-function subscribeToAllGameSessions(onUpdate) {
-  return sb
-    .channel('game_sessions:all')
-    .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'game_sessions' },
-      (payload) => onUpdate(payload.new, payload.eventType))
-    .subscribe();
-}
-
-// Admin-only: push new shared game state (RLS blocks non-admins).
-async function updateGameState(sessionId, gameState, status) {
-  const patch = { game_state: gameState };
-  if (status) patch.status = status;
-  const { data, error } = await sb
-    .from('game_sessions')
-    .update(patch)
-    .eq('id', sessionId)
+// ---------------------------------------------------------------------
+// TRANSACTIONS
+// ---------------------------------------------------------------------
+async function createTransaction(userId, type, amount, status = "pending") {
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert([{ user_id: userId, type, amount, status }])
     .select()
     .single();
-  if (error) { console.error('updateGameState:', error.message); return { error }; }
-  return { data };
+  if (error) console.error("createTransaction error:", error.message);
+  return { data, error };
+}
+
+async function getTransactions(userId) {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) console.error("getTransactions error:", error.message);
+  return data || [];
+}
+
+function subscribeToTransactions(userId, onChange) {
+  return supabase
+    .channel(`transactions-${userId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${userId}` },
+      (payload) => onChange(payload)
+    )
+    .subscribe();
+}
+
+// ---------------------------------------------------------------------
+// GAME SESSIONS — REALTIME MULTIPLAYER SYNC
+// ---------------------------------------------------------------------
+async function getGameSession(gameName) {
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .select("*")
+    .eq("game_name", gameName)
+    .single();
+  if (error) console.error("getGameSession error:", error.message);
+  return data;
+}
+
+// Subscribe to a single room. All players receive the SAME state instantly.
+function subscribeToGameSession(gameName, onUpdate) {
+  return supabase
+    .channel(`game-session-${gameName}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "game_sessions", filter: `game_name=eq.${gameName}` },
+      (payload) => {
+        if (payload.eventType === "DELETE") return;
+        onUpdate(payload.new);
+      }
+    )
+    .subscribe();
+}
+
+// Subscribe to all bets placed in a session+round (live bet feed / pot totals)
+function subscribeToBets(sessionId, onUpdate) {
+  return supabase
+    .channel(`bets-${sessionId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bets", filter: `session_id=eq.${sessionId}` },
+      (payload) => onUpdate(payload)
+    )
+    .subscribe();
+}
+
+function subscribeToAllGameSessions(onUpdate) {
+  return supabase
+    .channel("game-sessions-all")
+    .on("postgres_changes", { event: "*", schema: "public", table: "game_sessions" }, (payload) =>
+      onUpdate(payload)
+    )
+    .subscribe();
 }
 
 function unsubscribe(channel) {
-  if (channel) sb.removeChannel(channel);
+  if (channel) supabase.removeChannel(channel);
 }
 
-// Expose globally for the SPA in index.html
-window.Casino = {
-  sb,
-  signInWithPhone, verifyOtp, signOut, getCurrentUser,
-  getMyProfile, processTransaction, getMyTransactions, subscribeToBalance,
-  getGameSession, subscribeToGameSession, subscribeToAllGameSessions,
-  updateGameState, unsubscribe,
+// ---------------------------------------------------------------------
+// RPC WRAPPERS (security-definer functions in schema.sql)
+// ---------------------------------------------------------------------
+
+// Place a bet — server-side validates balance + round status atomically
+async function placeBet(sessionId, roundId, choice, amount) {
+  const { data, error } = await supabase.rpc("place_bet", {
+    p_session_id: sessionId,
+    p_round_id: roundId,
+    p_choice: choice,
+    p_amount: amount
+  });
+  if (error) console.error("placeBet error:", error.message);
+  return { data, error };
+}
+
+// Settle a round — admin only
+async function settleRound(sessionId, roundId, winningChoice, multiplier = 2.0) {
+  const { data, error } = await supabase.rpc("settle_round", {
+    p_session_id: sessionId,
+    p_round_id: roundId,
+    p_winning_choice: winningChoice,
+    p_multiplier: multiplier
+  });
+  if (error) console.error("settleRound error:", error.message);
+  return { data, error };
+}
+
+// Adjust balance — used by payment-gateway (deposit/withdraw)
+async function adjustBalance(userId, delta, reason = "adjustment") {
+  const { data, error } = await supabase.rpc("adjust_balance", {
+    p_user_id: userId,
+    p_delta: delta,
+    p_reason: reason
+  });
+  if (error) console.error("adjustBalance error:", error.message);
+  return { data, error };
+}
+
+// Update game_sessions.game_state (admin/dealer-driven state machine)
+async function updateGameState(gameName, patch) {
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .update(patch)
+    .eq("game_name", gameName)
+    .select()
+    .single();
+  if (error) console.error("updateGameState error:", error.message);
+  return { data, error };
+}
+
+// ---------------------------------------------------------------------
+// EXPORTS
+// ---------------------------------------------------------------------
+window.SupabaseAPI = {
+  supabase,
+  // auth
+  signInWithPhone,
+  verifyOtp,
+  getCurrentUser,
+  signOut,
+  // profile
+  getProfile,
+  subscribeToBalance,
+  // transactions
+  createTransaction,
+  getTransactions,
+  subscribeToTransactions,
+  // game sessions
+  getGameSession,
+  subscribeToGameSession,
+  subscribeToBets,
+  subscribeToAllGameSessions,
+  updateGameState,
+  unsubscribe,
+  // RPC
+  placeBet,
+  settleRound,
+  adjustBalance
 };

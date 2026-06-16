@@ -1,134 +1,167 @@
-// =============================================================
-// payment-gateway.js  -  Lux Royale Casino
-// Mock deposit/withdraw flow with instant UI feedback.
+// =====================================================================
+// PAYMENT-GATEWAY.JS — Mock deposit/withdrawal via secure RPC (v2)
+// Requires: supabase-config.js + auth.js loaded first
 //
-// SECURITY NOTE: balance is NOT written from the client. The
-// balance column is reachable from the browser, so a direct
-// `update({ balance })` would let any user set their own funds
-// arbitrarily. Instead we call the server-side `process_transaction`
-// RPC (security definer) defined in schema.sql, which:
-//   - locks the profile row,
-//   - validates sufficient funds for withdrawals,
-//   - updates balance and inserts the ledger row atomically.
-// The UX (speed, sufficiency check, success tone) is identical.
-//
-// Load order:
-//   supabase-config.js -> auth.js -> payment-gateway.js
-// =============================================================
+// Balance mutation now goes through `adjust_balance()`, a security-definer
+// Postgres function that re-checks the balance server-side under a row
+// lock — this closes the devtools-spoofing hole a plain `.update()` has.
+// =====================================================================
 
 (function () {
-  'use strict';
+  const { supabase, getProfile, adjustBalance } = window.SupabaseAPI;
 
-  const C = window.Casino;
-  if (!C) { console.error('payment-gateway.js: supabase-config.js must load first'); return; }
+  const MIN_DEPOSIT = 5;
+  const MIN_WITHDRAWAL = 10;
+  const MAX_TRANSACTION = 50000;
 
-  // ---------------------------------------------------------
-  // Audio tone emulation (no asset files; WebAudio synth)
-  // ---------------------------------------------------------
-  let audioCtx = null;
-  function tone(success) {
+  // -------------------------------------------------------------
+  // PUBLIC ENTRY POINTS
+  // -------------------------------------------------------------
+  async function deposit(amount) {
+    return processTransaction("deposit", amount);
+  }
+
+  async function withdraw(amount) {
+    return processTransaction("withdrawal", amount);
+  }
+
+  // -------------------------------------------------------------
+  // CORE PIPELINE
+  // -------------------------------------------------------------
+  async function processTransaction(type, rawAmount) {
+    const amount = Number(rawAmount);
+
+    const validationError = validateAmount(type, amount);
+    if (validationError) {
+      playTone("error");
+      showResult(false, validationError);
+      return { success: false, error: validationError };
+    }
+
     try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      const now = audioCtx.currentTime;
-      const notes = success ? [659.25, 880.0] : [220.0, 174.6]; // up = win, down = error
-      notes.forEach((freq, i) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, now + i * 0.12);
-        gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.12 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.12 + 0.18);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start(now + i * 0.12);
-        osc.stop(now + i * 0.12 + 0.2);
-      });
-    } catch (_) { /* audio optional */ }
-  }
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !userData?.user) throw new Error("You must be logged in to continue.");
+      const userId = userData.user.id;
 
-  // ---------------------------------------------------------
-  // Toast / alert
-  // ---------------------------------------------------------
-  function toast(message, success) {
-    let el = document.getElementById('pgToast');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'pgToast';
-      el.style.cssText =
-        'position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-120%);' +
-        'z-index:60;padding:12px 18px;border-radius:14px;font:600 13px system-ui;' +
-        'backdrop-filter:blur(12px);transition:transform .35s cubic-bezier(.2,.9,.2,1);' +
-        'max-width:420px;width:calc(100% - 32px);text-align:center;';
-      document.body.appendChild(el);
-    }
-    el.style.background = success ? 'rgba(80,200,120,0.18)' : 'rgba(255,80,80,0.18)';
-    el.style.color = success ? '#50C878' : '#ff6b6b';
-    el.style.border = '1px solid ' + (success ? 'rgba(80,200,120,0.5)' : 'rgba(255,80,80,0.5)');
-    el.textContent = message;
-    requestAnimationFrame(() => { el.style.transform = 'translateX(-50%) translateY(0)'; });
-    clearTimeout(el._t);
-    el._t = setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(-120%)'; }, 2600);
-  }
-
-  // ---------------------------------------------------------
-  // Core transaction
-  // ---------------------------------------------------------
-  async function transact(type, amount) {
-    const amt = Number(amount);
-    if (!Number.isFinite(amt) || amt <= 0) {
-      tone(false); toast('Enter a valid amount', false);
-      return { ok: false, error: 'invalid amount' };
-    }
-
-    const user = await C.getCurrentUser();
-    if (!user) {
-      tone(false); toast('Please sign in first', false);
-      return { ok: false, error: 'not authenticated' };
-    }
-
-    // Fast client-side sufficiency check for instant feedback.
-    // (The server RPC re-checks authoritatively; this avoids a round
-    //  trip when the user obviously lacks funds.)
-    if (type === 'withdrawal') {
-      const profile = await C.getMyProfile();
-      if (profile && Number(profile.balance) < amt) {
-        tone(false); toast('Insufficient balance', false);
-        return { ok: false, error: 'insufficient funds' };
+      // Pre-check for withdrawals (RPC re-validates server-side too)
+      if (type === "withdrawal") {
+        const profile = await getProfile(userId);
+        if (!profile) throw new Error("Unable to load your profile.");
+        if (amount > Number(profile.balance)) {
+          throw new Error("Insufficient balance for this withdrawal.");
+        }
       }
+
+      const delta = type === "deposit" ? amount : -amount;
+
+      // --- Atomic, server-validated balance change ---
+      const { data: newBalance, error: rpcErr } = await adjustBalance(
+        userId,
+        delta,
+        type === "deposit" ? "Mock deposit" : "Mock withdrawal"
+      );
+      if (rpcErr) throw rpcErr;
+
+      // --- Ledger record ---
+      const { data: txData, error: txErr } = await supabase
+        .from("transactions")
+        .insert([{ user_id: userId, type, amount, status: "success" }])
+        .select()
+        .single();
+      if (txErr) throw txErr;
+
+      window.AuthAPI?.updateBalanceUI(newBalance);
+      playTone("success");
+      showResult(
+        true,
+        `${type === "deposit" ? "Deposit" : "Withdrawal"} of $${amount.toFixed(2)} successful!`
+      );
+
+      return { success: true, transaction: txData, newBalance };
+    } catch (err) {
+      console.error(`${type} error:`, err.message);
+      playTone("error");
+      showResult(false, err.message);
+      return { success: false, error: err.message };
     }
-
-    // Authoritative, atomic balance change + ledger insert (server-side).
-    const { data, error } = await C.processTransaction(type, amt);
-    if (error) {
-      tone(false); toast(error.message || 'Transaction failed', false);
-      return { ok: false, error: error.message || 'failed' };
-    }
-
-    // Repaint balance immediately (realtime sub will also fire).
-    if (window.Auth && data) window.Auth.paintBalance(data.balance);
-
-    const verb = type === 'deposit' ? 'Deposited' : 'Withdrew';
-    tone(true); toast(verb + ' $' + amt.toFixed(2) + ' successfully', true);
-    return { ok: true, data };
   }
 
-  const deposit = (amount) => transact('deposit', amount);
-  const withdraw = (amount) => transact('withdrawal', amount);
-
-  // ---------------------------------------------------------
-  // Wire up the #wallet UI buttons if present
-  // ---------------------------------------------------------
-  function bindWalletUI() {
-    const depBtn = document.getElementById('depositBtn');
-    const wdrBtn = document.getElementById('withdrawBtn');
-    const input = document.getElementById('amountInput');
-    const readAmt = () => (input ? input.value : null);
-    if (depBtn) depBtn.addEventListener('click', () => deposit(readAmt()));
-    if (wdrBtn) wdrBtn.addEventListener('click', () => withdraw(readAmt()));
+  // -------------------------------------------------------------
+  // VALIDATION
+  // -------------------------------------------------------------
+  function validateAmount(type, amount) {
+    if (!amount || isNaN(amount) || amount <= 0) return "Please enter a valid amount.";
+    if (type === "deposit" && amount < MIN_DEPOSIT) return `Minimum deposit is $${MIN_DEPOSIT.toFixed(2)}.`;
+    if (type === "withdrawal" && amount < MIN_WITHDRAWAL) return `Minimum withdrawal is $${MIN_WITHDRAWAL.toFixed(2)}.`;
+    if (amount > MAX_TRANSACTION) return `Maximum transaction amount is $${MAX_TRANSACTION.toLocaleString()}.`;
+    return null;
   }
 
-  window.PaymentGateway = { deposit, withdraw, transact };
+  // -------------------------------------------------------------
+  // UI FEEDBACK — toast + audio tone emulation
+  // -------------------------------------------------------------
+  function showResult(success, message) {
+    const el = document.createElement("div");
+    el.className =
+      "fixed bottom-24 left-1/2 -translate-x-1/2 z-50 text-xs font-semibold px-4 py-3 rounded-2xl backdrop-blur flex items-center gap-2 shadow-lg";
+    el.style.background = success ? "rgba(80,200,120,0.15)" : "rgba(239,68,68,0.15)";
+    el.style.color = success ? "#50C878" : "#f87171";
+    el.style.border = `1px solid ${success ? "rgba(80,200,120,0.4)" : "rgba(239,68,68,0.4)"}`;
+    el.style.transform = "translate(-50%, 20px)";
+    el.style.opacity = "0";
+    el.style.transition = "all 0.3s ease";
 
-  if (document.readyState !== 'loading') bindWalletUI();
-  else document.addEventListener('DOMContentLoaded', bindWalletUI);
+    const icon = success
+      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6" stroke-linecap="round"/></svg>`;
+
+    el.innerHTML = `${icon}<span>${message}</span>`;
+    document.body.appendChild(el);
+
+    requestAnimationFrame(() => {
+      el.style.transform = "translate(-50%, 0)";
+      el.style.opacity = "1";
+    });
+
+    setTimeout(() => {
+      el.style.opacity = "0";
+      el.style.transform = "translate(-50%, 20px)";
+      setTimeout(() => el.remove(), 300);
+    }, 2800);
+  }
+
+  function playTone(type = "success") {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === "success") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else {
+        osc.type = "square";
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      }
+      osc.onended = () => ctx.close();
+    } catch (e) {
+      /* audio blocked — fail silently */
+    }
+  }
+
+  // -------------------------------------------------------------
+  // EXPORTS
+  // -------------------------------------------------------------
+  window.PaymentGateway = { deposit, withdraw };
 })();
