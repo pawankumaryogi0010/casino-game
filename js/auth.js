@@ -964,3 +964,815 @@ async function processRegistration(email, username, password) {
         if (data.session) {
             // User is automatically signed in
             showAuthStatusMessage('✅ Account created! ID: ' + casinoID, 'success');
+            
+            await loadAndBindUserProfile();
+            initializeRealTimeBalanceTracking();
+            
+            setTimeout(() => dismissLoginOverlay(), 800);
+        } else {
+            // Email confirmation required
+            showAuthStatusMessage('✅ Account created! Check your email to confirm. ID: ' + casinoID, 'success');
+        }
+        
+    } catch (error) {
+        logError('Registration processing error: ' + error.message);
+        showAuthStatusMessage('❌ Registration failed. Please try again.', 'error');
+    }
+}
+
+/**
+ * Handle user logout
+ * Clears session and resets UI to guest state
+ */
+async function processLogout() {
+    try {
+        // Confirm logout with user
+        if (!confirm('Are you sure you want to logout?')) {
+            return;
+        }
+        
+        if (isDatabaseReady && casinoDatabase && casinoDatabase.auth) {
+            // Clean up real-time subscriptions
+            cleanupRealtimeTracking();
+            
+            // Execute Supabase sign out
+            const { error } = await casinoDatabase.auth.signOut();
+            
+            if (error) {
+                logError('Logout error: ' + error.message);
+                alert('Logout failed. Please try again.');
+                return;
+            }
+        }
+        
+        logSuccess('User logged out successfully');
+        
+        // Reset UI to guest state
+        resetProfileToGuestState();
+        updateBalanceDisplay(0, 0);
+        
+        // Show login overlay
+        setTimeout(() => {
+            renderLoginOverlay();
+        }, 300);
+        
+    } catch (error) {
+        logError('Logout processing error: ' + error.message);
+    }
+}
+
+// ============================================
+// SECTION 7: PROFILE DATA BINDING ENGINE
+// ============================================
+
+/**
+ * Fetch user profile from Supabase and bind to Profile UI
+ * Updates all profile-related DOM elements with live data
+ * @returns {Object|null} Profile data object or null on failure
+ */
+async function loadAndBindUserProfile() {
+    try {
+        // Verify database is available
+        if (!isDatabaseReady || !casinoDatabase) {
+            logWarning('Cannot load profile - database not initialized');
+            return null;
+        }
+        
+        // Get current authenticated user
+        const { data: { user }, error: authError } = await casinoDatabase.auth.getUser();
+        
+        if (authError || !user) {
+            logWarning('No authenticated user for profile loading');
+            return null;
+        }
+        
+        // Query profile from database
+        const { data: profile, error: profileError } = await casinoDatabase
+            .from('profiles')
+            .select('username, casino_id, balance, vip_level, referral_code, total_referrals, commission_earned')
+            .eq('id', user.id)
+            .single();
+        
+        if (profileError) {
+            logError('Profile query error: ' + profileError.message);
+            return null;
+        }
+        
+        if (!profile) {
+            logError('No profile record found for user: ' + user.id);
+            return null;
+        }
+        
+        logSuccess('Profile data retrieved successfully');
+        logInfo('Username: ' + profile.username + ' | Casino ID: ' + profile.casino_id + ' | Balance: ' + profile.balance);
+        
+        // Bind profile data to all UI elements
+        bindProfileDataToUserInterface(profile);
+        
+        // Update balance in top bar
+        updateBalanceDisplay(profile.balance, profile.vip_level);
+        
+        return profile;
+        
+    } catch (error) {
+        logError('Profile loading error: ' + error.message);
+        return null;
+    }
+}
+
+/**
+ * Bind profile data to all Profile Page UI elements
+ * Updates: Username, Casino ID, VIP Level, Progress Bar, Referral, Commission
+ * @param {Object} profile - Profile data from database
+ */
+function bindProfileDataToUserInterface(profile) {
+    try {
+        // ============================================
+        // BIND 1: Username String
+        // ============================================
+        const usernameElement = document.getElementById('profile-username');
+        if (usernameElement) {
+            usernameElement.textContent = profile.username || 'Unknown Player';
+            logSuccess('UI Bound: Username → ' + profile.username);
+        } else {
+            logWarning('DOM element #profile-username not found');
+        }
+        
+        // ============================================
+        // BIND 2: Casino ID Number (9-digit)
+        // ============================================
+        const casinoIDElement = document.getElementById('profile-id');
+        if (casinoIDElement) {
+            const displayID = profile.casino_id || '000000000';
+            casinoIDElement.textContent = 'ID: ' + displayID;
+            logSuccess('UI Bound: Casino ID → ' + displayID);
+        } else {
+            logWarning('DOM element #profile-id not found');
+        }
+        
+        // ============================================
+        // BIND 3: VIP Level with Icon
+        // ============================================
+        const vipLevelElement = document.getElementById('profile-vip');
+        if (vipLevelElement) {
+            // VIP tier definitions with emoji indicators
+            const vipTierDefinitions = [
+                { name: 'Bronze', icon: '🥉', color: '#cd7f32' },
+                { name: 'Silver', icon: '🥈', color: '#c0c0c0' },
+                { name: 'Gold', icon: '🥇', color: '#FFD700' },
+                { name: 'Platinum', icon: '💎', color: '#e5e4e2' },
+                { name: 'Diamond', icon: '👑', color: '#b9f2ff' },
+                { name: 'Royal', icon: '🌟', color: '#ffd700' }
+            ];
+            
+            const currentTier = vipTierDefinitions[profile.vip_level] || vipTierDefinitions[0];
+            vipLevelElement.textContent = 'VIP ' + currentTier.name + ' ' + currentTier.icon;
+            vipLevelElement.style.color = currentTier.color;
+            
+            logSuccess('UI Bound: VIP Level → ' + currentTier.name);
+        } else {
+            logWarning('DOM element #profile-vip not found');
+        }
+        
+        // ============================================
+        // BIND 4: VIP Progress Bar (Geometric Width Calculation)
+        // ============================================
+        updateVIPProgressBar(profile.vip_level, profile.balance);
+        
+        // ============================================
+        // BIND 5: Referral Link
+        // ============================================
+        const referralLinkElement = document.getElementById('referral-link');
+        if (referralLinkElement) {
+            const referralCode = profile.referral_code || 'DEMO0000';
+            referralLinkElement.value = 'emerald.com/ref/' + referralCode;
+            logSuccess('UI Bound: Referral Link → ' + referralLinkElement.value);
+        } else {
+            logWarning('DOM element #referral-link not found');
+        }
+        
+        // ============================================
+        // BIND 6: Total Referrals Count
+        // ============================================
+        const totalReferralsElement = document.getElementById('total-referrals');
+        if (totalReferralsElement) {
+            totalReferralsElement.textContent = profile.total_referrals || 0;
+            logSuccess('UI Bound: Total Referrals → ' + profile.total_referrals);
+        } else {
+            logWarning('DOM element #total-referrals not found');
+        }
+        
+        // ============================================
+        // BIND 7: Commission Earned
+        // ============================================
+        const commissionElement = document.getElementById('commission-earned');
+        if (commissionElement) {
+            const formattedCommission = '₹' + parseFloat(profile.commission_earned || 0).toFixed(2);
+            commissionElement.textContent = formattedCommission;
+            logSuccess('UI Bound: Commission → ' + formattedCommission);
+        } else {
+            logWarning('DOM element #commission-earned not found');
+        }
+        
+        // ============================================
+        // BIND 8: Deposit Page Balance
+        // ============================================
+        const depositBalanceElement = document.getElementById('deposit-balance-display');
+        if (depositBalanceElement) {
+            depositBalanceElement.textContent = parseFloat(profile.balance || 0).toFixed(2);
+        }
+        
+        logSuccess('✅ All profile data bindings completed successfully');
+        
+    } catch (error) {
+        logError('Profile UI binding error: ' + error.message);
+    }
+}
+
+/**
+ * Calculate and render VIP Progress Bar with geometric width
+ * Uses tier thresholds to calculate progress percentage
+ * @param {number} vipLevel - Current VIP level (0-5)
+ * @param {number} balance - Current account balance
+ */
+function updateVIPProgressBar(vipLevel, balance) {
+    try {
+        const progressBarElement = document.getElementById('vip-progress-bar');
+        const progressTextElement = document.getElementById('vip-progress-text');
+        const nextTierTextElement = document.getElementById('vip-next-tier');
+        
+        // Exit if no progress elements exist in DOM
+        if (!progressBarElement && !progressTextElement && !nextTierTextElement) {
+            return;
+        }
+        
+        // ============================================
+        // VIP TIER THRESHOLD DEFINITIONS
+        // Based on total wagered/deposited amount
+        // ============================================
+        const vipThresholds = [
+            0,        // Bronze: Starting tier
+            10000,    // Silver: ₹10,000
+            25000,    // Gold: ₹25,000
+            50000,    // Platinum: ₹50,000
+            100000,   // Diamond: ₹1,00,000
+            500000    // Royal: ₹5,00,000
+        ];
+        
+        const vipTierNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Royal'];
+        const vipTierColors = ['#cd7f32', '#c0c0c0', '#FFD700', '#e5e4e2', '#b9f2ff', '#ffd700'];
+        
+        // Get current and next tier thresholds
+        const currentThreshold = vipThresholds[vipLevel] || 0;
+        const nextLevel = Math.min(vipLevel + 1, vipThresholds.length - 1);
+        const nextThreshold = vipThresholds[nextLevel] || vipThresholds[vipThresholds.length - 1];
+        
+        // ============================================
+        // GEOMETRIC WIDTH CALCULATION
+        // Progress = (current_balance - current_threshold) / (next_threshold - current_threshold) * 100
+        // ============================================
+        let progressPercentage = 0;
+        
+        if (nextThreshold > currentThreshold) {
+            const progressInTier = balance - currentThreshold;
+            const tierRange = nextThreshold - currentThreshold;
+            progressPercentage = (progressInTier / tierRange) * 100;
+            
+            // Clamp between 0 and 100
+            progressPercentage = Math.max(0, Math.min(100, progressPercentage));
+        }
+        
+        // If at max tier, show 100%
+        if (vipLevel >= vipThresholds.length - 1) {
+            progressPercentage = 100;
+        }
+        
+        // ============================================
+        // RENDER PROGRESS BAR
+        // ============================================
+        if (progressBarElement) {
+            // Set calculated width
+            progressBarElement.style.width = progressPercentage + '%';
+            
+            // Apply gradient color based on current and next tier
+            const currentColor = vipTierColors[vipLevel] || '#00e676';
+            const nextColor = vipTierColors[nextLevel] || '#FFD700';
+            progressBarElement.style.background = 
+                'linear-gradient(90deg, ' + currentColor + ' 0%, ' + nextColor + ' 100%)';
+            
+            // Add subtle glow effect
+            progressBarElement.style.boxShadow = '0 0 10px ' + currentColor + '80';
+            
+            // Smooth transition
+            progressBarElement.style.transition = 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+        
+        // ============================================
+        // RENDER PROGRESS TEXT
+        // ============================================
+        if (progressTextElement && vipLevel < vipTierNames.length - 1) {
+            progressTextElement.textContent = 
+                vipTierNames[vipLevel] + ' → ' + vipTierNames[nextLevel];
+            progressTextElement.style.color = vipTierColors[nextLevel];
+        } else if (progressTextElement) {
+            progressTextElement.textContent = '🏆 MAX LEVEL - ' + vipTierNames[vipLevel];
+            progressTextElement.style.color = '#FFD700';
+        }
+        
+        // ============================================
+        // RENDER NEXT TIER REQUIREMENT
+        // ============================================
+        if (nextTierTextElement && vipLevel < vipTierNames.length - 1) {
+            const remaining = nextThreshold - balance;
+            if (remaining > 0) {
+                nextTierTextElement.textContent = 
+                    '₹' + remaining.toLocaleString('en-IN') + 
+                    ' more to reach ' + vipTierNames[nextLevel] + ' tier';
+            } else {
+                nextTierTextElement.textContent = '🎉 Eligible for ' + vipTierNames[nextLevel] + ' upgrade!';
+                nextTierTextElement.style.color = '#00e676';
+            }
+        } else if (nextTierTextElement) {
+            nextTierTextElement.textContent = '🌟 You have reached the highest tier!';
+            nextTierTextElement.style.color = '#FFD700';
+        }
+        
+        logSuccess('VIP Progress updated: ' + progressPercentage.toFixed(1) + '%');
+        
+    } catch (error) {
+        logError('VIP progress bar error: ' + error.message);
+    }
+}
+
+/**
+ * Update balance display in top bar with animation
+ * @param {number} balance - Current balance amount
+ * @param {number} vipLevel - Current VIP level for styling
+ */
+function updateBalanceDisplay(balance, vipLevel = 0) {
+    try {
+        const balanceElement = document.getElementById('balance-display');
+        if (!balanceElement) {
+            logWarning('Balance display element not found');
+            return;
+        }
+        
+        // Format balance to 2 decimal places
+        const formattedBalance = parseFloat(balance || 0).toFixed(2);
+        
+        // Update text content
+        balanceElement.textContent = formattedBalance;
+        
+        // ============================================
+        // VIP-BASED STYLING
+        // ============================================
+        if (vipLevel >= 4) {
+            // Diamond/Royal: Gold color with glow
+            balanceElement.style.color = '#FFD700';
+            balanceElement.style.textShadow = '0 0 15px rgba(255, 215, 0, 0.6)';
+        } else if (vipLevel >= 2) {
+            // Gold/Platinum: Bright mint
+            balanceElement.style.color = '#00e676';
+            balanceElement.style.textShadow = '0 0 10px rgba(0, 230, 118, 0.4)';
+        } else {
+            // Bronze/Silver: Standard mint
+            balanceElement.style.color = '#00e676';
+            balanceElement.style.textShadow = 'none';
+        }
+        
+        // ============================================
+        // SCALE ANIMATION ON UPDATE
+        // ============================================
+        balanceElement.style.transition = 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        balanceElement.style.transform = 'scale(1.25)';
+        
+        setTimeout(() => {
+            balanceElement.style.transform = 'scale(1)';
+        }, 200);
+        
+        // Also update deposit page balance
+        const depositBalanceElement = document.getElementById('deposit-balance-display');
+        if (depositBalanceElement) {
+            depositBalanceElement.textContent = formattedBalance;
+        }
+        
+    } catch (error) {
+        logError('Balance display update error: ' + error.message);
+    }
+}
+
+/**
+ * Reset profile UI to guest state (not logged in)
+ */
+function resetProfileToGuestState() {
+    try {
+        const usernameElement = document.getElementById('profile-username');
+        const idElement = document.getElementById('profile-id');
+        const vipElement = document.getElementById('profile-vip');
+        const referralElement = document.getElementById('referral-link');
+        const totalReferralsElement = document.getElementById('total-referrals');
+        const commissionElement = document.getElementById('commission-earned');
+        const progressBarElement = document.getElementById('vip-progress-bar');
+        const progressTextElement = document.getElementById('vip-progress-text');
+        const nextTierElement = document.getElementById('vip-next-tier');
+        
+        if (usernameElement) usernameElement.textContent = 'Not Logged In';
+        if (idElement) idElement.textContent = 'ID: ---';
+        if (vipElement) { vipElement.textContent = 'VIP Bronze 🥉'; vipElement.style.color = '#cd7f32'; }
+        if (referralElement) referralElement.value = 'emerald.com/ref/---';
+        if (totalReferralsElement) totalReferralsElement.textContent = '0';
+        if (commissionElement) commissionElement.textContent = '₹0.00';
+        if (progressBarElement) progressBarElement.style.width = '0%';
+        if (progressTextElement) progressTextElement.textContent = 'Bronze → Silver';
+        if (nextTierElement) { nextTierElement.textContent = 'Login to view progress'; nextTierElement.style.color = ''; }
+        
+        logSuccess('Profile reset to guest state');
+        
+    } catch (error) {
+        logError('Profile reset error: ' + error.message);
+    }
+}
+
+// ============================================
+// SECTION 8: DEMO MODE PROFILE LOADER
+// ============================================
+
+/**
+ * Load simulated profile data for demo mode
+ * @param {string} email - User email
+ * @param {string} username - Optional username
+ * @param {string} casinoID - Optional casino ID
+ */
+function loadDemoUserProfile(email, username = null, casinoID = null) {
+    try {
+        // Generate demo data
+        const demoUsername = username || email.split('@')[0] || 'Player_' + Math.random().toString(36).substring(2, 6);
+        const demoCasinoID = casinoID || generateUniqueCasinoID();
+        const demoBalance = (Math.random() * 5000 + 100).toFixed(2);
+        const demoVipLevel = Math.floor(Math.random() * 4); // 0-3 for demo
+        const demoReferralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const demoTotalReferrals = Math.floor(Math.random() * 50);
+        const demoCommission = (Math.random() * 2000).toFixed(2);
+        
+        // Create demo profile object
+        const demoProfile = {
+            username: demoUsername,
+            casino_id: demoCasinoID,
+            balance: parseFloat(demoBalance),
+            vip_level: demoVipLevel,
+            referral_code: demoReferralCode,
+            total_referrals: demoTotalReferrals,
+            commission_earned: parseFloat(demoCommission)
+        };
+        
+        logInfo('📝 Loading demo profile:', demoProfile);
+        
+        // Bind demo data to UI
+        bindProfileDataToUserInterface(demoProfile);
+        updateBalanceDisplay(demoProfile.balance, demoProfile.vip_level);
+        
+        logSuccess('Demo profile loaded: ' + demoUsername + ' (ID: ' + demoCasinoID + ')');
+        
+    } catch (error) {
+        logError('Demo profile loading error: ' + error.message);
+    }
+}
+
+// ============================================
+// SECTION 9: REAL-TIME BALANCE TRACKING
+// ============================================
+
+// Store real-time subscription reference for cleanup
+let activeRealtimeSubscription = null;
+
+/**
+ * Initialize real-time database subscription for balance updates
+ * Listens for profile changes and updates UI automatically
+ */
+function initializeRealTimeBalanceTracking() {
+    try {
+        // Skip if database not available
+        if (!isDatabaseReady || !casinoDatabase) {
+            logInfo('Real-time tracking not available in demo mode');
+            return;
+        }
+        
+        // Get current user
+        casinoDatabase.auth.getUser().then(({ data: { user }, error }) => {
+            if (error || !user) {
+                logWarning('No user for real-time tracking');
+                return;
+            }
+            
+            // Clean up existing subscription
+            if (activeRealtimeSubscription) {
+                casinoDatabase.removeChannel(activeRealtimeSubscription);
+                activeRealtimeSubscription = null;
+            }
+            
+            // Create new real-time channel
+            const channel = casinoDatabase.channel('profile-tracking-' + user.id);
+            
+            // Listen for profile updates
+            channel.on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: 'id=eq.' + user.id
+                },
+                (payload) => {
+                    try {
+                        const updatedProfile = payload.new;
+                        logInfo('🔄 Real-time profile update detected');
+                        
+                        // Update all UI bindings
+                        updateBalanceDisplay(updatedProfile.balance, updatedProfile.vip_level);
+                        bindProfileDataToUserInterface(updatedProfile);
+                        
+                        // Dispatch custom event for other modules
+                        window.dispatchEvent(new CustomEvent('casino:profileChanged', {
+                            detail: updatedProfile
+                        }));
+                        
+                    } catch (err) {
+                        logError('Real-time handler error: ' + err.message);
+                    }
+                }
+            );
+            
+            // Subscribe to channel
+            channel.subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    logSuccess('👂 Real-time balance tracking active');
+                    activeRealtimeSubscription = channel;
+                } else if (status === 'CHANNEL_ERROR') {
+                    logError('Real-time channel error');
+                }
+            });
+        });
+        
+    } catch (error) {
+        logError('Real-time tracking initialization error: ' + error.message);
+    }
+}
+
+/**
+ * Clean up real-time subscription
+ */
+function cleanupRealtimeTracking() {
+    try {
+        if (activeRealtimeSubscription && casinoDatabase) {
+            casinoDatabase.removeChannel(activeRealtimeSubscription);
+            activeRealtimeSubscription = null;
+            logInfo('Real-time tracking cleaned up');
+        }
+    } catch (error) {
+        logError('Real-time cleanup error: ' + error.message);
+    }
+}
+
+// ============================================
+// SECTION 10: AUTH STATE MONITOR
+// ============================================
+
+/**
+ * Monitor Supabase auth state changes (login, logout, token refresh)
+ * Automatically responds to auth events
+ */
+function initializeAuthStateMonitor() {
+    try {
+        if (!isDatabaseReady || !casinoDatabase) {
+            logInfo('Auth state monitor not available');
+            return;
+        }
+        
+        casinoDatabase.auth.onAuthStateChange(async (event, session) => {
+            logInfo('🔔 Auth state changed: ' + event);
+            
+            switch (event) {
+                case 'SIGNED_IN':
+                    logSuccess('User signed in: ' + session?.user?.email);
+                    await loadAndBindUserProfile();
+                    initializeRealTimeBalanceTracking();
+                    dismissLoginOverlay();
+                    window.dispatchEvent(new Event('casino:userLoggedIn'));
+                    break;
+                    
+                case 'SIGNED_OUT':
+                    logInfo('User signed out');
+                    cleanupRealtimeTracking();
+                    resetProfileToGuestState();
+                    updateBalanceDisplay(0, 0);
+                    window.dispatchEvent(new Event('casino:userLoggedOut'));
+                    break;
+                    
+                case 'TOKEN_REFRESHED':
+                    logInfo('JWT token refreshed automatically');
+                    break;
+                    
+                case 'USER_UPDATED':
+                    logInfo('User data updated');
+                    await loadAndBindUserProfile();
+                    break;
+                    
+                case 'PASSWORD_RECOVERY':
+                    logInfo('Password recovery initiated');
+                    break;
+            }
+        });
+        
+        logSuccess('👁️ Auth state monitor active');
+        
+    } catch (error) {
+        logError('Auth state monitor error: ' + error.message);
+    }
+}
+
+// ============================================
+// SECTION 11: LOGGING UTILITIES
+// ============================================
+
+/**
+ * Log success message to console
+ */
+function logSuccess(message) {
+    if (CASINO_SECURITY_CONFIG.ENABLE_CONSOLE_LOGS) {
+        console.log('✅', message);
+    }
+}
+
+/**
+ * Log error message to console
+ */
+function logError(message) {
+    if (CASINO_SECURITY_CONFIG.ENABLE_CONSOLE_LOGS) {
+        console.error('❌', message);
+    }
+}
+
+/**
+ * Log warning message to console
+ */
+function logWarning(message) {
+    if (CASINO_SECURITY_CONFIG.ENABLE_CONSOLE_LOGS) {
+        console.warn('⚠️', message);
+    }
+}
+
+/**
+ * Log info message to console
+ */
+function logInfo(message) {
+    if (CASINO_SECURITY_CONFIG.ENABLE_CONSOLE_LOGS) {
+        console.log('ℹ️', message);
+    }
+}
+
+// ============================================
+// SECTION 12: PUBLIC API EXPORT
+// ============================================
+
+/**
+ * Expose all auth module functions to global scope
+ * Accessible via window.casinoAuth
+ */
+window.casinoAuth = {
+    // Core security functions
+    executeFirewall: executeSecurityFirewall,
+    initializeDatabase: initializeCasinoDatabase,
+    validateSession: validateActiveSession,
+    
+    // Auth actions
+    login: processLogin,
+    register: processRegistration,
+    logout: processLogout,
+    
+    // Profile management
+    loadProfile: loadAndBindUserProfile,
+    bindProfileUI: bindProfileDataToUserInterface,
+    resetProfile: resetProfileToGuestState,
+    loadDemoProfile: loadDemoUserProfile,
+    
+    // UI controllers
+    showLoginOverlay: renderLoginOverlay,
+    hideLoginOverlay: dismissLoginOverlay,
+    updateBalance: updateBalanceDisplay,
+    updateVIPBar: updateVIPProgressBar,
+    showAuthMessage: showAuthStatusMessage,
+    
+    // Casino ID
+    generateCasinoID: generateUniqueCasinoID,
+    generateGuaranteedID: generateGuaranteedUniqueCasinoID,
+    
+    // Real-time
+    startRealtimeTracking: initializeRealTimeBalanceTracking,
+    stopRealtimeTracking: cleanupRealtimeTracking,
+    
+    // State
+    isLoggedIn: () => isDatabaseReady && !isLoginOverlayVisible,
+    getDatabase: () => casinoDatabase,
+    getConfig: () => CASINO_SECURITY_CONFIG
+};
+
+// ============================================
+// SECTION 13: CSS ANIMATION INJECTION
+// ============================================
+
+/**
+ * Inject required CSS animations for the auth overlay
+ * These are added programmatically to avoid dependency on external CSS
+ */
+function injectAuthAnimations() {
+    try {
+        // Check if animations already injected
+        if (document.getElementById('casino-auth-animations')) {
+            return;
+        }
+        
+        const styleElement = document.createElement('style');
+        styleElement.id = 'casino-auth-animations';
+        styleElement.textContent = `
+            @keyframes casinoFadeIn {
+                0% { opacity: 0; }
+                100% { opacity: 1; }
+            }
+            
+            @keyframes casinoFadeOut {
+                0% { opacity: 1; }
+                100% { opacity: 0; }
+            }
+            
+            @keyframes casinoSlideUp {
+                0% { 
+                    opacity: 0;
+                    transform: translateY(30px) scale(0.95);
+                }
+                100% { 
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            
+            @keyframes casinoPulse {
+                0%, 100% { 
+                    box-shadow: 0 0 5px rgba(0, 230, 118, 0.3);
+                }
+                50% { 
+                    box-shadow: 0 0 25px rgba(0, 230, 118, 0.6);
+                }
+            }
+        `;
+        
+        document.head.appendChild(styleElement);
+        logSuccess('Auth animations injected');
+        
+    } catch (error) {
+        logError('Animation injection error: ' + error.message);
+    }
+}
+
+// ============================================
+// SECTION 14: AUTO-START ON SCRIPT LOAD
+// ============================================
+
+/**
+ * Main entry point - Executes when script loads
+ * Waits for DOM and dependencies to be ready
+ */
+function autoStartSecurityFirewall() {
+    // Inject required CSS animations
+    injectAuthAnimations();
+    
+    // Wait for DOM to be fully loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            logInfo('🚀 Starting Emerald King Casino Security Firewall...');
+            // Small delay to ensure all CDN scripts are parsed
+            setTimeout(() => {
+                executeSecurityFirewall();
+            }, 600);
+        });
+    } else {
+        // DOM already loaded
+        logInfo('🚀 Starting Emerald King Casino Security Firewall...');
+        setTimeout(() => {
+            executeSecurityFirewall();
+        }, 600);
+    }
+}
+
+// ============================================
+// EXECUTE AUTO-START
+// ============================================
+
+autoStartSecurityFirewall();
+
+// ============================================
+// END OF MODULE
+// ============================================
+
+console.log('🔐 Casino Security Firewall Module v' + CASINO_SECURITY_CONFIG.APP_VERSION + ' Loaded');
+console.log('📋 Access via: window.casinoAuth');
+console.log('🛡️ Features: Session Firewall | Casino ID Generator | Profile Binder | Real-time Tracker');
