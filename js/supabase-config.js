@@ -664,4 +664,246 @@ function showToast(message) {
         
         const toast = document.createElement('div');
         toast.id = 'emerald-toast';
-        toast.text
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #02231c;
+            color: #00e676;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 9999;
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+        
+    } catch (error) {
+        console.error('❌ Toast error:', error);
+    }
+}
+
+/**
+ * Render profile data to dashboard UI
+ */
+function renderProfileDashboard(profile) {
+    try {
+        if (!profile) return;
+        
+        // Update username
+        const usernameEl = document.getElementById('profile-username');
+        if (usernameEl) usernameEl.textContent = profile.username || 'Player';
+        
+        // Update casino ID
+        const idEl = document.getElementById('profile-id');
+        if (idEl) idEl.textContent = 'ID: ' + (profile.casino_id || '---');
+        
+        // Update VIP
+        const vipEl = document.getElementById('profile-vip');
+        if (vipEl) {
+            const titles = ['Bronze 🥉', 'Silver 🥈', 'Gold 🥇', 'Platinum 💎', 'Diamond 👑', 'Royal 🌟'];
+            vipEl.textContent = 'VIP ' + (titles[profile.vip_level] || 'Member');
+        }
+        
+        // Update referral
+        const refEl = document.getElementById('referral-link');
+        if (refEl) refEl.value = 'emerald.com/ref/' + (profile.referral_code || '---');
+        
+        // Update commission
+        const commEl = document.getElementById('commission-earned');
+        if (commEl) commEl.textContent = '₹' + parseFloat(profile.commission_earned || 0).toFixed(2);
+        
+        // Update total referrals
+        const totalRefEl = document.getElementById('total-referrals');
+        if (totalRefEl) totalRefEl.textContent = profile.total_referrals || 0;
+        
+    } catch (error) {
+        console.error('❌ Render profile error:', error);
+    }
+}
+
+/**
+ * Update balance display in top bar
+ */
+function updateBalanceDisplay(balance, vipLevel) {
+    try {
+        const balanceEl = document.getElementById('balance-display');
+        if (!balanceEl) return;
+        
+        balanceEl.textContent = parseFloat(balance).toFixed(2);
+        
+        // VIP styling
+        if (vipLevel >= 4) {
+            balanceEl.style.color = '#FFD700';
+            balanceEl.style.textShadow = '0 0 10px rgba(255,215,0,0.5)';
+        } else {
+            balanceEl.style.color = '#00e676';
+            balanceEl.style.textShadow = 'none';
+        }
+        
+        // Animation
+        balanceEl.style.transform = 'scale(1.3)';
+        setTimeout(() => { balanceEl.style.transform = 'scale(1)'; }, 200);
+        
+    } catch (error) {
+        console.error('❌ Update balance error:', error);
+    }
+}
+
+/**
+ * Update VIP progress bar
+ */
+function updateVIPProgressBar(vipLevel, balance) {
+    try {
+        const progressBar = document.getElementById('vip-progress-bar');
+        const progressText = document.getElementById('vip-progress-text');
+        const nextTierText = document.getElementById('vip-next-tier');
+        
+        if (!progressBar) return;
+        
+        const thresholds = [0, 10000, 25000, 50000, 100000, 500000];
+        const titles = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Royal'];
+        
+        const currentThreshold = thresholds[vipLevel] || 0;
+        const nextThreshold = thresholds[Math.min(vipLevel + 1, thresholds.length - 1)] || 500000;
+        
+        let percent = 0;
+        if (nextThreshold > currentThreshold) {
+            percent = Math.min(100, Math.max(0, ((balance - currentThreshold) / (nextThreshold - currentThreshold)) * 100));
+        }
+        
+        progressBar.style.width = percent + '%';
+        
+        if (progressText && vipLevel < titles.length - 1) {
+            progressText.textContent = titles[vipLevel] + ' → ' + titles[vipLevel + 1];
+        }
+        
+        if (nextTierText && vipLevel < titles.length - 1) {
+            const remaining = (nextThreshold - balance).toFixed(2);
+            nextTierText.textContent = '₹' + remaining + ' more to reach ' + titles[vipLevel + 1] + ' tier';
+        }
+        
+    } catch (error) {
+        console.error('❌ VIP progress error:', error);
+    }
+}
+
+// ============================================
+// SECTION 8: SESSION RECOVERY
+// ============================================
+
+/**
+ * Restore session on page load if exists
+ */
+async function restoreSession() {
+    try {
+        if (!isInitialized || !emeraldDB) return false;
+        
+        const { data: { session }, error } = await emeraldDB.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (session) {
+            if (EMERALD_CONFIG.ENABLE_LOGGING) {
+                console.log('🔄 Session restored for:', session.user.email);
+            }
+            
+            // Fetch profile and setup realtime
+            await fetchUserProfile();
+            await setupRealtimeSubscriptions();
+            return true;
+        }
+        
+        return false;
+        
+    } catch (error) {
+        console.error('❌ Session restore error:', error);
+        return false;
+    }
+}
+
+// ============================================
+// SECTION 9: PUBLIC API EXPORT
+// ============================================
+
+/**
+ * Expose all functions to global scope
+ */
+window.emeraldDB = {
+    // Core
+    initialize: initializeSupabaseClient,
+    isReady: () => isInitialized,
+    getClient: () => emeraldDB,
+    config: EMERALD_CONFIG,
+    
+    // Real-time
+    setupRealtime: setupRealtimeSubscriptions,
+    cleanupRealtime: cleanupRealtimeSubscriptions,
+    
+    // Database
+    fetchProfile: fetchUserProfile,
+    submitDeposit: submitDeposit,
+    fetchDeposits: fetchDepositHistory,
+    fetchGameHistory: fetchGameHistory,
+    fetchDashboardStats: fetchDashboardStats,
+    
+    // Auth
+    signUp: signUpUser,
+    signIn: signInUser,
+    signOut: signOutUser,
+    restoreSession: restoreSession,
+    
+    // UI helpers
+    showToast: showToast,
+    renderProfile: renderProfileDashboard,
+    updateBalance: updateBalanceDisplay,
+    updateVIP: updateVIPProgressBar
+};
+
+// ============================================
+// SECTION 10: AUTO-INITIALIZE ON LOAD
+// ============================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (EMERALD_CONFIG.ENABLE_LOGGING) {
+        console.log('🚀 Initializing ' + EMERALD_CONFIG.APP_NAME + ' v' + EMERALD_CONFIG.APP_VERSION);
+    }
+    
+    // Step 1: Initialize Supabase client
+    const dbReady = initializeSupabaseClient();
+    
+    if (!dbReady) {
+        console.warn('⚠️ Running in DEMO MODE - No database connection');
+        return;
+    }
+    
+    // Step 2: Setup auth state monitor
+    setupAuthStateMonitor();
+    
+    // Step 3: Try to restore existing session
+    const hasSession = await restoreSession();
+    
+    if (!hasSession) {
+        console.log('ℹ️ No active session. Waiting for user login.');
+    }
+    
+    if (EMERALD_CONFIG.ENABLE_LOGGING) {
+        console.log('✅ ' + EMERALD_CONFIG.APP_NAME + ' ready');
+        console.log('📋 Available: window.emeraldDB');
+    }
+});
+
+// ============================================
+// END OF MODULE
+// ============================================
