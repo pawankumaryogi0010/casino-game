@@ -2,11 +2,11 @@
 // EMERALD KING CASINO - GAME MATRIX ENGINE
 // Core Library: CardRenderer, WinParticleCascade, Game Registry
 // File: js/games/matrix.js
-// Version: 2.0.0
+// Version: 2.0.0 - All 20 Games Registered
 // ============================================
 
 // ============================================
-// CARD RENDERING ENGINE
+// SECTION 1: CARD RENDERING ENGINE
 // ============================================
 
 class CardRenderer {
@@ -68,6 +68,20 @@ class CardRenderer {
         ctx.restore();
     }
     
+    static drawCardBack(ctx, x, y, w, h) {
+        ctx.fillStyle = '#1a2744';
+        ctx.strokeStyle = '#2a4a7a';
+        ctx.lineWidth = 2;
+        CardRenderer.roundRect(ctx, x, y, w, h, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#2a4a7a';
+        ctx.font = `${Math.floor(w * 0.4)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🎰', x + w/2, y + h/2);
+    }
+    
     static roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -84,7 +98,7 @@ class CardRenderer {
 }
 
 // ============================================
-// WIN PARTICLE CASCADE
+// SECTION 2: WIN PARTICLE CASCADE SYSTEM
 // ============================================
 
 class WinParticle {
@@ -104,7 +118,8 @@ class WinParticle {
         this.size = type === 'coin' ? 5 + Math.random() * 7 : 2 + Math.random() * 5;
         this.opacity = 1.0;
         this.fadeRate = 0.008 + Math.random() * 0.015;
-        this.color = type === 'coin' ? (Math.random() > 0.5 ? '#FFD700' : '#FFA500') : ['#FFD700', '#00e676', '#00b0ff', '#ff6b6b', '#ffffff'][Math.floor(Math.random() * 5)];
+        this.color = type === 'coin' ? (Math.random() > 0.5 ? '#FFD700' : '#FFA500') : 
+            ['#FFD700', '#00e676', '#00b0ff', '#ff6b6b', '#ffffff'][Math.floor(Math.random() * 5)];
         this.alive = true;
         this.age = 0;
         this.maxAge = 60 + Math.random() * 80;
@@ -203,47 +218,259 @@ class WinParticleCascade {
 }
 
 // ============================================
-// GAME REGISTRY
+// SECTION 3: NEON GLOW CONTEXT
+// ============================================
+
+class NeonGlowContext {
+    static apply(ctx, color = '#00e676', blur = 15, offsetX = 0, offsetY = 0) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = blur;
+        ctx.shadowOffsetX = offsetX;
+        ctx.shadowOffsetY = offsetY;
+    }
+    
+    static clear(ctx) {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+    }
+}
+
+// ============================================
+// SECTION 4: VECTOR2 MATH
+// ============================================
+
+class Vector2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    add(v) { this.x += v.x; this.y += v.y; return this; }
+    subtract(v) { this.x -= v.x; this.y -= v.y; return this; }
+    multiply(s) { this.x *= s; this.y *= s; return this; }
+    
+    magnitude() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    
+    normalize() {
+        const mag = this.magnitude();
+        if (mag > 0) { this.x /= mag; this.y /= mag; }
+        return this;
+    }
+    
+    clone() { return new Vector2(this.x, this.y); }
+    
+    distanceTo(v) {
+        const dx = this.x - v.x;
+        const dy = this.y - v.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    static lerp(v1, v2, t) {
+        return new Vector2(
+            v1.x + (v2.x - v1.x) * t,
+            v1.y + (v2.y - v1.y) * t
+        );
+    }
+    
+    static random(radius = 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * radius;
+        return new Vector2(
+            Math.cos(angle) * distance,
+            Math.sin(angle) * distance
+        );
+    }
+}
+
+// ============================================
+// SECTION 5: GAME CONSTANTS & DATA
+// ============================================
+
+const GAME_RTP = {
+    'teen-patti': 0.968,
+    'andar-bahar': 0.945,
+    'aviator': 0.991,
+    'roulette': 0.973,
+    'blackjack': 0.995,
+    'baccarat': 0.989,
+    'jhandi-munda': 0.952,
+    'dragon-tiger': 0.975,
+    '7up-7down': 0.938,
+    'car-roulette': 0.960,
+    'ludo-betting': 0.940,
+    'plinko': 0.972,
+    'mines': 0.965,
+    'wheel-fortune': 0.955,
+    'classic-slots': 0.965,
+    'video-poker': 0.978,
+    'red-dog': 0.948,
+    'sic-bo': 0.950,
+    'hi-low': 0.962,
+    'keno-jackpot': 0.940
+};
+
+const SUITS = ['♠', '♥', '♦', '♣'];
+const SUIT_COLORS = { '♠': '#ffffff', '♥': '#ff4444', '♦': '#ff4444', '♣': '#ffffff' };
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+const RANK_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+
+const ROULETTE_NUMBERS = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const ROULETTE_COLORS = { 0: 'green', 32: 'red', 15: 'black', 19: 'red', 4: 'black', 21: 'red', 2: 'black', 25: 'red', 17: 'black', 34: 'red', 6: 'black', 27: 'red', 13: 'black', 36: 'red', 11: 'black', 30: 'red', 8: 'black', 23: 'red', 10: 'black', 5: 'red', 24: 'black', 16: 'red', 33: 'black', 1: 'red', 20: 'black', 14: 'red', 31: 'black', 9: 'red', 22: 'black', 18: 'red', 29: 'black', 7: 'red', 28: 'black', 12: 'red', 35: 'black', 3: 'red', 26: 'black' };
+
+const SLOT_SYMBOLS = ['⭐', '🔔', '7️⃣', '🍒', '💎', '🍀', '🎰', '👑'];
+const SLOT_PAYOUTS = { '⭐': 2, '🔔': 3, '7️⃣': 5, '🍒': 2, '💎': 4, '🍀': 3, '🎰': 10, '👑': 8 };
+
+// ============================================
+// SECTION 6: GAME CLASS REGISTRY
 // ============================================
 
 const GAME_CLASSES = {
-    'teen-patti': null,  // Loaded from teen-patti.js
-    'andar-bahar': null, // Loaded from andar-bahar.js
-    // More games will be added...
+    'teen-patti': null,
+    'andar-bahar': null,
+    'aviator': null,
+    'roulette': null,
+    'blackjack': null,
+    'baccarat': null,
+    'jhandi-munda': null,
+    'dragon-tiger': null,
+    '7up-7down': null,
+    'car-roulette': null,
+    'ludo-betting': null,
+    'plinko': null,
+    'mines': null,
+    'wheel-fortune': null,
+    'classic-slots': null,
+    'video-poker': null,
+    'red-dog': null,
+    'sic-bo': null,
+    'hi-low': null,
+    'keno-jackpot': null
 };
+
+const GAME_CLASS_MAP = {
+    'teen-patti': 'TeenPattiFullGame',
+    'andar-bahar': 'AndarBaharFullGame',
+    'aviator': 'AviatorFullGame',
+    'roulette': 'RouletteFullGame',
+    'blackjack': 'BlackjackFullGame',
+    'baccarat': 'BaccaratFullGame',
+    'jhandi-munda': 'JhandiMundaFullGame',
+    'dragon-tiger': 'DragonTigerFullGame',
+    '7up-7down': 'SevenUpSevenDownFullGame',
+    'car-roulette': 'CarRouletteFullGame',
+    'ludo-betting': 'LudoBettingFullGame',
+    'plinko': 'PlinkoFullGame',
+    'mines': 'MinesFullGame',
+    'wheel-fortune': 'WheelOfFortuneFullGame',
+    'classic-slots': 'ClassicSlotsFullGame',
+    'video-poker': 'VideoPokerFullGame',
+    'red-dog': 'RedDogFullGame',
+    'sic-bo': 'SicBoFullGame',
+    'hi-low': 'HiLowFullGame',
+    'keno-jackpot': 'KenoJackpotFullGame'
+};
+
+// ============================================
+// SECTION 7: GAME FACTORY FUNCTIONS
+// ============================================
 
 function getGameClass(gameId) {
     if (GAME_CLASSES[gameId]) return GAME_CLASSES[gameId];
-    // Fallback lookup on window
-    const className = {
-        'teen-patti': 'TeenPattiFullGame',
-        'andar-bahar': 'AndarBaharFullGame',
-    }[gameId];
+    
+    const className = GAME_CLASS_MAP[gameId];
     if (className && window[className]) {
         GAME_CLASSES[gameId] = window[className];
         return window[className];
     }
+    
+    console.warn('⚠️ Game class not found for:', gameId);
     return null;
 }
 
 function createGameInstance(gameId, canvas, ctx) {
     const GameClass = getGameClass(gameId);
-    if (GameClass) return new GameClass(canvas, ctx);
-    console.warn('Game not found:', gameId);
+    if (GameClass) {
+        return new GameClass(canvas, ctx);
+    }
+    console.error('❌ Cannot create game instance for:', gameId);
     return null;
 }
 
+function registerGameClass(gameId, gameClass) {
+    if (gameId && gameClass) {
+        GAME_CLASSES[gameId] = gameClass;
+        console.log('✅ Game registered:', gameId);
+    }
+}
+
 // ============================================
-// EXPORT
+// SECTION 8: AUTO-DETECT LOADED GAMES
+// ============================================
+
+function detectLoadedGames() {
+    for (const [gameId, className] of Object.entries(GAME_CLASS_MAP)) {
+        if (window[className] && !GAME_CLASSES[gameId]) {
+            GAME_CLASSES[gameId] = window[className];
+            console.log('🔍 Auto-detected game:', gameId, '→', className);
+        }
+    }
+}
+
+// ============================================
+// SECTION 9: GLOBAL EXPORT
 // ============================================
 
 window.GameMatrix = {
+    // Core Classes
     CardRenderer,
     WinParticle,
     WinParticleCascade,
+    NeonGlowContext,
+    Vector2,
+    
+    // Constants
+    GAME_RTP,
+    SUITS,
+    SUIT_COLORS,
+    RANKS,
+    RANK_VALUES,
+    ROULETTE_NUMBERS,
+    ROULETTE_COLORS,
+    SLOT_SYMBOLS,
+    SLOT_PAYOUTS,
+    
+    // Game Registry
     GAME_CLASSES,
+    GAME_CLASS_MAP,
+    
+    // Functions
     getGameClass,
-    createGameInstance
+    createGameInstance,
+    registerGameClass,
+    detectLoadedGames
 };
+
+// ============================================
+// SECTION 10: AUTO-INITIALIZE
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        detectLoadedGames();
+        const loadedCount = Object.values(GAME_CLASSES).filter(c => c !== null).length;
+        console.log('🎮 Game Matrix Engine v2.0.0 Ready');
+        console.log('📋 Registered Games:', loadedCount, '/ 20');
+        console.log('🔧 Available via: window.GameMatrix');
+    }, 500);
+});
+
+// Also detect immediately in case scripts load later
+window.addEventListener('load', () => {
+    setTimeout(detectLoadedGames, 1000);
+});
 
 console.log('✅ Game Matrix Engine v2.0.0 Loaded');
