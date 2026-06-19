@@ -8,6 +8,11 @@
     <meta name="theme-color" content="#011713">
     <title>Emerald King Casino</title>
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Emerald King">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -140,43 +145,37 @@
                     <input type="text" placeholder="Search games..." class="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white text-sm outline-none focus:border-neon-mint/50 transition-all">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
-                        <div class="h-24 bg-gradient-to-br from-red-900/40 to-orange-900/20 flex items-center justify-center text-4xl relative">
-                            🐉
-                            <span class="absolute top-2 left-2 bg-neon-mint text-obsidian-deep text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-neon-mint/30">HOT</span>
-                        </div>
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="dragon-tiger">
+                        <div class="h-24 bg-gradient-to-br from-red-900/40 to-orange-900/20 flex items-center justify-center text-4xl relative">🐉<span class="absolute top-2 left-2 bg-neon-mint text-obsidian-deep text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-neon-mint/30">HOT</span></div>
                         <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Dragon Tiger</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 97.5%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
-                        <div class="h-24 bg-gradient-to-br from-purple-900/40 to-pink-900/20 flex items-center justify-center text-4xl relative">
-                            🃏
-                            <span class="absolute top-2 left-2 bg-neon-gold text-obsidian-deep text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-neon-gold/30">HOT</span>
-                        </div>
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="teen-patti">
+                        <div class="h-24 bg-gradient-to-br from-purple-900/40 to-pink-900/20 flex items-center justify-center text-4xl relative">🃏<span class="absolute top-2 left-2 bg-neon-gold text-obsidian-deep text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-neon-gold/30">HOT</span></div>
                         <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Teen Patti</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 96.8%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="aviator">
                         <div class="h-24 bg-gradient-to-br from-blue-900/40 to-cyan-900/20 flex items-center justify-center text-4xl">✈️</div>
                         <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Aviator</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 99.1%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="roulette">
                         <div class="h-24 bg-gradient-to-br from-green-900/40 to-red-900/20 flex items-center justify-center text-4xl">🎡</div>
                         <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Roulette</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 97.3%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="classic-slots">
                         <div class="h-24 bg-gradient-to-br from-orange-900/40 to-yellow-900/20 flex items-center justify-center text-4xl">🎰</div>
                         <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">777 Slots</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 96.5%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="baccarat">
                         <div class="h-24 bg-gradient-to-br from-indigo-900/40 to-blue-900/20 flex items-center justify-center text-4xl">🎴</div>
                         <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Baccarat</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 98.9%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
-                        <div class="h-24 bg-gradient-to-br from-yellow-900/40 to-amber-900/20 flex items-center justify-center text-4xl">🎯</div>
-                        <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Cricket War</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 95.2%</span></div>
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="blackjack">
+                        <div class="h-24 bg-gradient-to-br from-yellow-900/40 to-amber-900/20 flex items-center justify-center text-4xl">🃏</div>
+                        <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Blackjack</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 99.5%</span></div>
                     </div>
-                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg">
-                        <div class="h-24 bg-gradient-to-br from-pink-900/40 to-rose-900/20 flex items-center justify-center text-4xl">🍀</div>
-                        <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Lucky 7</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 96.0%</span></div>
+                    <div class="game-card bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-mint/50 transition-all shadow-lg" data-game-id="wheel-fortune">
+                        <div class="h-24 bg-gradient-to-br from-pink-900/40 to-rose-900/20 flex items-center justify-center text-4xl">🎡</div>
+                        <div class="p-2.5"><h4 class="text-white text-xs font-bold truncate">Wheel of Fortune</h4><span class="text-neon-mint text-[10px] font-bold bg-neon-mint/10 px-1.5 py-0.5 rounded-full">RTP 95.5%</span></div>
                     </div>
                 </div>
             </div>
@@ -305,13 +304,55 @@
         console.log('✅ Hash Router & Interactions Ready');
     </script>
 
-    <!-- External Script -->
+    <!-- ============================================
+    PWA SERVICE WORKER REGISTRATION
+    ============================================ -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('✅ SW registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('❌ SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- ============================================
+    GAME ENGINE SCRIPTS (ALL 20 GAMES)
+    ============================================ -->
     <script src="js/games/matrix.js"></script>
-    <script src="script.js"></script>
-    <script src="js/payment.js"></script>
     <script src="js/games/_engine.js"></script>
-    <script src="js/app.js"></script>
     <script src="js/games/teen-patti.js"></script>
     <script src="js/games/andar-bahar.js"></script>
+    <script src="js/games/aviator.js"></script>
+    <script src="js/games/roulette.js"></script>
+    <script src="js/games/blackjack.js"></script>
+    <script src="js/games/baccarat.js"></script>
+    <script src="js/games/jhandi-munda.js"></script>
+    <script src="js/games/dragon-tiger.js"></script>
+    <script src="js/games/7up-7down.js"></script>
+    <script src="js/games/car-roulette.js"></script>
+    <script src="js/games/ludo-betting.js"></script>
+    <script src="js/games/plinko.js"></script>
+    <script src="js/games/mines.js"></script>
+    <script src="js/games/wheel-fortune.js"></script>
+    <script src="js/games/classic-slots.js"></script>
+    <script src="js/games/video-poker.js"></script>
+    <script src="js/games/red-dog.js"></script>
+    <script src="js/games/sic-bo.js"></script>
+    <script src="js/games/hi-low.js"></script>
+    <script src="js/games/keno-jackpot.js"></script>
+
+    <!-- ============================================
+    APPLICATION MODULES
+    ============================================ -->
+    <script src="js/app.js"></script>
+    <script src="js/payment.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
