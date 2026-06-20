@@ -1,7 +1,7 @@
 {
-    "name": "Emerald King Casino",
+    "name": "Emerald King - Skill Gaming",
     "short_name": "Emerald King",
-    "description": "Premium Casino Gaming Platform - 20+ Games",
+    "description": "Premium Skill-Based Gaming Platform with 20+ Strategy Games",
     "start_url": "/index.html",
     "scope": "/",
     "display": "standalone",
@@ -91,7 +91,7 @@
             "sizes": "450x900",
             "type": "image/png",
             "form_factor": "narrow",
-            "label": "Deposit Screen"
+            "label": "Performance Report Dashboard"
         }
     ],
 
@@ -99,7 +99,7 @@
         {
             "name": "Games Lobby",
             "short_name": "Games",
-            "description": "Browse all casino games",
+            "description": "Browse all strategy games",
             "url": "/index.html#home-view",
             "icons": [
                 {
@@ -123,9 +123,9 @@
             ]
         },
         {
-            "name": "Profile",
+            "name": "My Profile",
             "short_name": "Profile",
-            "description": "View your profile and VIP status",
+            "description": "View profile and VIP status",
             "url": "/index.html#profile-view",
             "icons": [
                 {
