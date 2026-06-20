@@ -8,15 +8,12 @@
     <meta name="theme-color" content="#011713">
     <title>Emerald King Casino</title>
 
-    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Emerald King">
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Custom Tailwind Config -->
     <script>
         tailwind.config = {
             theme: {
@@ -44,22 +41,14 @@
         }
     </script>
 
-    <!-- Font Awesome Icons CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- External Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-obsidian-deep font-casino antialiased select-none overflow-x-hidden">
 
-    <!-- ============================================
-    MOBILE APP CONTAINER
-    ============================================ -->
     <div id="app" class="mx-auto max-w-mobile min-h-screen relative bg-gradient-to-b from-obsidian via-obsidian-DEFAULT to-obsidian-deep shadow-2xl shadow-black/50 overflow-hidden">
 
-        <!-- ============================================
-        TOP HEADER BAR - Logo & Balance Capsule
-        ============================================ -->
         <header class="fixed top-0 left-0 right-0 z-40 mx-auto max-w-mobile bg-obsidian-deep/95 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <div class="w-8 h-8 bg-gradient-to-br from-neon-mint to-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-neon-mint/20">
@@ -76,9 +65,6 @@
             </div>
         </header>
 
-        <!-- ============================================
-        PROMO BANNER SLIDER
-        ============================================ -->
         <section class="mt-16 px-4 pt-3">
             <div class="relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-lg">
                 <div id="promo-track" class="flex transition-transform duration-500 ease-in-out" style="transform: translateX(0%)">
@@ -115,9 +101,6 @@
             </div>
         </section>
 
-        <!-- ============================================
-        HORIZONTAL CATEGORY FILTERS
-        ============================================ -->
         <section class="mt-4 px-4">
             <div class="flex space-x-2 overflow-x-auto scrollbar-hide pb-2" id="category-tabs">
                 <button class="category-btn flex-shrink-0 px-4 py-1.5 rounded-full bg-neon-mint text-obsidian-deep font-bold text-xs border border-neon-mint" data-category="all">🔥 All</button>
@@ -133,12 +116,8 @@
             </div>
         </section>
 
-        <!-- ============================================
-        MAIN CONTENT AREA - HASH ROUTING VIEWS
-        ============================================ -->
         <main class="px-4 pb-24 mt-3">
 
-            <!-- VIEW: #home-view -->
             <div id="home-view" class="hash-view animate-fade-in">
                 <div class="relative mb-4">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm"></i>
@@ -180,7 +159,6 @@
                 </div>
             </div>
 
-            <!-- VIEW: #offers-view -->
             <div id="offers-view" class="hash-view hidden animate-fade-in">
                 <h3 class="text-white font-bold text-lg mb-4 flex items-center"><i class="fas fa-gift text-neon-gold mr-2"></i>Exclusive Offers</h3>
                 <div class="space-y-3">
@@ -191,7 +169,6 @@
                 </div>
             </div>
 
-            <!-- VIEW: #invite-view -->
             <div id="invite-view" class="hash-view hidden animate-fade-in">
                 <h3 class="text-white font-bold text-lg mb-4 flex items-center"><i class="fas fa-users text-neon-blue mr-2"></i>Invite & Earn</h3>
                 <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 mb-4"><h4 class="text-neon-mint font-bold text-xs mb-2">Your Referral Link</h4><div class="flex items-center space-x-2 bg-obsidian-deep rounded-lg p-2 border border-white/5"><input type="text" readonly value="emerald.com/ref/user123" class="bg-transparent text-white text-xs flex-1 outline-none" id="referral-link"><button onclick="copyReferral()" class="bg-neon-mint text-obsidian-deep px-3 py-1 rounded-lg text-xs font-bold"><i class="fas fa-copy"></i> Copy</button></div></div>
@@ -199,7 +176,6 @@
                 <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4"><h4 class="text-neon-blue font-bold text-xs mb-2">Agent Center</h4><p class="text-white/50 text-[10px] mb-3">Upgrade to agent and earn 30% lifetime commission</p><button class="w-full bg-transparent border border-neon-blue text-neon-blue font-bold py-2 rounded-lg text-sm">Become an Agent</button></div>
             </div>
 
-            <!-- VIEW: #deposit-view -->
             <div id="deposit-view" class="hash-view hidden animate-fade-in">
                 <h3 class="text-white font-bold text-lg mb-4 flex items-center"><i class="fas fa-wallet text-neon-gold mr-2"></i>Deposit Funds</h3>
                 <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 mb-4 text-center"><span class="text-white/50 text-[10px]">Current Balance</span><p class="text-neon-mint font-bold text-2xl" id="deposit-balance-display">0.00</p></div>
@@ -212,7 +188,6 @@
                 <button id="deposit-submit-btn" class="w-full bg-neon-mint text-obsidian-deep font-bold py-3 rounded-xl text-base shadow-lg shadow-neon-mint/20">Deposit Now</button>
             </div>
 
-            <!-- VIEW: #profile-view -->
             <div id="profile-view" class="hash-view hidden animate-fade-in">
                 <h3 class="text-white font-bold text-lg mb-4 flex items-center"><i class="fas fa-user-circle text-neon-blue mr-2"></i>My Profile</h3>
                 <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex items-center space-x-4 mb-4"><div class="w-14 h-14 bg-gradient-to-br from-neon-mint to-emerald-600 rounded-full flex items-center justify-center text-xl shadow-lg shadow-neon-mint/20">👤</div><div><h4 class="text-white font-bold" id="profile-username">Not Logged In</h4><p class="text-white/50 text-[10px]" id="profile-id">ID: ---</p><p class="text-neon-gold text-[10px] font-bold mt-1" id="profile-vip">VIP Bronze 🥉</p></div></div>
@@ -225,9 +200,7 @@
                     <button id="logout-btn" class="w-full flex items-center justify-between p-4 text-red-400 text-sm hover:bg-red-900/10 transition-all"><span><i class="fas fa-sign-out-alt mr-3"></i>Logout</span><i class="fas fa-chevron-right text-red-400/20 text-xs"></i></button>
                 </div>
             </div>
-            </div>
 
-            <!-- VIEW: #report-view -->
             <div id="report-view" class="hash-view hidden animate-fade-in">
                 <h3 class="text-white font-bold text-lg mb-4 flex items-center"><i class="fas fa-chart-line text-neon-mint mr-2"></i>Performance Report</h3>
                 <div class="grid grid-cols-2 gap-3 mb-4">
@@ -242,14 +215,10 @@
                 </div>
             </div>
 
-        </main>
+            <div id="settings-view" class="hash-view hidden animate-fade-in" style="padding:4px 0;"></div>
 
         </main>
 
-        <!-- ============================================
-               <!-- ============================================
-        BOTTOM STICKY NAVIGATION BAR
-        ============================================ -->
         <nav class="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-mobile bg-obsidian-deep/98 backdrop-blur-md border-t border-white/5">
             <div class="flex items-center justify-around py-2 px-1">
                 <a href="#home-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-neon-mint" data-view="home-view"><i class="fas fa-home text-lg"></i><span class="text-[10px] font-medium">Home</span></a>
@@ -258,18 +227,14 @@
                 <a href="#deposit-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="deposit-view"><i class="fas fa-plus-circle text-lg"></i><span class="text-[10px] font-medium">Deposit</span></a>
                 <a href="#profile-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="profile-view"><i class="fas fa-user text-lg"></i><span class="text-[10px] font-medium">Profile</span></a>
                 <a href="#report-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="report-view"><i class="fas fa-chart-line text-lg"></i><span class="text-[10px] font-medium">Report</span></a>
+                <a href="#settings-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="settings-view"><i class="fas fa-cog text-lg"></i><span class="text-[10px] font-medium">Settings</span></a>
             </div>
         </nav>
 
     </div>
-    <!-- ============================================
-    SUPABASE JS CLIENT CDN
-    ============================================ -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- ============================================
-    JS: SUPABASE CONFIG & REAL-TIME CONTROLLER
-    ============================================ -->
     <script>
         const EMERALD_CONFIG={SUPABASE_URL:'https://xxxxxxxxxxxx.supabase.co',SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHh4eHh4eHh4eHh4eCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjk5OTk5OTk5LCJleHAiOjIwMTU1NzU5OTl9.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',APP_NAME:'Emerald King Casino',APP_VERSION:'2.0.0',ENABLE_REALTIME:true,ENABLE_LOGGING:true,DEMO_MODE:false};
         let emeraldDB=null,realtimeSubscription=null,isInitialized=false;
@@ -292,9 +257,6 @@
         document.addEventListener('DOMContentLoaded',async()=>{console.log('🚀 Initializing '+EMERALD_CONFIG.APP_NAME+' v'+EMERALD_CONFIG.APP_VERSION);const dbReady=initializeSupabaseClient();if(!dbReady){console.warn('⚠️ DEMO MODE - No database connection');}else{setupAuthStateMonitor();const hasSession=await restoreSession();if(!hasSession)console.log('ℹ️ No active session. Waiting for login.');}console.log('✅ '+EMERALD_CONFIG.APP_NAME+' ready');console.log('📋 Available: window.emeraldDB');});
     </script>
 
-    <!-- ============================================
-    JS: AUTH FIREWALL & LOGIN OVERLAY
-    ============================================ -->
     <script>
         function generateCasinoID(){try{const timestamp=Date.now().toString().slice(-6);const random=Math.floor(Math.random()*900)+100;const casinoID=timestamp+random.toString();if(casinoID.length!==9)return Math.floor(100000000+Math.random()*900000000).toString();console.log('🎰 Generated Casino ID:',casinoID);return casinoID;}catch(error){return Math.floor(100000000+Math.random()*900000000).toString();}}
         let loginOverlayActive=false;
@@ -305,9 +267,6 @@
         document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>securityCheckpoint(),600);});
     </script>
 
-    <!-- ============================================
-    JS: HASH ROUTER & INTERACTIONS
-    ============================================ -->
     <script>
         function switchView(viewId){try{document.querySelectorAll('.hash-view').forEach(v=>v.classList.add('hidden'));const target=document.getElementById(viewId);if(target){target.classList.remove('hidden');target.classList.add('animate-fade-in');}document.querySelectorAll('.nav-link').forEach(link=>{if(link.getAttribute('data-view')===viewId){link.classList.add('text-neon-mint');link.classList.remove('text-white/50');}else{link.classList.remove('text-neon-mint');link.classList.add('text-white/50');}});window.location.hash=viewId;}catch(e){console.error('View switch error:',e);}}
         window.addEventListener('hashchange',()=>{const hash=window.location.hash.replace('#','')||'home-view';switchView(hash);});
@@ -323,26 +282,16 @@
         console.log('✅ Hash Router & Interactions Ready');
     </script>
 
-    <!-- ============================================
-    PWA SERVICE WORKER REGISTRATION
-    ============================================ -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('✅ SW registered:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('❌ SW registration failed:', error);
-                    });
+                    .then(registration => { console.log('✅ SW registered:', registration.scope); })
+                    .catch(error => { console.error('❌ SW registration failed:', error); });
             });
         }
     </script>
 
-    <!-- ============================================
-    GAME ENGINE SCRIPTS (ALL 20 GAMES)
-    ============================================ -->
     <script src="js/games/matrix.js"></script>
     <script src="js/games/_engine.js"></script>
     <script src="js/games/teen-patti.js"></script>
@@ -366,9 +315,6 @@
     <script src="js/games/hi-low.js"></script>
     <script src="js/games/keno-jackpot.js"></script>
 
-    <!-- ============================================
-    APPLICATION MODULES
-    ============================================ -->
     <script src="js/app.js"></script>
     <script src="js/vip.js"></script>
     <script src="js/payment.js"></script>
@@ -376,5 +322,7 @@
     <script src="script.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/agent.js"></script>
+    <script src="js/report.js"></script>
+    <script src="js/settings.js"></script>
 </body>
 </html>
