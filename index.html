@@ -225,10 +225,29 @@
                     <button id="logout-btn" class="w-full flex items-center justify-between p-4 text-red-400 text-sm hover:bg-red-900/10 transition-all"><span><i class="fas fa-sign-out-alt mr-3"></i>Logout</span><i class="fas fa-chevron-right text-red-400/20 text-xs"></i></button>
                 </div>
             </div>
+            </div>
+
+            <!-- VIEW: #report-view -->
+            <div id="report-view" class="hash-view hidden animate-fade-in">
+                <h3 class="text-white font-bold text-lg mb-4 flex items-center"><i class="fas fa-chart-line text-neon-mint mr-2"></i>Performance Report</h3>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 text-center"><span class="text-white/50 text-[9px] uppercase tracking-wider">Total Allocated</span><p class="text-white font-bold text-lg mt-1" id="report-total-allocated">0</p></div>
+                    <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 text-center"><span class="text-white/50 text-[9px] uppercase tracking-wider">Total Recovered</span><p class="text-neon-mint font-bold text-lg mt-1" id="report-total-recovered">0</p></div>
+                    <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 text-center"><span class="text-white/50 text-[9px] uppercase tracking-wider">Net Delta</span><p class="font-bold text-lg mt-1" id="report-net-delta">0</p></div>
+                    <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 text-center"><span class="text-white/50 text-[9px] uppercase tracking-wider">Win Rate</span><p class="text-neon-blue font-bold text-lg mt-1" id="report-win-rate">0%</p></div>
+                </div>
+                <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden">
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 0.8fr 1fr;gap:4px;padding:10px 8px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-size:9px;font-weight:bold;text-transform:uppercase;"><span>Strategy</span><span style="text-align:center;">Allocated</span><span style="text-align:center;">Recovered</span><span style="text-align:center;">Multi</span><span style="text-align:right;">Status</span></div>
+                    <div id="report-history-table" style="max-height:45vh;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;"><tbody id="report-history-tbody"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);"><i class="fas fa-spinner fa-spin" style="font-size:18px;display:block;margin-bottom:8px;"></i>Loading...</td></tr></tbody></table></div>
+                </div>
+            </div>
+
+        </main>
 
         </main>
 
         <!-- ============================================
+               <!-- ============================================
         BOTTOM STICKY NAVIGATION BAR
         ============================================ -->
         <nav class="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-mobile bg-obsidian-deep/98 backdrop-blur-md border-t border-white/5">
@@ -238,11 +257,11 @@
                 <a href="#invite-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50 relative" data-view="invite-view"><div class="absolute -top-5 w-10 h-10 bg-gradient-to-br from-neon-mint to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-neon-mint/30 border-2 border-obsidian-deep"><i class="fas fa-gift text-obsidian-deep text-sm"></i></div><span class="text-[10px] font-medium mt-2">Invite</span></a>
                 <a href="#deposit-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="deposit-view"><i class="fas fa-plus-circle text-lg"></i><span class="text-[10px] font-medium">Deposit</span></a>
                 <a href="#profile-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="profile-view"><i class="fas fa-user text-lg"></i><span class="text-[10px] font-medium">Profile</span></a>
+                <a href="#report-view" class="nav-link flex flex-col items-center space-y-0.5 px-3 py-1 text-white/50" data-view="report-view"><i class="fas fa-chart-line text-lg"></i><span class="text-[10px] font-medium">Report</span></a>
             </div>
         </nav>
 
     </div>
-
     <!-- ============================================
     SUPABASE JS CLIENT CDN
     ============================================ -->
