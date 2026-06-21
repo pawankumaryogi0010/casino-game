@@ -3,113 +3,557 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0a0806">
-    <title>Emerald King Casino</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0e1a">
+    <title>Emerald King - Casino</title>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
-    
-    <!-- Main Stylesheet -->
+    <!-- Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- App Container -->
-    <div id="app">
-        <!-- Header -->
-        <header>
-            <div class="header-inner">
-                <div class="brand">
-                    <span class="brand-icon">👑</span>
-                    <span class="brand-name">EMERALD KING</span>
-                </div>
-                <div id="balance-capsule">
-                    <span class="balance-label">💰</span>
-                    <span class="balance-amount" id="balance-display">₹1,250.00</span>
+
+<div id="app">
+    <!-- ==========================================
+    HEADER - Balance & User Info
+    ========================================== -->
+    <header>
+        <div class="header-left">
+            <div class="user-avatar">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23d4a843'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='%230a0e1a' font-size='18' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E" alt="Avatar">
+                <span class="online-dot"></span>
+            </div>
+            <div class="user-info">
+                <span class="username">maruf0099</span>
+                <span class="user-id">ID: 421571595</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="balance-capsule">
+                <span class="balance-icon">💰</span>
+                <span class="balance-amount" id="balance-display">0.64</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==========================================
+    MAIN CONTENT
+    ========================================== -->
+    <main>
+        <!-- HOME VIEW -->
+        <div id="home-view" class="view active">
+            <!-- Banner -->
+            <div class="banner-container">
+                <div class="banner-slide">
+                    <div class="banner-content">
+                        <span class="banner-badge">🎯 WEB CORNER BD</span>
+                        <h2 class="banner-title">SWEET GAME</h2>
+                        <div class="banner-actions">
+                            <span class="banner-percent">100%</span>
+                            <span class="banner-best">BEST</span>
+                            <button class="banner-btn">Participate</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </header>
 
-        <!-- Main Content -->
-        <main>
-            <!-- Home View -->
-            <div id="home-view" class="hash-view">
-                <!-- Carousel -->
-                <section class="carousel-container">
-                    <div class="carousel-track" id="carousel-track">
-                        <div class="carousel-slide">
-                            <div class="promo-content">
-                                <span class="promo-badge">⚡ WELCOME BONUS</span>
-                                <h2 class="promo-title">200% Deposit Match</h2>
-                                <p class="promo-desc">Up to ₹1,000 + 50 Free Spins</p>
-                            </div>
-                        </div>
-                        <div class="carousel-slide">
-                            <div class="promo-content">
-                                <span class="promo-badge">🎰 DAILY REWARDS</span>
-                                <h2 class="promo-title">10% Cashback</h2>
-                                <p class="promo-desc">Unlimited rebate on all games</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="carousel-dots">
-                        <span class="carousel-dot active" data-index="0"></span>
-                        <span class="carousel-dot" data-index="1"></span>
-                    </div>
-                </section>
-
-                <!-- Provider Tabs -->
-                <section class="provider-tabs">
-                    <button class="provider-btn active" data-provider="all">🔥 All</button>
-                    <button class="provider-btn" data-provider="pg">PG Soft</button>
-                    <button class="provider-btn" data-provider="pp">PP</button>
-                    <button class="provider-btn" data-provider="jdb">JDB</button>
-                    <button class="provider-btn" data-provider="spribe">Spribe</button>
-                </section>
-
-                <!-- Games Grid -->
-                <section class="games-section">
-                    <div class="games-header">
-                        <h3>🎮 Featured Games</h3>
-                        <span id="game-count">24 Games</span>
-                    </div>
-                    <div class="games-grid" id="games-grid"></div>
-                </section>
+            <!-- Agent Gallery -->
+            <div class="agent-gallery">
+                <span class="agent-label">AGENT SALLERY</span>
+                <div class="agent-icons">
+                    <span class="agent-icon hot">🔥</span>
+                    <span class="agent-icon">PG</span>
+                    <span class="agent-icon">PLAYS...</span>
+                    <span class="agent-icon">JDB</span>
+                    <span class="agent-icon">Tade</span>
+                    <span class="agent-icon hot">Hot</span>
+                </div>
             </div>
 
-            <!-- Other Views -->
-            <div id="offers-view" class="hash-view hidden">Offers Coming Soon</div>
-            <div id="invite-view" class="hash-view hidden">Invite Friends</div>
-            <div id="deposit-view" class="hash-view hidden">Deposit Funds</div>
-            <div id="profile-view" class="hash-view hidden">Profile</div>
-        </main>
+            <!-- Category Tabs -->
+            <div class="category-tabs">
+                <button class="cat-tab active" data-cat="all">All</button>
+                <button class="cat-tab" data-cat="hot">🔥 Hot</button>
+                <button class="cat-tab" data-cat="recent">Recent</button>
+                <button class="cat-tab" data-cat="favorite">⭐ Favorite</button>
+            </div>
 
-        <!-- Bottom Navigation -->
-        <nav>
-            <a href="#home" class="nav-link active" data-route="home">
-                <span class="nav-icon">🏠</span>
-                <span>Home</span>
-            </a>
-            <a href="#offers" class="nav-link" data-route="offers">
-                <span class="nav-icon">🎁</span>
-                <span>Offers</span>
-            </a>
-            <a href="#invite" class="nav-link" data-route="invite">
-                <span class="nav-icon">👥</span>
-                <span>Invite</span>
-                <span class="nav-badge">NEW</span>
-            </a>
-            <a href="#deposit" class="nav-link" data-route="deposit">
-                <span class="nav-icon">💰</span>
-                <span>Deposit</span>
-            </a>
-            <a href="#profile" class="nav-link" data-route="profile">
-                <span class="nav-icon">👤</span>
-                <span>Profile</span>
-            </a>
-        </nav>
-    </div>
+            <!-- Provider Filters -->
+            <div class="provider-filters">
+                <button class="provider-btn active" data-provider="all">ALL</button>
+                <button class="provider-btn" data-provider="pg">PG</button>
+                <button class="provider-btn" data-provider="pp">PP</button>
+                <button class="provider-btn" data-provider="jdb">JDB</button>
+                <button class="provider-btn" data-provider="spribe">SPRIBE</button>
+                <button class="provider-btn" data-provider="pgsoft">PGSOFT</button>
+                <button class="provider-btn" data-provider="playson">PLAYSON</button>
+                <button class="provider-btn" data-provider="fachai">FaChai</button>
+            </div>
 
-    <!-- Scripts -->
-    <script src="script.js"></script>
+            <!-- Search -->
+            <div class="search-container">
+                <input type="text" placeholder="Search Games" class="search-input">
+                <span class="search-icon">🔍</span>
+            </div>
+
+            <!-- Games Grid -->
+            <div class="games-grid" id="games-grid">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
+        <!-- OFFERS VIEW -->
+        <div id="offers-view" class="view hidden">
+            <div class="view-content">
+                <h3>🎁 Exclusive Offers</h3>
+                <div class="offers-list">
+                    <div class="offer-card">
+                        <span class="offer-badge">WELCOME</span>
+                        <h4>200% First Deposit</h4>
+                        <p>Min deposit: ₹200</p>
+                        <span class="offer-status active">ACTIVE</span>
+                    </div>
+                    <div class="offer-card">
+                        <span class="offer-badge">DAILY</span>
+                        <h4>10% Unlimited Cashback</h4>
+                        <p>No wagering required</p>
+                        <span class="offer-status new">NEW</span>
+                    </div>
+                    <div class="offer-card">
+                        <span class="offer-badge">VIP</span>
+                        <h4>₹500 Free Chip</h4>
+                        <p>For VIP Level 5+</p>
+                        <span class="offer-status exclusive">EXCLUSIVE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INVITE VIEW -->
+        <div id="invite-view" class="view hidden">
+            <div class="view-content">
+                <h3>👥 Agent Center</h3>
+                
+                <!-- Tabs -->
+                <div class="agent-tabs">
+                    <button class="agent-tab active" data-atab="referral">Referral Link</button>
+                    <button class="agent-tab" data-atab="network">Agent Network</button>
+                    <button class="agent-tab" data-atab="performance">Performance</button>
+                </div>
+
+                <!-- Referral Tab -->
+                <div id="referral-tab" class="agent-tab-content active">
+                    <div class="referral-box">
+                        <span class="referral-label">Referral ID: 0</span>
+                        <div class="referral-link-box">
+                            <input type="text" value="https://demo.bulet99.com/spread/?pid=421571595" readonly id="referral-link">
+                            <button onclick="copyReferral()" class="copy-btn">Copy</button>
+                        </div>
+                        <button class="save-btn">Save</button>
+                    </div>
+
+                    <div class="commission-box">
+                        <h4>Commissions</h4>
+                        <div class="commission-row">
+                            <span>Commission Received</span>
+                            <span class="commission-amount">0.00</span>
+                        </div>
+                        <div class="commission-row">
+                            <span>Today's Commission</span>
+                            <span class="commission-amount">0.00</span>
+                        </div>
+                        <button class="claim-btn">Claim</button>
+                    </div>
+
+                    <div class="data-box">
+                        <h4>My Data</h4>
+                        <span class="data-label">Today</span>
+                    </div>
+
+                    <div class="subordinates-box">
+                        <h4>New Subordinates</h4>
+                        <div class="sub-row">
+                            <span>New Direct Subordinates</span>
+                            <span class="sub-count">0</span>
+                        </div>
+                        <div class="sub-row">
+                            <span>New Other Subordinates</span>
+                            <span class="sub-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Tab -->
+                <div id="network-tab" class="agent-tab-content hidden">
+                    <div class="network-list">
+                        <div class="network-item">
+                            <span class="network-name">No subordinates yet</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Tab -->
+                <div id="performance-tab" class="agent-tab-content hidden">
+                    <div class="performance-stats">
+                        <div class="stat-card">
+                            <span>Total Earned</span>
+                            <strong>₹0.00</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>This Month</span>
+                            <strong>₹0.00</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Active Refs</span>
+                            <strong>0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPOSIT VIEW -->
+        <div id="deposit-view" class="view hidden">
+            <div class="view-content">
+                <h3>💰 Deposit</h3>
+                <p class="deposit-sub">If you have any questions or issues, please contact customer support. Thank you! 💬 online support.</p>
+
+                <div class="deposit-box">
+                    <h4>Manual Payment</h4>
+                    
+                    <div class="deposit-field">
+                        <label>Payment</label>
+                        <select class="deposit-select">
+                            <option>bKash</option>
+                            <option>Nagad</option>
+                            <option>UPI</option>
+                        </select>
+                    </div>
+
+                    <div class="deposit-field">
+                        <label>Amount</label>
+                        <div class="amount-input-wrapper">
+                            <input type="number" placeholder="100 - 25,000" class="deposit-input" id="deposit-amount">
+                        </div>
+                    </div>
+
+                    <div class="deposit-note">
+                        ⚠️ NOTE: अनुष्ठित किया गया आपका डिपार्टरि करने के बाद आपको Trx-ID सबमिट करनी होगी
+                    </div>
+
+                    <div class="quick-amounts">
+                        <button class="quick-amount" data-amount="100">100.00</button>
+                        <button class="quick-amount" data-amount="200">200.00</button>
+                        <button class="quick-amount" data-amount="300">300.00</button>
+                        <button class="quick-amount" data-amount="500">500.00</button>
+                        <button class="quick-amount" data-amount="1000">1,000.00</button>
+                        <button class="quick-amount" data-amount="5000">5,000.00</button>
+                        <button class="quick-amount" data-amount="25000">25,000.00</button>
+                    </div>
+
+                    <div class="deposit-field">
+                        <label>Transaction ID</label>
+                        <input type="text" placeholder="Enter your Trx-ID" class="deposit-input" id="deposit-txid">
+                    </div>
+
+                    <button class="deposit-submit" id="deposit-submit-btn">Deposit Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="profile-view" class="view hidden">
+            <div class="view-content">
+                <div class="profile-header">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-info">
+                        <h3 class="profile-name" id="profile-username">maruf0099</h3>
+                        <span class="profile-id">ID: 421571595</span>
+                    </div>
+                </div>
+
+                <div class="profile-balance">
+                    <span>Balance</span>
+                    <strong id="profile-balance">0.64</strong>
+                </div>
+
+                <div class="profile-vip">
+                    <span>VIP 0</span>
+                    <span class="vip-badge">👑 VIP 0</span>
+                </div>
+
+                <div class="profile-bonus">
+                    <span>The bonus received today</span>
+                    <strong>0.00</strong>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="profile-action deposit-btn">💰 Deposit</button>
+                    <button class="profile-action withdraw-btn">💳 Withdraw</button>
+                </div>
+
+                <div class="vip-details">
+                    <h4>VIP Details</h4>
+                    <div class="vip-levels">
+                        <span class="vip-level active">VIP 0</span>
+                        <span class="vip-level">VIP 1</span>
+                    </div>
+                    <div class="vip-progress">
+                        <div class="vip-progress-bar" style="width: 0%"></div>
+                        <span class="vip-progress-text">Required bet: 0.00 (0.00/5,000.00)</span>
+                    </div>
+                </div>
+
+                <div class="profile-menu">
+                    <button class="menu-item" data-route="support">🛟 Support</button>
+                    <button class="menu-item" data-route="report">📊 Report</button>
+                    <button class="menu-item" data-route="invite">👥 Invite</button>
+                    <button class="menu-item" data-route="redeem">🎁 Redeem</button>
+                    <button class="menu-item" data-route="security">🔒 Security Center</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+    BOTTOM NAVIGATION
+    ========================================== -->
+    <nav class="bottom-nav">
+        <a href="#home" class="nav-item active" data-route="home">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="#offers" class="nav-item" data-route="offers">
+            <span class="nav-icon">🎁</span>
+            <span class="nav-label">Offers</span>
+        </a>
+        <a href="#invite" class="nav-item" data-route="invite">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Invite</span>
+        </a>
+        <a href="#deposit" class="nav-item" data-route="deposit">
+            <span class="nav-icon">💰</span>
+            <span class="nav-label">Deposit</span>
+        </a>
+        <a href="#profile" class="nav-item" data-route="profile">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+</div>
+
+<!-- ==========================================
+SCRIPTS
+========================================== -->
+<script>
+// ============================================
+// GAME DATA - EXACTLY LIKE YOUR IMAGES
+// ============================================
+const GAMES = [
+    // PG Games
+    { name: 'DRAGON', provider: 'pg', icon: '🐉', hot: true, rtp: '96.5%' },
+    { name: 'FORTUNE', provider: 'pg', icon: '🧧', hot: true, rtp: '97.2%' },
+    { name: 'FORTUNE HATCH', provider: 'pg', icon: '🥚', hot: true, rtp: '96.8%' },
+    { name: 'ER', provider: 'pg', icon: '🎯', hot: false, rtp: '95.9%' },
+    { name: 'MOUSE', provider: 'pg', icon: '🐭', hot: false, rtp: '96.3%' },
+    { name: 'OX', provider: 'pg', icon: '🐂', hot: false, rtp: '95.7%' },
+    { name: 'QUEEN OF BOUNTY', provider: 'pg', icon: '👑', hot: false, rtp: '97.0%' },
+    { name: 'GENIE\'S 3 WISHES', provider: 'pg', icon: '🧞', hot: false, rtp: '96.1%' },
+    { name: 'TREASURES OF AZTEC', provider: 'pg', icon: '🗿', hot: false, rtp: '97.5%' },
+    { name: 'ULTIMATE PROSPERITY', provider: 'pg', icon: '💰', hot: false, rtp: '96.4%' },
+    { name: 'MAHJONG PROSPERITY', provider: 'pg', icon: '🀄', hot: false, rtp: '96.9%' },
+    { name: 'ORIENTAL', provider: 'pg', icon: '🏮', hot: false, rtp: '95.8%' },
+    
+    // PP Games
+    { name: 'ANUBIS WRATH', provider: 'pp', icon: '⚱️', hot: false, rtp: '96.3%' },
+    { name: 'TSAR TREASURES', provider: 'pp', icon: '👑', hot: false, rtp: '97.0%' },
+    { name: 'POPAKI', provider: 'pp', icon: '🍿', hot: false, rtp: '96.2%' },
+    { name: 'POPOK', provider: 'pp', icon: '🎮', hot: false, rtp: '95.9%' },
+    
+    // JDB Games
+    { name: 'VAMPIRE\'S CHARM', provider: 'jdb', icon: '🧛', hot: false, rtp: '95.7%' },
+    { name: 'WILD SAFARI', provider: 'jdb', icon: '🦁', hot: false, rtp: '96.5%' },
+    { name: 'HOOD VS WOLF', provider: 'jdb', icon: '🐺', hot: false, rtp: '96.1%' },
+    { name: 'WINWIN WON', provider: 'jdb', icon: '🏆', hot: false, rtp: '97.3%' },
+    
+    // Spribe Games
+    { name: 'AVIATOR', provider: 'spribe', icon: '✈️', hot: true, rtp: '99.1%' },
+    { name: 'STRATEGY', provider: 'spribe', icon: '📈', hot: false, rtp: '97.8%' },
+    { name: 'FORTUNE TREE', provider: 'spribe', icon: '🌳', hot: false, rtp: '96.2%' },
+    
+    // FaChai Games
+    { name: 'STRIKER', provider: 'fachai', icon: '⚽', hot: false, rtp: '96.7%' },
+    { name: 'TREE OF FORTUNE', provider: 'fachai', icon: '🌲', hot: false, rtp: '95.9%' },
+];
+
+// ============================================
+// RENDER GAMES
+// ============================================
+function renderGames(provider = 'all', search = '') {
+    const grid = document.getElementById('games-grid');
+    let filtered = provider === 'all' ? GAMES : GAMES.filter(g => g.provider === provider);
+    
+    if (search) {
+        filtered = filtered.filter(g => g.name.toLowerCase().includes(search.toLowerCase()));
+    }
+
+    grid.innerHTML = filtered.map(g => `
+        <div class="game-card" data-game="${g.name.toLowerCase().replace(/ /g, '-')}" onclick="launchGame('${g.name}')">
+            <div class="game-card-icon">${g.icon}</div>
+            <div class="game-card-name">${g.name}</div>
+            ${g.hot ? '<span class="game-hot">🔥</span>' : ''}
+            <span class="game-rtp">${g.rtp}</span>
+        </div>
+    `).join('');
+}
+
+// ============================================
+// LAUNCH GAME
+// ============================================
+function launchGame(name) {
+    alert('🎰 Launching: ' + name);
+    console.log('🚀 Launching game:', name);
+}
+
+// ============================================
+// COPY REFERRAL
+// ============================================
+function copyReferral() {
+    const input = document.getElementById('referral-link');
+    if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            alert('✅ Referral link copied!');
+        });
+    }
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Render games
+    renderGames('all');
+
+    // Provider filters
+    document.querySelectorAll('.provider-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const provider = this.dataset.provider;
+            const search = document.querySelector('.search-input')?.value || '';
+            renderGames(provider, search);
+        });
+    });
+
+    // Category tabs
+    document.querySelectorAll('.cat-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Search
+    const searchInput = document.querySelector('.search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const activeProvider = document.querySelector('.provider-btn.active')?.dataset.provider || 'all';
+            renderGames(activeProvider, this.value);
+        });
+    }
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const route = this.dataset.route;
+            
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update views
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(route + '-view');
+            if (targetView) targetView.classList.add('active');
+            
+            // Update URL hash
+            window.location.hash = route;
+        });
+    });
+
+    // Agent tabs
+    document.querySelectorAll('.agent-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.agent-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            const tabName = this.dataset.atab;
+            document.querySelectorAll('.agent-tab-content').forEach(c => c.classList.remove('active'));
+            const target = document.getElementById(tabName + '-tab');
+            if (target) target.classList.add('active');
+        });
+    });
+
+    // Quick amounts
+    document.querySelectorAll('.quick-amount').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.dataset.amount;
+            const input = document.getElementById('deposit-amount');
+            if (input) {
+                input.value = amount;
+                document.querySelectorAll('.quick-amount').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+
+    // Deposit submit
+    const depositBtn = document.getElementById('deposit-submit-btn');
+    if (depositBtn) {
+        depositBtn.addEventListener('click', function() {
+            const amount = document.getElementById('deposit-amount')?.value;
+            const txid = document.getElementById('deposit-txid')?.value;
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            if (!txid) {
+                alert('Please enter your Transaction ID');
+                return;
+            }
+            alert('✅ Deposit request submitted!\nAmount: ₹' + amount + '\nTrx-ID: ' + txid);
+        });
+    }
+
+    // Profile menu items
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const route = this.dataset.route;
+            alert('🔜 ' + route.charAt(0).toUpperCase() + route.slice(1) + ' section coming soon!');
+        });
+    });
+
+    // Hash change
+    window.addEventListener('hashchange', function() {
+        const hash = window.location.hash.replace('#', '') || 'home';
+        document.querySelectorAll('.nav-item').forEach(n => {
+            n.classList.toggle('active', n.dataset.route === hash);
+        });
+        document.querySelectorAll('.view').forEach(v => {
+            v.classList.toggle('active', v.id === hash + '-view');
+        });
+    });
+
+    console.log('✅ Emerald King Casino loaded!');
+});
+
+// Global exports
+window.launchGame = launchGame;
+window.copyReferral = copyReferral;
+window.renderGames = renderGames;
+</script>
+
 </body>
 </html>
