@@ -3,264 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0a0e1a">
-    <title>Elite Gaming Dashboard</title>
-    <link rel="manifest" href="/manifest.json">
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Afacad+Flux:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        royal: { dark: '#0a0e1a', blue: '#0f1525', card: '#131a2e', border: '#1e2844' },
-                        gold: { DEFAULT: '#d4a843', light: '#f0d078', dark: '#a07828' },
-                        emerald: { DEFAULT: '#0d9488', light: '#14b8a6', glow: '#5eead4' },
-                        neon: { mint: '#00e676', blue: '#00b0ff', red: '#ff4444' }
-                    },
-                    fontFamily: {
-                        display: ['Comfortaa', 'cursive'],
-                        body: ['Afacad Flux', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    <meta name="theme-color" content="#0a0806">
+    <title>Emerald King Casino</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
+    
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-royal-dark font-body antialiased overflow-x-hidden">
-
+<body>
     <!-- App Container -->
-    <div id="app" class="mx-auto max-w-md min-h-screen relative shadow-2xl shadow-black/60">
-
-        <!-- ============================================
-        TOP BAR
-        ============================================ -->
-        <header class="fixed top-0 left-0 right-0 z-50 mx-auto max-w-md bg-royal-dark/95 backdrop-blur-xl border-b border-royal-border/50 px-4 py-3">
-            <div class="flex items-center justify-between">
-                <!-- Left: User Info -->
-                <div class="flex items-center space-x-3">
-                    <div class="relative">
-                        <img src="https://api.dicebear.com/8.x/bottts/svg?seed=player&backgroundColor=0f1525" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-gold/60 shadow-lg shadow-gold/20" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><circle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22%23131a2e%22/><text x=%2220%22 y=%2226%22 text-anchor=%22middle%22 fill=%22%23d4a843%22 font-size=%2218%22>👤</text></svg>'">
-                        <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-glow rounded-full border-2 border-royal-dark animate-pulse"></span>
-                    </div>
-                    <div>
-                        <span class="text-white text-xs font-display font-semibold tracking-wide">ID: 421571595</span>
-                        <span class="bg-gold/20 text-gold text-[10px] px-2 py-0.5 rounded-full font-display font-bold ml-1">👑 VIP 3</span>
-                    </div>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <div class="header-inner">
+                <div class="brand">
+                    <span class="brand-icon">👑</span>
+                    <span class="brand-name">EMERALD KING</span>
                 </div>
-
-                <!-- Right: Balance -->
-                <div class="glass-card rounded-full px-4 py-2 flex items-center space-x-2">
-                    <span class="text-gold/70 text-[10px] font-display uppercase tracking-wider">Balance</span>
-                    <span class="text-gold font-display font-bold text-lg balance-glow">$1,250.00</span>
+                <div id="balance-capsule">
+                    <span class="balance-label">💰</span>
+                    <span class="balance-amount" id="balance-display">₹1,250.00</span>
                 </div>
             </div>
         </header>
 
-        <!-- ============================================
-        MAIN CONTENT
-        ============================================ -->
-        <main class="pt-20 pb-24 px-4">
-
-            <!-- DYNAMIC CAROUSEL -->
-            <section class="mb-5">
-                <div class="carousel-container relative overflow-hidden rounded-2xl shadow-2xl">
-                    <div class="carousel-track flex transition-transform duration-500 ease-out" id="carousel-track" style="transform:translateX(0%)">
-                        <!-- Slide 1 -->
-                        <div class="min-w-full relative">
-                            <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&h=300&fit=crop" alt="Promo" class="w-full h-40 object-cover" onerror="this.style.display='none'">
-                            <div class="absolute inset-0 bg-gradient-to-r from-royal-dark/90 to-transparent flex items-center p-6">
-                                <div>
-                                    <span class="text-emerald-glow text-xs font-display font-bold uppercase tracking-widest">⚡ Welcome Offer</span>
-                                    <h2 class="text-white font-display font-bold text-xl mt-1">200% Deposit Bonus</h2>
-                                    <p class="text-white/70 text-sm font-body">Up to $1,000 + 50 Free Spins</p>
-                                    <button class="mt-2 bg-gold text-royal-dark font-display font-bold px-5 py-2 rounded-full text-sm shadow-lg shadow-gold/30 hover:scale-105 transition-transform">Claim Now</button>
-                                </div>
+        <!-- Main Content -->
+        <main>
+            <!-- Home View -->
+            <div id="home-view" class="hash-view">
+                <!-- Carousel -->
+                <section class="carousel-container">
+                    <div class="carousel-track" id="carousel-track">
+                        <div class="carousel-slide">
+                            <div class="promo-content">
+                                <span class="promo-badge">⚡ WELCOME BONUS</span>
+                                <h2 class="promo-title">200% Deposit Match</h2>
+                                <p class="promo-desc">Up to ₹1,000 + 50 Free Spins</p>
                             </div>
                         </div>
-                        <!-- Slide 2 -->
-                        <div class="min-w-full relative">
-                            <img src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&h=300&fit=crop" alt="Promo" class="w-full h-40 object-cover" onerror="this.style.display='none'">
-                            <div class="absolute inset-0 bg-gradient-to-r from-royal-blue/90 to-transparent flex items-center p-6">
-                                <div>
-                                    <span class="text-neon-blue text-xs font-display font-bold uppercase tracking-widest">🎰 Web Corner BD</span>
-                                    <h2 class="text-white font-display font-bold text-xl mt-1">Daily Cashback 10%</h2>
-                                    <p class="text-white/70 text-sm font-body">Unlimited rebate on all games</p>
-                                    <button class="mt-2 bg-neon-blue text-white font-display font-bold px-5 py-2 rounded-full text-sm shadow-lg shadow-neon-blue/30 hover:scale-105 transition-transform">Play Now</button>
-                                </div>
+                        <div class="carousel-slide">
+                            <div class="promo-content">
+                                <span class="promo-badge">🎰 DAILY REWARDS</span>
+                                <h2 class="promo-title">10% Cashback</h2>
+                                <p class="promo-desc">Unlimited rebate on all games</p>
                             </div>
                         </div>
                     </div>
-                    <!-- Carousel Dots -->
-                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-2">
-                        <span class="w-2 h-2 rounded-full bg-gold carousel-dot" data-index="0"></span>
-                        <span class="w-2 h-2 rounded-full bg-white/30 carousel-dot" data-index="1"></span>
+                    <div class="carousel-dots">
+                        <span class="carousel-dot active" data-index="0"></span>
+                        <span class="carousel-dot" data-index="1"></span>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- PROVIDER NAVIGATION TABS -->
-            <section class="mb-5">
-                <div class="flex space-x-2 overflow-x-auto scrollbar-hide pb-2" id="provider-tabs">
-                    <button class="provider-btn flex-shrink-0 px-5 py-2 rounded-xl bg-gold text-royal-dark font-display font-bold text-xs shadow-lg shadow-gold/20 hover:scale-105 transition-transform" data-provider="all">🔥 All</button>
-                    <button class="provider-btn flex-shrink-0 px-5 py-2 rounded-xl bg-royal-card text-white/70 font-display font-semibold text-xs border border-royal-border/30 hover:border-gold/50 transition-all" data-provider="pg">PG Soft</button>
-                    <button class="provider-btn flex-shrink-0 px-5 py-2 rounded-xl bg-royal-card text-white/70 font-display font-semibold text-xs border border-royal-border/30 hover:border-gold/50 transition-all" data-provider="pp">PP</button>
-                    <button class="provider-btn flex-shrink-0 px-5 py-2 rounded-xl bg-royal-card text-white/70 font-display font-semibold text-xs border border-royal-border/30 hover:border-gold/50 transition-all" data-provider="jdb">JDB</button>
-                    <button class="provider-btn flex-shrink-0 px-5 py-2 rounded-xl bg-royal-card text-white/70 font-display font-semibold text-xs border border-royal-border/30 hover:border-gold/50 transition-all" data-provider="spribe">Spribe</button>
-                </div>
-            </section>
+                <!-- Provider Tabs -->
+                <section class="provider-tabs">
+                    <button class="provider-btn active" data-provider="all">🔥 All</button>
+                    <button class="provider-btn" data-provider="pg">PG Soft</button>
+                    <button class="provider-btn" data-provider="pp">PP</button>
+                    <button class="provider-btn" data-provider="jdb">JDB</button>
+                    <button class="provider-btn" data-provider="spribe">Spribe</button>
+                </section>
 
-            <!-- GAMES GRID -->
-            <section>
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-white font-display font-bold text-sm uppercase tracking-wider">🎮 Featured Games</h3>
-                    <span class="text-white/40 text-xs font-body">24 Games</span>
-                </div>
-                <div class="grid grid-cols-2 gap-3" id="games-grid">
-                    <!-- Cards rendered by JS -->
-                </div>
-            </section>
+                <!-- Games Grid -->
+                <section class="games-section">
+                    <div class="games-header">
+                        <h3>🎮 Featured Games</h3>
+                        <span id="game-count">24 Games</span>
+                    </div>
+                    <div class="games-grid" id="games-grid"></div>
+                </section>
+            </div>
 
+            <!-- Other Views -->
+            <div id="offers-view" class="hash-view hidden">Offers Coming Soon</div>
+            <div id="invite-view" class="hash-view hidden">Invite Friends</div>
+            <div id="deposit-view" class="hash-view hidden">Deposit Funds</div>
+            <div id="profile-view" class="hash-view hidden">Profile</div>
         </main>
 
-        <!-- ============================================
-        BOTTOM NAVIGATION
-        ============================================ -->
-        <nav class="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-md bg-royal-dark/98 backdrop-blur-xl border-t border-royal-border/50">
-            <div class="flex items-center justify-around py-3 px-2">
-                <a href="#home" class="nav-link flex flex-col items-center space-y-1 text-gold" data-route="home">
-                    <i class="fas fa-home text-lg"></i>
-                    <span class="text-[10px] font-display font-semibold">Home</span>
-                </a>
-                <a href="#offers" class="nav-link flex flex-col items-center space-y-1 text-white/50" data-route="offers">
-                    <i class="fas fa-tag text-lg"></i>
-                    <span class="text-[10px] font-display font-semibold">Offers</span>
-                </a>
-                <a href="#invite" class="nav-link flex flex-col items-center space-y-1 text-white/50 relative" data-route="invite">
-                    <div class="absolute -top-6 w-12 h-12 bg-gradient-to-br from-gold to-gold-dark rounded-full flex items-center justify-center shadow-xl shadow-gold/30 border-2 border-royal-dark">
-                        <i class="fas fa-gift text-royal-dark text-sm"></i>
-                    </div>
-                    <span class="text-[10px] font-display font-semibold mt-2">Invite</span>
-                </a>
-                <a href="#deposit" class="nav-link flex flex-col items-center space-y-1 text-white/50" data-route="deposit">
-                    <i class="fas fa-plus-circle text-lg"></i>
-                    <span class="text-[10px] font-display font-semibold">Deposit</span>
-                </a>
-                <a href="#profile" class="nav-link flex flex-col items-center space-y-1 text-white/50" data-route="profile">
-                    <i class="fas fa-user text-lg"></i>
-                    <span class="text-[10px] font-display font-semibold">Profile</span>
-                </a>
-            </div>
+        <!-- Bottom Navigation -->
+        <nav>
+            <a href="#home" class="nav-link active" data-route="home">
+                <span class="nav-icon">🏠</span>
+                <span>Home</span>
+            </a>
+            <a href="#offers" class="nav-link" data-route="offers">
+                <span class="nav-icon">🎁</span>
+                <span>Offers</span>
+            </a>
+            <a href="#invite" class="nav-link" data-route="invite">
+                <span class="nav-icon">👥</span>
+                <span>Invite</span>
+                <span class="nav-badge">NEW</span>
+            </a>
+            <a href="#deposit" class="nav-link" data-route="deposit">
+                <span class="nav-icon">💰</span>
+                <span>Deposit</span>
+            </a>
+            <a href="#profile" class="nav-link" data-route="profile">
+                <span class="nav-icon">👤</span>
+                <span>Profile</span>
+            </a>
         </nav>
-
     </div>
 
-    <!-- Main JS -->
-    <script>
-        // ============================================
-        // GAME DATA
-        // ============================================
-        const GAMES = [
-            { name: 'Mahjong Ways 2', provider: 'pg', img: 'https://images.unsplash.com/photo-1611095973763-414019e7c38b?w=400&h=300&fit=crop', rtp: '96.5%', hot: true },
-            { name: 'Fortune Tiger', provider: 'pg', img: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=300&fit=crop', rtp: '97.2%', hot: true },
-            { name: 'Aviator', provider: 'spribe', img: 'https://images.unsplash.com/photo-1436891620584-47fd0e565afb?w=400&h=300&fit=crop', rtp: '99.1%', hot: false },
-            { name: 'Queen of Bounty', provider: 'pg', img: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=300&fit=crop', rtp: '96.8%', hot: false },
-            { name: 'Genie\'s 3 Wishes', provider: 'pp', img: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=300&fit=crop', rtp: '95.9%', hot: false },
-            { name: 'Anubis Wrath', provider: 'jdb', img: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=400&h=300&fit=crop', rtp: '96.3%', hot: false },
-            { name: 'Vampire\'s Charm', provider: 'jdb', img: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=400&h=300&fit=crop', rtp: '95.7%', hot: false },
-            { name: 'Tsar Treasures', provider: 'pp', img: 'https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=400&h=300&fit=crop', rtp: '97.0%', hot: false },
-            { name: 'Treasures of Aztec', provider: 'pg', img: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=400&h=300&fit=crop', rtp: '96.1%', hot: false },
-            { name: 'Dragon Hatch', provider: 'pg', img: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?w=400&h=300&fit=crop', rtp: '97.5%', hot: true }
-        ];
-
-        // ============================================
-        // RENDER GAMES
-        // ============================================
-        function renderGames(provider = 'all') {
-            const grid = document.getElementById('games-grid');
-            const filtered = provider === 'all' ? GAMES : GAMES.filter(g => g.provider === provider);
-
-            grid.innerHTML = filtered.map(g => `
-                <div class="game-card glass-card rounded-2xl overflow-hidden cursor-pointer group" onclick="launchGame('${g.name}')">
-                    <div class="relative h-28 overflow-hidden">
-                        <div class="absolute inset-0 bg-gradient-to-t from-royal-dark/80 to-transparent z-10"></div>
-                        <img src="${g.img}" alt="${g.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center bg-gradient-to-br from-royal-card to-royal-blue text-4xl\'>🎰</div>'">
-                        ${g.hot ? '<span class="absolute top-2 left-2 z-20 bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">HOT</span>' : ''}
-                        <button class="absolute top-2 right-2 z-20 text-white/50 hover:text-gold transition-colors text-sm favorite-btn" onclick="event.stopPropagation();this.classList.toggle('text-gold')">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <span class="absolute bottom-2 right-2 z-20 bg-emerald/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">RTP ${g.rtp}</span>
-                    </div>
-                    <div class="p-3">
-                        <h4 class="text-white text-xs font-display font-bold truncate">${g.name}</h4>
-                        <span class="text-white/40 text-[10px] font-body">${g.provider.toUpperCase()}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function launchGame(name) {
-            console.log('🚀 Launching:', name);
-            if (window.LaunchSimulationEngine) {
-                window.LaunchSimulationEngine(name);
-            } else {
-                alert('Launching: ' + name);
-            }
-        }
-
-        // ============================================
-        // PROVIDER TABS
-        // ============================================
-        document.addEventListener('DOMContentLoaded', () => {
-            renderGames('all');
-
-            document.querySelectorAll('.provider-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.provider-btn').forEach(b => {
-                        b.classList.remove('bg-gold', 'text-royal-dark', 'shadow-lg', 'shadow-gold/20');
-                        b.classList.add('bg-royal-card', 'text-white/70', 'border', 'border-royal-border/30');
-                    });
-                    this.classList.add('bg-gold', 'text-royal-dark', 'shadow-lg', 'shadow-gold/20');
-                    this.classList.remove('bg-royal-card', 'text-white/70', 'border', 'border-royal-border/30');
-                    renderGames(this.getAttribute('data-provider'));
-                });
-            });
-
-            // Carousel
-            let slide = 0;
-            const track = document.getElementById('carousel-track');
-            const dots = document.querySelectorAll('.carousel-dot');
-            setInterval(() => {
-                slide = (slide + 1) % 2;
-                track.style.transform = `translateX(-${slide * 100}%)`;
-                dots.forEach((d, i) => d.classList.toggle('bg-gold', i === slide));
-            }, 4000);
-
-            // Nav links
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', function() {
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('text-gold'));
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.add('text-white/50'));
-                    this.classList.add('text-gold');
-                    this.classList.remove('text-white/50');
-                });
-            });
-        });
-    </script>
-
+    <!-- Scripts -->
+    <script src="script.js"></script>
 </body>
 </html>
