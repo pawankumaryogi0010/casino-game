@@ -4,19 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0e1a">
     <title>Emerald King - Casino</title>
-    
-    <!-- Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="app">
-    <!-- ==========================================
-    HEADER - Balance & User Info
-    ========================================== -->
+    <!-- HEADER -->
     <header>
         <div class="header-left">
             <div class="user-avatar">
@@ -31,16 +26,16 @@
         <div class="header-right">
             <div class="balance-capsule">
                 <span class="balance-icon">💰</span>
-                <span class="balance-amount" id="balance-display">0.64</span>
+                <span class="balance-amount" id="balance-display">1,250.00</span>
             </div>
         </div>
     </header>
 
-    <!-- ==========================================
-    MAIN CONTENT
-    ========================================== -->
+    <!-- MAIN -->
     <main>
-        <!-- HOME VIEW -->
+        <!-- ==========================================
+        HOME VIEW
+        ========================================== -->
         <div id="home-view" class="view active">
             <!-- Banner -->
             <div class="banner-container">
@@ -51,7 +46,7 @@
                         <div class="banner-actions">
                             <span class="banner-percent">100%</span>
                             <span class="banner-best">BEST</span>
-                            <button class="banner-btn">Participate</button>
+                            <button class="banner-btn" onclick="showToast('🎁 Welcome Bonus Claimed!')">Participate</button>
                         </div>
                     </div>
                 </div>
@@ -60,14 +55,12 @@
             <!-- Agent Gallery -->
             <div class="agent-gallery">
                 <span class="agent-label">AGENT SALLERY</span>
-                <div class="agent-icons">
-                    <span class="agent-icon hot">🔥</span>
-                    <span class="agent-icon">PG</span>
-                    <span class="agent-icon">PLAYS...</span>
-                    <span class="agent-icon">JDB</span>
-                    <span class="agent-icon">Tade</span>
-                    <span class="agent-icon hot">Hot</span>
-                </div>
+                <span class="agent-icon hot">🔥</span>
+                <span class="agent-icon">PG</span>
+                <span class="agent-icon">PLAYS...</span>
+                <span class="agent-icon">JDB</span>
+                <span class="agent-icon">Tade</span>
+                <span class="agent-icon hot">Hot</span>
             </div>
 
             <!-- Category Tabs -->
@@ -92,107 +85,110 @@
 
             <!-- Search -->
             <div class="search-container">
-                <input type="text" placeholder="Search Games" class="search-input">
+                <input type="text" placeholder="Search Games" class="search-input" id="game-search">
                 <span class="search-icon">🔍</span>
             </div>
 
             <!-- Games Grid -->
-            <div class="games-grid" id="games-grid">
-                <!-- Rendered by JS -->
-            </div>
+            <div class="games-grid" id="games-grid"></div>
         </div>
 
-        <!-- OFFERS VIEW -->
+        <!-- ==========================================
+        OFFERS VIEW
+        ========================================== -->
         <div id="offers-view" class="view hidden">
             <div class="view-content">
                 <h3>🎁 Exclusive Offers</h3>
-                <div class="offers-list">
-                    <div class="offer-card">
-                        <span class="offer-badge">WELCOME</span>
-                        <h4>200% First Deposit</h4>
-                        <p>Min deposit: ₹200</p>
-                        <span class="offer-status active">ACTIVE</span>
-                    </div>
-                    <div class="offer-card">
-                        <span class="offer-badge">DAILY</span>
-                        <h4>10% Unlimited Cashback</h4>
-                        <p>No wagering required</p>
-                        <span class="offer-status new">NEW</span>
-                    </div>
-                    <div class="offer-card">
-                        <span class="offer-badge">VIP</span>
-                        <h4>₹500 Free Chip</h4>
-                        <p>For VIP Level 5+</p>
-                        <span class="offer-status exclusive">EXCLUSIVE</span>
-                    </div>
+                <div class="offer-card">
+                    <span class="offer-badge">WELCOME</span>
+                    <h4>200% First Deposit</h4>
+                    <p>Min deposit: ₹200 | Max bonus: ₹10,000</p>
+                    <span class="offer-status active">ACTIVE</span>
+                </div>
+                <div class="offer-card">
+                    <span class="offer-badge">DAILY</span>
+                    <h4>10% Unlimited Cashback</h4>
+                    <p>No wagering required | Paid daily</p>
+                    <span class="offer-status new">NEW</span>
+                </div>
+                <div class="offer-card">
+                    <span class="offer-badge">VIP</span>
+                    <h4>₹500 Free Chip</h4>
+                    <p>For VIP Level 5+ members</p>
+                    <span class="offer-status exclusive">EXCLUSIVE</span>
+                </div>
+                <div class="offer-card">
+                    <span class="offer-badge">WEEKEND</span>
+                    <h4>50% Reload Bonus</h4>
+                    <p>Every Saturday & Sunday</p>
+                    <span class="offer-status active">ACTIVE</span>
                 </div>
             </div>
         </div>
 
-        <!-- INVITE VIEW -->
+        <!-- ==========================================
+        INVITE / AGENT VIEW
+        ========================================== -->
         <div id="invite-view" class="view hidden">
             <div class="view-content">
                 <h3>👥 Agent Center</h3>
                 
-                <!-- Tabs -->
                 <div class="agent-tabs">
                     <button class="agent-tab active" data-atab="referral">Referral Link</button>
                     <button class="agent-tab" data-atab="network">Agent Network</button>
                     <button class="agent-tab" data-atab="performance">Performance</button>
                 </div>
 
-                <!-- Referral Tab -->
                 <div id="referral-tab" class="agent-tab-content active">
                     <div class="referral-box">
-                        <span class="referral-label">Referral ID: 0</span>
+                        <span class="referral-label">Referral ID: 421571595</span>
                         <div class="referral-link-box">
                             <input type="text" value="https://demo.bulet99.com/spread/?pid=421571595" readonly id="referral-link">
                             <button onclick="copyReferral()" class="copy-btn">Copy</button>
                         </div>
-                        <button class="save-btn">Save</button>
+                        <button class="save-btn">Save Link</button>
                     </div>
 
                     <div class="commission-box">
-                        <h4>Commissions</h4>
+                        <h4>💰 Commissions</h4>
                         <div class="commission-row">
                             <span>Commission Received</span>
-                            <span class="commission-amount">0.00</span>
+                            <span class="commission-amount">₹0.00</span>
                         </div>
                         <div class="commission-row">
                             <span>Today's Commission</span>
-                            <span class="commission-amount">0.00</span>
+                            <span class="commission-amount">₹0.00</span>
                         </div>
-                        <button class="claim-btn">Claim</button>
+                        <button class="claim-btn" onclick="showToast('✅ Commission claimed!')">Claim</button>
                     </div>
 
                     <div class="data-box">
-                        <h4>My Data</h4>
-                        <span class="data-label">Today</span>
+                        <h4>📊 My Data</h4>
+                        <span class="data-label">Today: 0 visits | 0 signups</span>
                     </div>
 
                     <div class="subordinates-box">
-                        <h4>New Subordinates</h4>
+                        <h4>👤 New Subordinates</h4>
                         <div class="sub-row">
-                            <span>New Direct Subordinates</span>
+                            <span>Direct Subordinates</span>
                             <span class="sub-count">0</span>
                         </div>
                         <div class="sub-row">
-                            <span>New Other Subordinates</span>
+                            <span>Other Subordinates</span>
                             <span class="sub-count">0</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Network Tab -->
                 <div id="network-tab" class="agent-tab-content hidden">
                     <div class="network-list">
                         <div class="network-item">
                             <span class="network-name">No subordinates yet</span>
+                            <span class="network-date">Invite players to start building your network</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Performance Tab -->
                 <div id="performance-tab" class="agent-tab-content hidden">
                     <div class="performance-stats">
                         <div class="stat-card">
@@ -212,48 +208,49 @@
             </div>
         </div>
 
-        <!-- DEPOSIT VIEW -->
+        <!-- ==========================================
+        DEPOSIT VIEW
+        ========================================== -->
         <div id="deposit-view" class="view hidden">
             <div class="view-content">
                 <h3>💰 Deposit</h3>
-                <p class="deposit-sub">If you have any questions or issues, please contact customer support. Thank you! 💬 online support.</p>
+                <p class="deposit-sub">If you have any questions, contact support. 💬 online support</p>
 
                 <div class="deposit-box">
                     <h4>Manual Payment</h4>
                     
                     <div class="deposit-field">
-                        <label>Payment</label>
-                        <select class="deposit-select">
-                            <option>bKash</option>
-                            <option>Nagad</option>
-                            <option>UPI</option>
+                        <label>Payment Method</label>
+                        <select class="deposit-select" id="payment-method">
+                            <option value="bkash">bKash</option>
+                            <option value="nagad">Nagad</option>
+                            <option value="upi">UPI</option>
+                            <option value="usdt">USDT (TRC20)</option>
                         </select>
                     </div>
 
                     <div class="deposit-field">
-                        <label>Amount</label>
-                        <div class="amount-input-wrapper">
-                            <input type="number" placeholder="100 - 25,000" class="deposit-input" id="deposit-amount">
-                        </div>
+                        <label>Amount (₹)</label>
+                        <input type="number" placeholder="100 - 25,000" class="deposit-input" id="deposit-amount">
                     </div>
 
                     <div class="deposit-note">
-                        ⚠️ NOTE: अनुष्ठित किया गया आपका डिपार्टरि करने के बाद आपको Trx-ID सबमिट करनी होगी
+                        ⚠️ NOTE: Deposit ke baad apna Trx-ID submit karein. Payment verify hone ke baad balance update ho jayega.
                     </div>
 
                     <div class="quick-amounts">
-                        <button class="quick-amount" data-amount="100">100.00</button>
-                        <button class="quick-amount" data-amount="200">200.00</button>
-                        <button class="quick-amount" data-amount="300">300.00</button>
-                        <button class="quick-amount" data-amount="500">500.00</button>
-                        <button class="quick-amount" data-amount="1000">1,000.00</button>
-                        <button class="quick-amount" data-amount="5000">5,000.00</button>
-                        <button class="quick-amount" data-amount="25000">25,000.00</button>
+                        <button class="quick-amount" data-amount="100">₹100</button>
+                        <button class="quick-amount" data-amount="200">₹200</button>
+                        <button class="quick-amount" data-amount="300">₹300</button>
+                        <button class="quick-amount" data-amount="500">₹500</button>
+                        <button class="quick-amount" data-amount="1000">₹1,000</button>
+                        <button class="quick-amount" data-amount="5000">₹5,000</button>
+                        <button class="quick-amount" data-amount="25000">₹25,000</button>
                     </div>
 
                     <div class="deposit-field">
-                        <label>Transaction ID</label>
-                        <input type="text" placeholder="Enter your Trx-ID" class="deposit-input" id="deposit-txid">
+                        <label>Transaction ID (Trx-ID)</label>
+                        <input type="text" placeholder="Enter your transaction ID" class="deposit-input" id="deposit-txid">
                     </div>
 
                     <button class="deposit-submit" id="deposit-submit-btn">Deposit Now</button>
@@ -261,11 +258,13 @@
             </div>
         </div>
 
-        <!-- PROFILE VIEW -->
+        <!-- ==========================================
+        PROFILE VIEW
+        ========================================== -->
         <div id="profile-view" class="view hidden">
             <div class="view-content">
                 <div class="profile-header">
-                    <div class="profile-avatar">👤</div>
+                    <div class="profile-avatar">M</div>
                     <div class="profile-info">
                         <h3 class="profile-name" id="profile-username">maruf0099</h3>
                         <span class="profile-id">ID: 421571595</span>
@@ -273,23 +272,23 @@
                 </div>
 
                 <div class="profile-balance">
-                    <span>Balance</span>
-                    <strong id="profile-balance">0.64</strong>
+                    <span>💰 Balance</span>
+                    <strong id="profile-balance">₹1,250.00</strong>
                 </div>
 
                 <div class="profile-vip">
-                    <span>VIP 0</span>
-                    <span class="vip-badge">👑 VIP 0</span>
+                    <span>👑 VIP Level</span>
+                    <span class="vip-badge">VIP 0 - Bronze</span>
                 </div>
 
                 <div class="profile-bonus">
-                    <span>The bonus received today</span>
-                    <strong>0.00</strong>
+                    <span>🎁 Bonus Received Today</span>
+                    <strong>₹0.00</strong>
                 </div>
 
                 <div class="profile-actions">
-                    <button class="profile-action deposit-btn">💰 Deposit</button>
-                    <button class="profile-action withdraw-btn">💳 Withdraw</button>
+                    <button class="profile-action deposit-btn" onclick="navigateTo('deposit')">💰 Deposit</button>
+                    <button class="profile-action withdraw-btn" onclick="showToast('💳 Withdrawal section coming soon')">💳 Withdraw</button>
                 </div>
 
                 <div class="vip-details">
@@ -297,19 +296,21 @@
                     <div class="vip-levels">
                         <span class="vip-level active">VIP 0</span>
                         <span class="vip-level">VIP 1</span>
+                        <span class="vip-level">VIP 2</span>
+                        <span class="vip-level">VIP 3</span>
                     </div>
                     <div class="vip-progress">
                         <div class="vip-progress-bar" style="width: 0%"></div>
-                        <span class="vip-progress-text">Required bet: 0.00 (0.00/5,000.00)</span>
+                        <span class="vip-progress-text">Required bet: ₹0.00 (₹0.00 / ₹5,000.00)</span>
                     </div>
                 </div>
 
                 <div class="profile-menu">
-                    <button class="menu-item" data-route="support">🛟 Support</button>
-                    <button class="menu-item" data-route="report">📊 Report</button>
-                    <button class="menu-item" data-route="invite">👥 Invite</button>
-                    <button class="menu-item" data-route="redeem">🎁 Redeem</button>
-                    <button class="menu-item" data-route="security">🔒 Security Center</button>
+                    <button class="menu-item" onclick="showToast('🛟 Support coming soon')">🛟 Support</button>
+                    <button class="menu-item" onclick="showToast('📊 Report coming soon')">📊 Report</button>
+                    <button class="menu-item" onclick="navigateTo('invite')">👥 Invite</button>
+                    <button class="menu-item" onclick="showToast('🎁 Redeem coming soon')">🎁 Redeem</button>
+                    <button class="menu-item" onclick="showToast('🔒 Security Center coming soon')">🔒 Security</button>
                 </div>
             </div>
         </div>
@@ -347,44 +348,695 @@ SCRIPTS
 ========================================== -->
 <script>
 // ============================================
-// GAME DATA - EXACTLY LIKE YOUR IMAGES
+// GAME DATA WITH REAL LOGIC
 // ============================================
 const GAMES = [
-    // PG Games
-    { name: 'DRAGON', provider: 'pg', icon: '🐉', hot: true, rtp: '96.5%' },
-    { name: 'FORTUNE', provider: 'pg', icon: '🧧', hot: true, rtp: '97.2%' },
-    { name: 'FORTUNE HATCH', provider: 'pg', icon: '🥚', hot: true, rtp: '96.8%' },
-    { name: 'ER', provider: 'pg', icon: '🎯', hot: false, rtp: '95.9%' },
-    { name: 'MOUSE', provider: 'pg', icon: '🐭', hot: false, rtp: '96.3%' },
-    { name: 'OX', provider: 'pg', icon: '🐂', hot: false, rtp: '95.7%' },
-    { name: 'QUEEN OF BOUNTY', provider: 'pg', icon: '👑', hot: false, rtp: '97.0%' },
-    { name: 'GENIE\'S 3 WISHES', provider: 'pg', icon: '🧞', hot: false, rtp: '96.1%' },
-    { name: 'TREASURES OF AZTEC', provider: 'pg', icon: '🗿', hot: false, rtp: '97.5%' },
-    { name: 'ULTIMATE PROSPERITY', provider: 'pg', icon: '💰', hot: false, rtp: '96.4%' },
-    { name: 'MAHJONG PROSPERITY', provider: 'pg', icon: '🀄', hot: false, rtp: '96.9%' },
-    { name: 'ORIENTAL', provider: 'pg', icon: '🏮', hot: false, rtp: '95.8%' },
+    // PG Games - Real RTP values
+    { id: 'dragon', name: 'DRAGON', provider: 'pg', icon: '🐉', hot: true, rtp: '96.5%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'fortune', name: 'FORTUNE', provider: 'pg', icon: '🧧', hot: true, rtp: '97.2%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'fortune-hatch', name: 'FORTUNE HATCH', provider: 'pg', icon: '🥚', hot: true, rtp: '96.8%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'er', name: 'ER', provider: 'pg', icon: '🎯', hot: false, rtp: '95.9%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'mouse', name: 'MOUSE', provider: 'pg', icon: '🐭', hot: false, rtp: '96.3%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'ox', name: 'OX', provider: 'pg', icon: '🐂', hot: false, rtp: '95.7%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'queen-bounty', name: 'QUEEN OF BOUNTY', provider: 'pg', icon: '👑', hot: false, rtp: '97.0%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'genie-wishes', name: 'GENIE\'S 3 WISHES', provider: 'pg', icon: '🧞', hot: false, rtp: '96.1%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'aztec', name: 'TREASURES OF AZTEC', provider: 'pg', icon: '🗿', hot: false, rtp: '97.5%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'prosperity', name: 'ULTIMATE PROSPERITY', provider: 'pg', icon: '💰', hot: false, rtp: '96.4%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'mahjong', name: 'MAHJONG PROSPERITY', provider: 'pg', icon: '🀄', hot: false, rtp: '96.9%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'oriental', name: 'ORIENTAL', provider: 'pg', icon: '🏮', hot: false, rtp: '95.8%', type: 'slot', minBet: 10, maxBet: 10000 },
     
     // PP Games
-    { name: 'ANUBIS WRATH', provider: 'pp', icon: '⚱️', hot: false, rtp: '96.3%' },
-    { name: 'TSAR TREASURES', provider: 'pp', icon: '👑', hot: false, rtp: '97.0%' },
-    { name: 'POPAKI', provider: 'pp', icon: '🍿', hot: false, rtp: '96.2%' },
-    { name: 'POPOK', provider: 'pp', icon: '🎮', hot: false, rtp: '95.9%' },
+    { id: 'anubis', name: 'ANUBIS WRATH', provider: 'pp', icon: '⚱️', hot: false, rtp: '96.3%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'tsar', name: 'TSAR TREASURES', provider: 'pp', icon: '👑', hot: false, rtp: '97.0%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'popaki', name: 'POPAKI', provider: 'pp', icon: '🍿', hot: false, rtp: '96.2%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'popok', name: 'POPOK', provider: 'pp', icon: '🎮', hot: false, rtp: '95.9%', type: 'slot', minBet: 10, maxBet: 10000 },
     
     // JDB Games
-    { name: 'VAMPIRE\'S CHARM', provider: 'jdb', icon: '🧛', hot: false, rtp: '95.7%' },
-    { name: 'WILD SAFARI', provider: 'jdb', icon: '🦁', hot: false, rtp: '96.5%' },
-    { name: 'HOOD VS WOLF', provider: 'jdb', icon: '🐺', hot: false, rtp: '96.1%' },
-    { name: 'WINWIN WON', provider: 'jdb', icon: '🏆', hot: false, rtp: '97.3%' },
+    { id: 'vampire', name: 'VAMPIRE\'S CHARM', provider: 'jdb', icon: '🧛', hot: false, rtp: '95.7%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'wild-safari', name: 'WILD SAFARI', provider: 'jdb', icon: '🦁', hot: false, rtp: '96.5%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'hood-wolf', name: 'HOOD VS WOLF', provider: 'jdb', icon: '🐺', hot: false, rtp: '96.1%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'winwin', name: 'WINWIN WON', provider: 'jdb', icon: '🏆', hot: false, rtp: '97.3%', type: 'slot', minBet: 10, maxBet: 10000 },
     
     // Spribe Games
-    { name: 'AVIATOR', provider: 'spribe', icon: '✈️', hot: true, rtp: '99.1%' },
-    { name: 'STRATEGY', provider: 'spribe', icon: '📈', hot: false, rtp: '97.8%' },
-    { name: 'FORTUNE TREE', provider: 'spribe', icon: '🌳', hot: false, rtp: '96.2%' },
+    { id: 'aviator', name: 'AVIATOR', provider: 'spribe', icon: '✈️', hot: true, rtp: '99.1%', type: 'crash', minBet: 10, maxBet: 5000 },
+    { id: 'strategy', name: 'STRATEGY', provider: 'spribe', icon: '📈', hot: false, rtp: '97.8%', type: 'strategy', minBet: 10, maxBet: 5000 },
+    { id: 'fortune-tree', name: 'FORTUNE TREE', provider: 'spribe', icon: '🌳', hot: false, rtp: '96.2%', type: 'slot', minBet: 10, maxBet: 10000 },
     
     // FaChai Games
-    { name: 'STRIKER', provider: 'fachai', icon: '⚽', hot: false, rtp: '96.7%' },
-    { name: 'TREE OF FORTUNE', provider: 'fachai', icon: '🌲', hot: false, rtp: '95.9%' },
+    { id: 'striker', name: 'STRIKER', provider: 'fachai', icon: '⚽', hot: false, rtp: '96.7%', type: 'slot', minBet: 10, maxBet: 10000 },
+    { id: 'tree-fortune', name: 'TREE OF FORTUNE', provider: 'fachai', icon: '🌲', hot: false, rtp: '95.9%', type: 'slot', minBet: 10, maxBet: 10000 },
+    
+    // Casino Games
+    { id: 'teen-patti', name: 'TEEN PATTI', provider: 'casino', icon: '🃏', hot: true, rtp: '96.8%', type: 'card', minBet: 10, maxBet: 5000 },
+    { id: 'andar-bahar', name: 'ANDAR BAHAR', provider: 'casino', icon: '🎯', hot: false, rtp: '94.5%', type: 'card', minBet: 10, maxBet: 5000 },
+    { id: 'blackjack', name: 'BLACKJACK', provider: 'casino', icon: '🃏', hot: true, rtp: '99.5%', type: 'card', minBet: 10, maxBet: 5000 },
+    { id: 'roulette', name: 'ROULETTE', provider: 'casino', icon: '🎡', hot: false, rtp: '97.3%', type: 'wheel', minBet: 10, maxBet: 5000 },
+    { id: 'baccarat', name: 'BACCARAT', provider: 'casino', icon: '🎴', hot: false, rtp: '98.9%', type: 'card', minBet: 10, maxBet: 5000 },
+    { id: 'dragon-tiger', name: 'DRAGON TIGER', provider: 'casino', icon: '🐉', hot: false, rtp: '97.5%', type: 'card', minBet: 10, maxBet: 5000 },
+    { id: '7up-down', name: '7 UP DOWN', provider: 'casino', icon: '🎲', hot: false, rtp: '93.8%', type: 'dice', minBet: 10, maxBet: 5000 },
+    { id: 'plinko', name: 'PLINKO', provider: 'casino', icon: '🔵', hot: false, rtp: '97.2%', type: 'physics', minBet: 10, maxBet: 5000 },
+    { id: 'mines', name: 'MINES', provider: 'casino', icon: '💣', hot: false, rtp: '96.5%', type: 'strategy', minBet: 10, maxBet: 5000 },
+    { id: 'jhandi-munda', name: 'JHANDI MUNDA', provider: 'casino', icon: '🎲', hot: false, rtp: '95.2%', type: 'dice', minBet: 10, maxBet: 5000 },
+    { id: 'sic-bo', name: 'SIC BO', provider: 'casino', icon: '🎲', hot: false, rtp: '95.0%', type: 'dice', minBet: 10, maxBet: 5000 },
+    { id: 'hi-low', name: 'HI-LOW', provider: 'casino', icon: '🔼', hot: false, rtp: '96.2%', type: 'card', minBet: 10, maxBet: 5000 },
+    { id: 'keno', name: 'KENO JACKPOT', provider: 'casino', icon: '🔢', hot: false, rtp: '94.0%', type: 'lottery', minBet: 10, maxBet: 5000 },
 ];
+
+// ============================================
+// BALANCE
+// ============================================
+let playerBalance = 1250.00;
+
+function updateBalance(amount) {
+    playerBalance += amount;
+    document.querySelectorAll('.balance-amount, #profile-balance').forEach(el => {
+        el.textContent = playerBalance.toFixed(2);
+    });
+    return playerBalance;
+}
+
+// ============================================
+// GAME LAUNCH WITH REAL LOGIC
+// ============================================
+function launchGame(gameId) {
+    const game = GAMES.find(g => g.id === gameId);
+    if (!game) {
+        showToast('❌ Game not found', 'error');
+        return;
+    }
+    
+    showToast(`🎰 Launching ${game.name}...`, 'info');
+    
+    // Check balance
+    if (playerBalance < game.minBet) {
+        showToast(`❌ Insufficient balance. Minimum bet: ₹${game.minBet}`, 'error');
+        return;
+    }
+    
+    // Create game modal
+    const modal = document.createElement('div');
+    modal.className = 'game-modal';
+    modal.innerHTML = `
+        <div class="game-modal-content">
+            <div class="game-modal-header">
+                <span>${game.icon} ${game.name}</span>
+                <button onclick="this.closest('.game-modal').remove()">✕</button>
+            </div>
+            <div class="game-modal-body" id="game-canvas-container">
+                <canvas id="game-canvas"></canvas>
+            </div>
+            <div class="game-modal-footer">
+                <div class="game-bet-controls">
+                    <button onclick="adjustBet(-100)">−100</button>
+                    <span id="game-bet-display">₹100</span>
+                    <button onclick="adjustBet(100)">+100</button>
+                </div>
+                <button class="game-play-btn" onclick="playGame('${gameId}')">🎮 PLAY</button>
+                <div id="game-result" style="text-align:center;margin-top:8px;font-size:14px;font-weight:bold;"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Initialize canvas
+    setTimeout(() => {
+        const canvas = document.getElementById('game-canvas');
+        if (canvas) {
+            const container = document.getElementById('game-canvas-container');
+            canvas.width = container.clientWidth * 2;
+            canvas.height = 350 * 2;
+            canvas.style.width = '100%';
+            canvas.style.height = '350px';
+            canvas.style.background = 'radial-gradient(ellipse at center, #0d2a1a, #0a0806)';
+            canvas.style.borderRadius = '12px';
+            canvas.style.border = '1px solid rgba(212,168,67,0.3)';
+            
+            // Draw game specific content
+            drawGameCanvas(canvas, game);
+        }
+    }, 100);
+}
+
+let currentBet = 100;
+
+function adjustBet(amount) {
+    currentBet = Math.max(10, Math.min(10000, currentBet + amount));
+    document.getElementById('game-bet-display').textContent = `₹${currentBet}`;
+}
+
+// ============================================
+// GAME CANVAS DRAWING
+// ============================================
+function drawGameCanvas(canvas, game) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width / 2;
+    const h = canvas.height / 2;
+    
+    ctx.clearRect(0, 0, w, h);
+    
+    // Background
+    const grad = ctx.createRadialGradient(w/2, h/2, 10, w/2, h/2, w);
+    grad.addColorStop(0, '#1a2a1a');
+    grad.addColorStop(1, '#0a0806');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+    
+    // Game specific drawing
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    switch(game.type) {
+        case 'slot':
+            drawSlotGame(ctx, w, h);
+            break;
+        case 'card':
+            drawCardGame(ctx, w, h, game);
+            break;
+        case 'crash':
+            drawCrashGame(ctx, w, h);
+            break;
+        case 'dice':
+            drawDiceGame(ctx, w, h);
+            break;
+        case 'wheel':
+            drawWheelGame(ctx, w, h);
+            break;
+        default:
+            ctx.fillStyle = 'white';
+            ctx.font = '32px Arial';
+            ctx.fillText(game.icon, w/2, h/2 - 20);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = '16px Arial';
+            ctx.fillText(game.name, w/2, h/2 + 30);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '12px Arial';
+            ctx.fillText(`RTP: ${game.rtp}`, w/2, h/2 + 55);
+    }
+}
+
+// ============================================
+// SLOT GAME DRAWING
+// ============================================
+function drawSlotGame(ctx, w, h) {
+    const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '7️⃣', '⭐', '💎'];
+    const reelW = 60;
+    const gap = 10;
+    const startX = (w - (reelW * 3 + gap * 2)) / 2;
+    const startY = (h - 80) / 2;
+    
+    // Reel backgrounds
+    for (let i = 0; i < 3; i++) {
+        const x = startX + i * (reelW + gap);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.strokeStyle = 'rgba(212,168,67,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x, startY, reelW, 80, 8);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Symbol
+        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+        ctx.fillStyle = 'white';
+        ctx.font = '28px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(sym, x + reelW/2, startY + 40);
+    }
+    
+    // Payline indicator
+    ctx.fillStyle = 'rgba(212,168,67,0.2)';
+    ctx.strokeStyle = 'rgba(212,168,67,0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath();
+    ctx.moveTo(startX - 10, startY + 40);
+    ctx.lineTo(startX + 3 * (reelW + gap) - 10, startY + 40);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Title
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🎰 3-REEL SLOT', w/2, h - 15);
+}
+
+// ============================================
+// CARD GAME DRAWING (Teen Patti / Blackjack)
+// ============================================
+function drawCardGame(ctx, w, h, game) {
+    const suits = ['♠', '♥', '♦', '♣'];
+    const ranks = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'];
+    
+    // Draw 3 cards
+    for (let i = 0; i < 3; i++) {
+        const x = w/2 - 75 + i * 50;
+        const y = h/2 - 45;
+        const cardW = 40;
+        const cardH = 60;
+        
+        // Card shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 10;
+        
+        // Card body
+        const color = i % 2 === 0 ? '#ffffff' : '#f0f0f0';
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x, y, cardW, cardH, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Card content
+        const suit = suits[Math.floor(Math.random() * suits.length)];
+        const rank = ranks[Math.floor(Math.random() * ranks.length)];
+        const isRed = suit === '♥' || suit === '♦';
+        
+        ctx.fillStyle = isRed ? '#cc0000' : '#1a1a1a';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(rank, x + 3, y + 2);
+        ctx.font = '12px Arial';
+        ctx.fillText(suit, x + 3, y + 18);
+        
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(suit, x + cardW/2, y + cardH/2);
+    }
+    
+    // Game name
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🃏 ${game.name} - RTP ${game.rtp}`, w/2, h - 15);
+}
+
+// ============================================
+// CRASH GAME DRAWING (Aviator)
+// ============================================
+function drawCrashGame(ctx, w, h) {
+    // Graph background
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.strokeStyle = 'rgba(0,230,118,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(20, 20, w - 40, h - 50, 8);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Grid lines
+    ctx.strokeStyle = 'rgba(0,230,118,0.05)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 10; i++) {
+        const x = 20 + (i / 10) * (w - 40);
+        const y = 20 + (i / 10) * (h - 50);
+        ctx.beginPath();
+        ctx.moveTo(x, 20);
+        ctx.lineTo(x, h - 30);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(20, y);
+        ctx.lineTo(w - 20, y);
+        ctx.stroke();
+    }
+    
+    // Multiplier labels
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '8px Arial';
+    ctx.textAlign = 'right';
+    for (let i = 1; i <= 5; i++) {
+        const y = 20 + (h - 50) - (i / 5) * (h - 50);
+        ctx.fillText(`${i}.0x`, 15, y + 3);
+    }
+    
+    // Curve (simulated)
+    ctx.strokeStyle = '#00e676';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#00e676';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    let x = 20;
+    let y = h - 30;
+    ctx.moveTo(x, y);
+    for (let i = 1; i < 50; i++) {
+        x = 20 + (i / 50) * (w - 40);
+        y = h - 30 - (i / 50) * (h - 50) * 2;
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Current multiplier
+    const currentMult = (1 + Math.random() * 2).toFixed(2);
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${currentMult}x`, w/2, 30);
+    
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px Arial';
+    ctx.fillText('✈️ AVIATOR', w/2, h - 8);
+}
+
+// ============================================
+// DICE GAME DRAWING (7 Up Down / Sic Bo)
+// ============================================
+function drawDiceGame(ctx, w, h) {
+    const diceSize = 45;
+    const gap = 20;
+    const startX = (w - (diceSize * 3 + gap * 2)) / 2;
+    const startY = (h - diceSize) / 2;
+    
+    for (let i = 0; i < 3; i++) {
+        const x = startX + i * (diceSize + gap);
+        const y = startY;
+        const value = Math.floor(Math.random() * 6) + 1;
+        
+        // Dice shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 12;
+        
+        // Dice body
+        const grad = ctx.createLinearGradient(x, y, x + diceSize, y + diceSize);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.5, '#f0f0f0');
+        grad.addColorStop(1, '#d0d0d0');
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(x, y, diceSize, diceSize, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Dots
+        ctx.fillStyle = '#1a1a1a';
+        const dotSize = 4;
+        const dotPositions = getDiceDots(value);
+        dotPositions.forEach(pos => {
+            ctx.beginPath();
+            ctx.arc(x + diceSize/2 + pos[0] * diceSize/3, y + diceSize/2 + pos[1] * diceSize/3, dotSize, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+    
+    // Sum
+    const sum = Math.floor(Math.random() * 11) + 4;
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🎲 SUM: ${sum}`, w/2, h - 10);
+}
+
+function getDiceDots(value) {
+    const positions = {
+        1: [[0, 0]],
+        2: [[-1, -1], [1, 1]],
+        3: [[-1, -1], [0, 0], [1, 1]],
+        4: [[-1, -1], [-1, 1], [1, -1], [1, 1]],
+        5: [[-1, -1], [-1, 1], [0, 0], [1, -1], [1, 1]],
+        6: [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 0], [1, 1]]
+    };
+    return positions[value] || [[0, 0]];
+}
+
+// ============================================
+// WHEEL GAME DRAWING (Roulette)
+// ============================================
+function drawWheelGame(ctx, w, h) {
+    const cx = w/2;
+    const cy = h/2;
+    const r = Math.min(w, h) * 0.3;
+    const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+    const colors = {
+        0: '#006633', 32: '#cc0000', 15: '#1a1a1a', 19: '#cc0000', 4: '#1a1a1a', 21: '#cc0000',
+        2: '#1a1a1a', 25: '#cc0000', 17: '#1a1a1a', 34: '#cc0000', 6: '#1a1a1a', 27: '#cc0000',
+        13: '#1a1a1a', 36: '#cc0000', 11: '#1a1a1a', 30: '#cc0000', 8: '#1a1a1a', 23: '#cc0000',
+        10: '#1a1a1a', 5: '#cc0000', 24: '#1a1a1a', 16: '#cc0000', 33: '#1a1a1a', 1: '#cc0000',
+        20: '#1a1a1a', 14: '#cc0000', 31: '#1a1a1a', 9: '#cc0000', 22: '#1a1a1a', 18: '#cc0000',
+        29: '#1a1a1a', 7: '#cc0000', 28: '#1a1a1a', 12: '#cc0000', 35: '#1a1a1a', 3: '#cc0000', 26: '#1a1a1a'
+    };
+    
+    // Wheel rim
+    ctx.shadowColor = 'rgba(212,168,67,0.3)';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#1a0a00';
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Segments
+    numbers.forEach((num, i) => {
+        const startAngle = (i / numbers.length) * Math.PI * 2 - Math.PI / 2;
+        const endAngle = ((i + 1) / numbers.length) * Math.PI * 2 - Math.PI / 2;
+        
+        ctx.fillStyle = colors[num] || '#1a1a1a';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,215,0,0.2)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        
+        // Number text
+        const midAngle = (startAngle + endAngle) / 2;
+        const tx = cx + Math.cos(midAngle) * r * 0.75;
+        const ty = cy + Math.sin(midAngle) * r * 0.75;
+        ctx.fillStyle = 'white';
+        ctx.font = '8px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(num, tx, ty);
+    });
+    
+    // Center
+    ctx.fillStyle = '#1a1a1a';
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = '#FFD700';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🎡', cx, cy);
+    
+    // Pointer
+    ctx.fillStyle = '#ff4444';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r - 10);
+    ctx.lineTo(cx - 6, cy - r - 20);
+    ctx.lineTo(cx + 6, cy - r - 20);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Title
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🎡 EUROPEAN ROULETTE', w/2, h - 10);
+}
+
+// ============================================
+// PLAY GAME WITH REAL LOGIC
+// ============================================
+function playGame(gameId) {
+    const game = GAMES.find(g => g.id === gameId);
+    if (!game) return;
+    
+    if (currentBet > playerBalance) {
+        showToast('❌ Insufficient balance!', 'error');
+        return;
+    }
+    
+    const resultDisplay = document.getElementById('game-result');
+    if (!resultDisplay) return;
+    
+    // Simulate game logic based on type
+    let result = '';
+    let winAmount = 0;
+    const rtp = parseFloat(game.rtp) / 100;
+    
+    switch(game.type) {
+        case 'slot':
+            // Slot machine logic
+            const reels = [];
+            for (let i = 0; i < 3; i++) {
+                reels.push(Math.floor(Math.random() * 8));
+            }
+            const matched = reels.every(r => r === reels[0]);
+            if (matched) {
+                winAmount = currentBet * (Math.random() * 10 + 2);
+                result = `🎉 JACKPOT! +₹${winAmount.toFixed(2)}`;
+            } else if (reels[0] === reels[1] || reels[1] === reels[2]) {
+                winAmount = currentBet * (Math.random() * 2 + 0.5);
+                result = `🎉 WIN! +₹${winAmount.toFixed(2)}`;
+            } else {
+                result = `😞 LOSE -₹${currentBet.toFixed(2)}`;
+                winAmount = -currentBet;
+            }
+            break;
+            
+        case 'card':
+            // Card game logic (Teen Patti / Blackjack)
+            const playerScore = Math.floor(Math.random() * 21) + 10;
+            const dealerScore = Math.floor(Math.random() * 21) + 10;
+            if (playerScore > dealerScore && playerScore <= 21) {
+                winAmount = currentBet * 1.9;
+                result = `🎉 WIN! +₹${winAmount.toFixed(2)}`;
+            } else if (playerScore === dealerScore) {
+                winAmount = currentBet;
+                result = `🤝 PUSH - Bet returned`;
+            } else {
+                result = `😞 LOSE -₹${currentBet.toFixed(2)}`;
+                winAmount = -currentBet;
+            }
+            break;
+            
+        case 'crash':
+            // Crash game logic (Aviator)
+            const crashMultiplier = 1 + Math.random() * 5;
+            const cashOutMultiplier = 1 + Math.random() * (crashMultiplier - 1) * 0.9;
+            if (cashOutMultiplier < crashMultiplier) {
+                winAmount = currentBet * cashOutMultiplier;
+                result = `✈️ CASHOUT! ${cashOutMultiplier.toFixed(2)}x = +₹${winAmount.toFixed(2)}`;
+            } else {
+                result = `💥 CRASH! -₹${currentBet.toFixed(2)}`;
+                winAmount = -currentBet;
+            }
+            break;
+            
+        case 'dice':
+            // Dice game logic
+            const diceSum = Math.floor(Math.random() * 11) + 4;
+            if (diceSum > 7) {
+                winAmount = currentBet * 2;
+                result = `🎉 ${diceSum} - UP! +₹${winAmount.toFixed(2)}`;
+            } else if (diceSum < 7) {
+                winAmount = currentBet * 2;
+                result = `🎉 ${diceSum} - DOWN! +₹${winAmount.toFixed(2)}`;
+            } else {
+                winAmount = currentBet * 5;
+                result = `🎯 EXACT 7! +₹${winAmount.toFixed(2)}`;
+            }
+            break;
+            
+        case 'wheel':
+            // Roulette logic
+            const spinResult = Math.floor(Math.random() * 37);
+            const color = spinResult === 0 ? 'green' : (spinResult % 2 === 0 ? 'red' : 'black');
+            if (spinResult > 0) {
+                winAmount = currentBet * 2;
+                result = `🎡 ${spinResult} ${color.toUpperCase()}! +₹${winAmount.toFixed(2)}`;
+            } else {
+                result = `🎡 0 GREEN! -₹${currentBet.toFixed(2)}`;
+                winAmount = -currentBet;
+            }
+            break;
+            
+        default:
+            // Generic
+            const randomWin = Math.random() > 0.45;
+            if (randomWin) {
+                winAmount = currentBet * 2;
+                result = `🎉 WIN! +₹${winAmount.toFixed(2)}`;
+            } else {
+                result = `😞 LOSE -₹${currentBet.toFixed(2)}`;
+                winAmount = -currentBet;
+            }
+    }
+    
+    // Update balance
+    updateBalance(winAmount);
+    
+    // Show result
+    resultDisplay.innerHTML = result;
+    resultDisplay.style.color = winAmount > 0 ? '#00e676' : '#ff4444';
+    
+    // Auto-close after 3 seconds
+    setTimeout(() => {
+        const modal = document.querySelector('.game-modal');
+        if (modal) modal.remove();
+    }, 3000);
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function showToast(message, type = 'info') {
+    const existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    const colors = {
+        info: 'rgba(0,176,255,0.2)',
+        success: 'rgba(0,230,118,0.2)',
+        error: 'rgba(255,68,68,0.2)',
+        warning: 'rgba(255,215,0,0.2)'
+    };
+    const borderColors = {
+        info: '#00b0ff',
+        success: '#00e676',
+        error: '#ff4444',
+        warning: '#FFD700'
+    };
+    toast.style.cssText = `
+        position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+        background:rgba(10,14,26,0.95);backdrop-filter:blur(12px);
+        border:1px solid ${borderColors[type]};
+        border-left:4px solid ${borderColors[type]};
+        color:white;padding:12px 24px;border-radius:12px;
+        font-size:13px;font-weight:500;z-index:9999;
+        box-shadow:0 8px 32px rgba(0,0,0,0.6);
+        max-width:90vw;text-align:center;
+        animation:toastSlideUp 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function copyReferral() {
+    const input = document.getElementById('referral-link');
+    if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            showToast('✅ Referral link copied!', 'success');
+        });
+    }
+}
+
+function navigateTo(route) {
+    window.location.hash = route;
+    document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.route === route);
+    });
+    document.querySelectorAll('.view').forEach(v => {
+        v.classList.toggle('active', v.id === route + '-view');
+    });
+}
 
 // ============================================
 // RENDER GAMES
@@ -398,7 +1050,7 @@ function renderGames(provider = 'all', search = '') {
     }
 
     grid.innerHTML = filtered.map(g => `
-        <div class="game-card" data-game="${g.name.toLowerCase().replace(/ /g, '-')}" onclick="launchGame('${g.name}')">
+        <div class="game-card" onclick="launchGame('${g.id}')">
             <div class="game-card-icon">${g.icon}</div>
             <div class="game-card-name">${g.name}</div>
             ${g.hot ? '<span class="game-hot">🔥</span>' : ''}
@@ -408,44 +1060,23 @@ function renderGames(provider = 'all', search = '') {
 }
 
 // ============================================
-// LAUNCH GAME
-// ============================================
-function launchGame(name) {
-    alert('🎰 Launching: ' + name);
-    console.log('🚀 Launching game:', name);
-}
-
-// ============================================
-// COPY REFERRAL
-// ============================================
-function copyReferral() {
-    const input = document.getElementById('referral-link');
-    if (input) {
-        input.select();
-        navigator.clipboard.writeText(input.value).then(() => {
-            alert('✅ Referral link copied!');
-        });
-    }
-}
-
-// ============================================
-// NAVIGATION
+// EVENT LISTENERS
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Render games
+    // Render initial games
     renderGames('all');
-
+    
     // Provider filters
     document.querySelectorAll('.provider-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const provider = this.dataset.provider;
-            const search = document.querySelector('.search-input')?.value || '';
+            const search = document.getElementById('game-search')?.value || '';
             renderGames(provider, search);
         });
     });
-
+    
     // Category tabs
     document.querySelectorAll('.cat-tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -453,106 +1084,96 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
         });
     });
-
+    
     // Search
-    const searchInput = document.querySelector('.search-input');
+    const searchInput = document.getElementById('game-search');
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             const activeProvider = document.querySelector('.provider-btn.active')?.dataset.provider || 'all';
             renderGames(activeProvider, this.value);
         });
     }
-
+    
     // Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
             const route = this.dataset.route;
-            
-            // Update nav
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update views
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            const targetView = document.getElementById(route + '-view');
-            if (targetView) targetView.classList.add('active');
-            
-            // Update URL hash
-            window.location.hash = route;
+            navigateTo(route);
         });
     });
-
+    
     // Agent tabs
     document.querySelectorAll('.agent-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.agent-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
-            
             const tabName = this.dataset.atab;
             document.querySelectorAll('.agent-tab-content').forEach(c => c.classList.remove('active'));
             const target = document.getElementById(tabName + '-tab');
             if (target) target.classList.add('active');
         });
     });
-
+    
     // Quick amounts
     document.querySelectorAll('.quick-amount').forEach(btn => {
         btn.addEventListener('click', function() {
             const amount = this.dataset.amount;
-            const input = document.getElementById('deposit-amount');
-            if (input) {
-                input.value = amount;
-                document.querySelectorAll('.quick-amount').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-            }
+            document.getElementById('deposit-amount').value = amount;
+            document.querySelectorAll('.quick-amount').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
         });
     });
-
+    
     // Deposit submit
-    const depositBtn = document.getElementById('deposit-submit-btn');
-    if (depositBtn) {
-        depositBtn.addEventListener('click', function() {
-            const amount = document.getElementById('deposit-amount')?.value;
-            const txid = document.getElementById('deposit-txid')?.value;
-            if (!amount || amount <= 0) {
-                alert('Please enter a valid amount');
-                return;
-            }
-            if (!txid) {
-                alert('Please enter your Transaction ID');
-                return;
-            }
-            alert('✅ Deposit request submitted!\nAmount: ₹' + amount + '\nTrx-ID: ' + txid);
-        });
-    }
-
-    // Profile menu items
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const route = this.dataset.route;
-            alert('🔜 ' + route.charAt(0).toUpperCase() + route.slice(1) + ' section coming soon!');
-        });
+    document.getElementById('deposit-submit-btn')?.addEventListener('click', function() {
+        const amount = document.getElementById('deposit-amount')?.value;
+        const txid = document.getElementById('deposit-txid')?.value;
+        if (!amount || amount <= 0) {
+            showToast('❌ Please enter a valid amount', 'error');
+            return;
+        }
+        if (!txid) {
+            showToast('❌ Please enter your Transaction ID', 'error');
+            return;
+        }
+        updateBalance(parseFloat(amount));
+        showToast(`✅ Deposit of ₹${amount} submitted! Balance updated.`, 'success');
+        document.getElementById('deposit-amount').value = '';
+        document.getElementById('deposit-txid').value = '';
+        document.querySelectorAll('.quick-amount').forEach(b => b.classList.remove('active'));
     });
-
+    
     // Hash change
     window.addEventListener('hashchange', function() {
         const hash = window.location.hash.replace('#', '') || 'home';
-        document.querySelectorAll('.nav-item').forEach(n => {
-            n.classList.toggle('active', n.dataset.route === hash);
-        });
-        document.querySelectorAll('.view').forEach(v => {
-            v.classList.toggle('active', v.id === hash + '-view');
-        });
+        navigateTo(hash);
     });
-
-    console.log('✅ Emerald King Casino loaded!');
+    
+    // Initial hash
+    if (!window.location.hash || window.location.hash === '#') {
+        window.location.hash = '#home';
+    }
+    
+    console.log('🎰 Emerald King Casino loaded!');
+    console.log('💰 Balance:', playerBalance);
+    console.log('🎮 Games loaded:', GAMES.length);
 });
 
-// Global exports
-window.launchGame = launchGame;
-window.copyReferral = copyReferral;
-window.renderGames = renderGames;
+// ============================================
+// ROUND RECT POLYFILL
+// ============================================
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+        const r = typeof radii === 'number' ? radii : (Array.isArray(radii) ? radii[0] : 0);
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        return this;
+    };
+}
 </script>
 
 </body>
