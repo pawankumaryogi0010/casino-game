@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emerald King — Admin Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        royal: { dark: '#0a0e1a', card: '#131a2e', border: '#1e2844' },
+                        gold: { DEFAULT: '#d4a843', light: '#f0d078' },
+                        emerald: { DEFAULT: '#0d9488', glow: '#5eead4' },
+                        neon: { mint: '#00e676', red: '#ff4444', blue: '#00b0ff' }
+                    },
+                    fontFamily: { mono: ['Courier New', 'monospace'], sans: ['Arial', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0e1a; color: #fff; font-family: 'Arial', sans-serif; min-height: 100vh; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(212,168,67,0.3); border-radius: 10px; }
+        .glass-card { background: rgba(19,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(212,168,67,0.15); border-radius: 16px; }
+        .glass-card:hover { border-color: rgba(212,168,67,0.3); }
+        input, select { background: #131a2e; border: 1px solid #1e2844; color: #fff; padding: 10px 14px; border-radius: 10px; outline: none; font-size: 13px; }
+        input:focus, select:focus { border-color: rgba(212,168,67,0.5); }
+        button { cursor: pointer; transition: all 0.2s; }
+        button:hover { transform: translateY(-1px); }
+        button:active { transform: scale(0.97); }
+        .tab-btn.active { background: #d4a843; color: #0a0e1a; }
+        .status-pending { background: rgba(212,168,67,0.15); color: #d4a843; }
+        .status-success { background: rgba(0,230,118,0.15); color: #00e676; }
+        .status-failed { background: rgba(255,68,68,0.15); color: #ff4444; }
+        .balance-glow { text-shadow: 0 0 15px rgba(212,168,67,0.4); }
+    </style>
+</head>
+<body>
+
+    <!-- Master Key Login -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass-card p-8 w-full max-w-sm text-center">
+            <div class="text-5xl mb-4">🛡️</div>
+            <h1 class="text-gold font-bold text-xl mb-2">Admin Command Center</h1>
+            <p class="text-white/40 text-sm mb-6">Enter Master Key to access</p>
+            <input type="password" id="master-key" placeholder="Enter Master Key" class="w-full mb-4 text-center text-lg tracking-widest">
+            <button onclick="authenticateAdmin()" class="w-full bg-gold text-royal-dark font-bold py-3 rounded-xl text-sm">🔓 Unlock Dashboard</button>
+            <p id="login-error" class="text-neon-red text-xs mt-3 hidden">Invalid master key</p>
+        </div>
+    </div>
+
+    <!-- Dashboard (Hidden until authenticated) -->
+    <div id="dashboard" class="hidden min-h-screen">
+        <!-- Top Bar -->
+        <header class="bg-royal-dark/95 backdrop-blur-xl border-b border-royal-border px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">🛡️</span>
+                <div>
+                    <h1 class="text-gold font-bold text-lg">Admin Command Center</h1>
+                    <span class="text-white/40 text-xs">Platform Oversight v3.0</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-neon-mint text-sm">● System Online</span>
+                <button onclick="logoutAdmin()" class="bg-red-500/20 text-neon-red px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-500/30">🚪 Logout</button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
+            <div class="glass-card p-4 text-center"><span class="text-white/40 text-xs">Total Deposits Today</span><p class="text-gold font-bold text-2xl balance-glow mt-1">$12,450</p></div>
+            <div class="glass-card p-4 text-center"><span class="text-white/40 text-xs">Game Volume</span><p class="text-neon-blue font-bold text-2xl mt-1">1,247</p></div>
+            <div class="glass-card p-4 text-center"><span class="text-white/40 text-xs">Net Platform Profit</span><p class="text-emerald-glow font-bold text-2xl mt-1">$8,320</p></div>
+            <div class="glass-card p-4 text-center"><span class="text-white/40 text-xs">Active Users</span><p class="text-white font-bold text-2xl mt-1">342</p></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="px-6 pb-8">
+            <!-- Tabs -->
+            <div class="flex space-x-2 mb-6 overflow-x-auto scrollbar-hide">
+                <button class="tab-btn active px-5 py-2.5 rounded-xl font-bold text-xs" data-tab="users">👥 Users</button>
+                <button class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs bg-royal-card text-white/60" data-tab="transactions">💳 Transactions</button>
+                <button class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs bg-royal-card text-white/60" data-tab="rtp">📊 RTP Control</button>
+                <button class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs bg-royal-card text-white/60" data-tab="analytics">📈 Analytics</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content"></div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
