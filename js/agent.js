@@ -1,668 +1,243 @@
 // ============================================
-// EMERALD KING CASINO - AGENT CENTER DASHBOARD
-// Referral Tracking & Subordinate Statistics
-// NO Financial Transactions - Demo Only
+// ELITE GAMING - AGENT CENTER MODULE
+// Referral, Network & Performance
 // File: js/agent.js
-// Version: 1.0.0
 // ============================================
 
-// ============================================
-// SECTION 1: CONFIGURATION
-// ============================================
+const AgentModule = {
+    activeTab: 'referral',
+    referralLink: 'emerald.com/ref/TAC8A3F2K1',
 
-const AGENT_CONFIG = {
-    // Production domain for referral links
-    PRODUCTION_DOMAIN: 'emerald.com',
-    
-    // Default referral code prefix
-    REFERRAL_PREFIX: 'ref',
-    
-    // Enable console logging
-    ENABLE_LOGGING: true,
-    
-    // Auto-refresh interval (ms)
-    REFRESH_INTERVAL: 30000
-};
+    init(container) {
+        this.container = container;
+        this.render();
+        this.bindEvents();
+        this.generateQR();
+    },
 
-// ============================================
-// SECTION 2: REFERRAL LINK GENERATOR
-// ============================================
+    render() {
+        this.container.innerHTML = `
+            <div class="animate-fade-in space-y-4">
+                <!-- Tab Switcher -->
+                <div class="flex bg-royal-card rounded-xl p-1.5 mb-4 overflow-x-auto scrollbar-hide">
+                    <button class="agent-tab flex-shrink-0 px-4 py-2.5 rounded-lg font-display font-bold text-xs transition-all ${this.activeTab === 'referral' ? 'bg-gold text-royal-dark' : 'text-white/50'}" data-tab="referral">🔗 Referral Link</button>
+                    <button class="agent-tab flex-shrink-0 px-4 py-2.5 rounded-lg font-display font-bold text-xs transition-all ${this.activeTab === 'network' ? 'bg-gold text-royal-dark' : 'text-white/50'}" data-tab="network">👥 Agent Network</button>
+                    <button class="agent-tab flex-shrink-0 px-4 py-2.5 rounded-lg font-display font-bold text-xs transition-all ${this.activeTab === 'performance' ? 'bg-gold text-royal-dark' : 'text-white/50'}" data-tab="performance">📊 Performance</button>
+                </div>
 
-/**
- * Fetch the active user's referral data from profiles table
- * Gets referral_code and builds the full referral link
- * @returns {Promise<Object>} Referral data { link, code, userId }
- */
-async function generateReferralLink() {
-    try {
-        // Check database availability
-        if (!window.emeraldDB || !window.emeraldDB.isReady || !window.emeraldDB.isReady()) {
-            console.warn('⚠️ AGENT: Database not available, using demo mode');
-            return getDemoReferralData();
-        }
-        
-        // Fetch user profile
-        const profile = await window.emeraldDB.fetchProfile();
-        
-        if (!profile) {
-            console.warn('⚠️ AGENT: No profile found, using demo mode');
-            return getDemoReferralData();
-        }
-        
-        // Build referral link
-        const referralCode = profile.referral_code || profile.casino_id || 'DEMO';
-        const referralLink = `https://${AGENT_CONFIG.PRODUCTION_DOMAIN}/${AGENT_CONFIG.REFERRAL_PREFIX}/${referralCode}`;
-        
-        const referralData = {
-            link: referralLink,
-            code: referralCode,
-            userId: profile.casino_id || '---',
-            username: profile.username || 'Player'
-        };
-        
-        console.log('✅ AGENT: Referral link generated:', referralLink);
-        return referralData;
-        
-    } catch (error) {
-        console.error('❌ AGENT: Referral link error:', error);
-        return getDemoReferralData();
-    }
-}
+                ${this.activeTab === 'referral' ? this.renderReferralTab() : ''}
+                ${this.activeTab === 'network' ? this.renderNetworkTab() : ''}
+                ${this.activeTab === 'performance' ? this.renderPerformanceTab() : ''}
+            </div>
+        `;
+    },
 
-/**
- * Generate demo referral data when database is not available
- * @returns {Object} Demo referral data
- */
-function getDemoReferralData() {
-    const demoCode = 'DEMO' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const demoData = {
-        link: `https://${AGENT_CONFIG.PRODUCTION_DOMAIN}/${AGENT_CONFIG.REFERRAL_PREFIX}/${demoCode}`,
-        code: demoCode,
-        userId: 'DEMO' + Math.random().toString(36).substring(2, 6).toUpperCase(),
-        username: 'Demo_Player'
-    };
-    
-    console.log('📝 AGENT: Using demo referral data');
-    return demoData;
-}
+    renderReferralTab() {
+        return `
+            <div class="space-y-4">
+                <!-- QR Code -->
+                <div class="glass-card rounded-2xl p-6 text-center">
+                    <h4 class="text-white font-display font-bold text-sm mb-4">Your Referral QR Code</h4>
+                    <div id="agent-qr-code" class="bg-white p-3 rounded-xl inline-block mx-auto"></div>
+                    <p class="text-white/40 text-[10px] mt-3">Scan to join instantly</p>
+                </div>
 
-/**
- * Copy referral link to clipboard
- * @param {string} link - The referral link to copy
- */
-async function copyReferralLink(link) {
-    try {
-        if (!link) {
-            const data = await generateReferralLink();
-            link = data.link;
-        }
-        
-        // Try modern clipboard API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(link);
-            showAgentToast('✅ Referral link copied!');
-            console.log('✅ AGENT: Link copied to clipboard');
-        } else {
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = link;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-9999px';
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showAgentToast('✅ Referral link copied!');
-        }
-        
-    } catch (error) {
-        console.error('❌ AGENT: Copy error:', error);
-        showAgentToast('❌ Failed to copy link');
-    }
-}
+                <!-- Referral Link -->
+                <div class="glass-card rounded-2xl p-4">
+                    <h4 class="text-white font-display font-bold text-xs mb-3">Your Referral Link</h4>
+                    <div class="flex items-center space-x-2 bg-royal-card rounded-xl p-3 border border-royal-border">
+                        <input type="text" id="referral-link-input" readonly value="${this.referralLink}" class="bg-transparent text-white text-xs flex-1 outline-none font-mono">
+                        <button id="copy-referral-btn" class="bg-gold text-royal-dark px-4 py-2 rounded-lg font-display font-bold text-xs hover:scale-105 transition-transform">
+                            <i class="fas fa-copy mr-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
 
-// ============================================
-// SECTION 3: SUBORDINATE STATISTICS
-// ============================================
+                <!-- Share Options -->
+                <div class="glass-card rounded-2xl p-4">
+                    <h4 class="text-white font-display font-bold text-xs mb-3">Share Your Link</h4>
+                    <div class="grid grid-cols-4 gap-3">
+                        ${['facebook','twitter','whatsapp','telegram'].map(platform => `
+                            <button class="share-btn bg-royal-card border border-royal-border rounded-xl p-3 text-center hover:border-gold/50 transition-all" data-platform="${platform}">
+                                <i class="fab fa-${platform} text-2xl ${platform === 'whatsapp' ? 'text-emerald-glow' : platform === 'telegram' ? 'text-neon-blue' : 'text-gold'}"></i>
+                                <span class="text-white/50 text-[9px] block mt-1 capitalize">${platform}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
 
-/**
- * Count unique users registered under this agent's referral code
- * Queries profiles table for matching referral_code
- * @returns {Promise<Object>} Subordinate statistics
- */
-async function fetchSubordinateStats() {
-    try {
-        // Check database availability
-        if (!window.emeraldDB || !window.emeraldDB.isReady || !window.emeraldDB.isReady()) {
-            console.warn('⚠️ AGENT: Database not available for stats');
-            return getDemoSubordinateStats();
-        }
-        
-        const client = window.emeraldDB.getClient();
-        if (!client) {
-            return getDemoSubordinateStats();
-        }
-        
-        // Get current user's referral code
-        const profile = await window.emeraldDB.fetchProfile();
-        if (!profile || !profile.referral_code) {
-            return getDemoSubordinateStats();
-        }
-        
-        // Count users registered with this referral code
-        const { count, error } = await client
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .neq('referral_code', profile.referral_code) // Exclude self
-            .order('created_at', { ascending: false });
-        
-        if (error) {
-            console.error('❌ AGENT: Subordinate count error:', error);
-            return getDemoSubordinateStats();
-        }
-        
-        // Fetch recent subordinates (last 10)
-        const { data: recentUsers, error: recentError } = await client
-            .from('profiles')
-            .select('username, casino_id, created_at, vip_level')
-            .neq('referral_code', profile.referral_code)
-            .order('created_at', { ascending: false })
-            .limit(10);
-        
-        if (recentError) {
-            console.error('❌ AGENT: Recent users error:', recentError);
-        }
-        
-        // Calculate stats
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayISO = today.toISOString();
-        
-        const todayCount = (recentUsers || []).filter(u => 
-            u.created_at && new Date(u.created_at) >= today
-        ).length;
-        
-        const stats = {
-            totalSubordinates: count || 0,
-            todaySubordinates: todayCount,
-            recentSubordinates: (recentUsers || []).slice(0, 5),
-            referralCode: profile.referral_code
-        };
-        
-        console.log('📊 AGENT: Stats fetched - Total:', stats.totalSubordinates, 'Today:', stats.todaySubordinates);
-        return stats;
-        
-    } catch (error) {
-        console.error('❌ AGENT: Stats error:', error);
-        return getDemoSubordinateStats();
-    }
-}
+                <!-- Commission Info -->
+                <div class="glass-card rounded-2xl p-4">
+                    <h4 class="text-white font-display font-bold text-xs mb-3">Commission Overview</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-royal-card rounded-xl p-4 text-center">
+                            <span class="text-white/40 text-[10px]">Total Referrals</span>
+                            <p class="text-gold font-display font-bold text-xl">24</p>
+                        </div>
+                        <div class="bg-royal-card rounded-xl p-4 text-center">
+                            <span class="text-white/40 text-[10px]">Commission Earned</span>
+                            <p class="text-emerald-glow font-display font-bold text-xl">$1,250</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
 
-/**
- * Generate demo subordinate statistics
- * @returns {Object} Demo statistics
- */
-function getDemoSubordinateStats() {
-    const demoNames = ['Player_One', 'LuckyStar', 'BigWinner', 'CasinoKing', 'DiamondPro', 'RoyalFlush', 'JackpotHunter', 'GoldenAce'];
-    const recentSubordinates = [];
-    
-    // Generate 3-7 random demo subordinates
-    const count = 3 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < count; i++) {
-        const name = demoNames[Math.floor(Math.random() * demoNames.length)];
-        const daysAgo = Math.floor(Math.random() * 30);
-        const date = new Date();
-        date.setDate(date.getDate() - daysAgo);
-        
-        recentSubordinates.push({
-            username: name + '_' + Math.floor(Math.random() * 100),
-            casino_id: Math.floor(100000000 + Math.random() * 900000000).toString(),
-            created_at: date.toISOString(),
-            vip_level: Math.floor(Math.random() * 3)
-        });
-    }
-    
-    recentSubordinates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
-    const todayCount = recentSubordinates.filter(u => {
-        const d = new Date(u.created_at);
-        const today = new Date();
-        return d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
-    }).length;
-    
-    return {
-        totalSubordinates: 12 + Math.floor(Math.random() * 40),
-        todaySubordinates: todayCount,
-        recentSubordinates: recentSubordinates.slice(0, 5),
-        referralCode: 'DEMO' + Math.random().toString(36).substring(2, 6).toUpperCase()
-    };
-}
+    renderNetworkTab() {
+        const subordinates = [
+            { name: 'Player_One', id: '421571595', date: '2024-01-15', commission: 125.00 },
+            { name: 'LuckyStar', id: '398274611', date: '2024-01-18', commission: 89.50 },
+            { name: 'BigWinner', id: '512983477', date: '2024-01-20', commission: 245.00 },
+            { name: 'CasinoKing', id: '334561289', date: '2024-01-22', commission: 67.25 },
+            { name: 'DiamondPro', id: '445678912', date: '2024-01-25', commission: 312.00 },
+        ];
 
-// ============================================
-// SECTION 4: UI RENDERING
-// ============================================
+        return `
+            <div class="space-y-4">
+                <div class="glass-card rounded-2xl p-4">
+                    <h4 class="text-white font-display font-bold text-xs mb-3">New Subordinates</h4>
+                    <div class="space-y-2">
+                        ${subordinates.map(sub => `
+                            <div class="bg-royal-card rounded-xl p-3 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-gold to-gold-dark rounded-full flex items-center justify-center text-royal-dark font-bold text-xs">${sub.name.charAt(0)}</div>
+                                    <div>
+                                        <span class="text-white text-xs font-display font-bold">${sub.name}</span>
+                                        <span class="text-white/40 text-[9px] block">ID: ${sub.id}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-emerald-glow text-xs font-bold">+$${sub.commission.toFixed(2)}</span>
+                                    <span class="text-white/30 text-[9px] block">${sub.date}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
 
-/**
- * Initialize the Agent Center dashboard
- * Binds referral link and loads subordinate data
- */
-async function initializeAgentCenter() {
-    try {
-        console.log('👥 AGENT: Initializing Agent Center...');
-        
-        // Step 1: Generate and display referral link
-        await updateReferralLinkDisplay();
-        
-        // Step 2: Load subordinate statistics
-        await updateSubordinateDisplay();
-        
-        // Step 3: Setup auto-refresh
-        setupAgentAutoRefresh();
-        
-        console.log('✅ AGENT: Agent Center initialized');
-        
-    } catch (error) {
-        console.error('❌ AGENT: Initialization error:', error);
-    }
-}
+    renderPerformanceTab() {
+        return `
+            <div class="space-y-4">
+                <div class="glass-card rounded-2xl p-4">
+                    <h4 class="text-white font-display font-bold text-xs mb-3">Commission Received</h4>
+                    <div class="space-y-2">
+                        {[
+                            { from: 'Player_One', amount: 125.00, date: '2024-01-15', session: 'Dragon Tiger' },
+                            { from: 'LuckyStar', amount: 89.50, date: '2024-01-18', session: 'Aviator' },
+                            { from: 'BigWinner', amount: 245.00, date: '2024-01-20', session: '777 Slots' },
+                            { from: 'CasinoKing', amount: 67.25, date: '2024-01-22', session: 'Roulette' },
+                            { from: 'DiamondPro', amount: 312.00, date: '2024-01-25', session: 'Teen Patti' },
+                        ].map(comm => `
+                            <div class="bg-royal-card rounded-xl p-3 flex items-center justify-between">
+                                <div>
+                                    <span class="text-white text-xs font-display font-bold">${comm.from}</span>
+                                    <span class="text-white/40 text-[9px] block">${comm.session} • ${comm.date}</span>
+                                </div>
+                                <span class="text-emerald-glow text-sm font-display font-bold">+$${comm.amount.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
 
-/**
- * Update the referral link display in the UI
- * Binds to the referral link input field
- */
-async function updateReferralLinkDisplay() {
-    try {
-        const referralData = await generateReferralLink();
-        
-        // Update referral link input
-        const referralInput = document.getElementById('referral-link');
-        if (referralInput) {
-            referralInput.value = referralData.link;
-            console.log('✅ AGENT: Referral link bound to UI');
-        }
-        
-        // Update referral code display if exists
-        const codeDisplay = document.getElementById('referral-code-display');
-        if (codeDisplay) {
-            codeDisplay.textContent = referralData.code;
-        }
-        
-        // Update user ID display if exists
-        const idDisplay = document.getElementById('agent-user-id');
-        if (idDisplay) {
-            idDisplay.textContent = referralData.userId;
-        }
-        
-        // Store for copy function
-        window._agentReferralLink = referralData.link;
-        
-    } catch (error) {
-        console.error('❌ AGENT: Display update error:', error);
-    }
-}
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="glass-card rounded-xl p-4 text-center">
+                        <span class="text-white/40 text-[9px]">Total Earned</span>
+                        <p class="text-gold font-display font-bold text-lg">$838.75</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-4 text-center">
+                        <span class="text-white/40 text-[9px]">This Month</span>
+                        <p class="text-emerald-glow font-display font-bold text-lg">$312.00</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-4 text-center">
+                        <span class="text-white/40 text-[9px]">Active Refs</span>
+                        <p class="text-neon-blue font-display font-bold text-lg">5</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
 
-/**
- * Update subordinate statistics in the UI
- * Populates count cards and recent list
- */
-async function updateSubordinateDisplay() {
-    try {
-        const stats = await fetchSubordinateStats();
-        
-        // Update total count
-        const totalCountEl = document.getElementById('total-referrals');
-        if (totalCountEl) {
-            totalCountEl.textContent = stats.totalSubordinates;
-        }
-        
-        // Update today count
-        const todayCountEl = document.getElementById('today-referrals');
-        if (todayCountEl) {
-            todayCountEl.textContent = stats.todaySubordinates;
-        }
-        
-        // Update referral code badge
-        const codeBadge = document.getElementById('agent-code-badge');
-        if (codeBadge) {
-            codeBadge.textContent = 'Code: ' + (stats.referralCode || '---');
-        }
-        
-        // Render recent subordinates list
-        renderSubordinateList(stats.recentSubordinates);
-        
-        console.log('📊 AGENT: Stats display updated');
-        
-    } catch (error) {
-        console.error('❌ AGENT: Stats display error:', error);
-    }
-}
+    generateQR() {
+        setTimeout(() => {
+            const qrContainer = document.getElementById('agent-qr-code');
+            if (!qrContainer) return;
 
-/**
- * Render the recent subordinates list
- * @param {Array} subordinates - Array of subordinate user objects
- */
-function renderSubordinateList(subordinates) {
-    try {
-        const listContainer = document.getElementById('subordinates-list');
-        if (!listContainer) {
-            // Try to find in invite view
-            const inviteView = document.getElementById('invite-view');
-            if (inviteView) {
-                // Create list if doesn't exist
-                let existingList = document.getElementById('subordinates-list');
-                if (!existingList) {
-                    existingList = document.createElement('div');
-                    existingList.id = 'subordinates-list';
-                    existingList.style.cssText = 'margin-top:12px;';
-                    
-                    // Add header
-                    const header = document.createElement('h4');
-                    header.style.cssText = 'color:#00b0ff;font-size:11px;font-weight:bold;margin-bottom:8px;';
-                    header.textContent = '👥 Recent Subordinates';
-                    existingList.appendChild(header);
-                    
-                    // Find commission overview card to append after
-                    const commissionCard = inviteView.querySelector('.bg-white\\/5');
-                    if (commissionCard && commissionCard.nextSibling) {
-                        commissionCard.parentNode.insertBefore(existingList, commissionCard.nextSibling.nextSibling);
-                    } else {
-                        inviteView.appendChild(existingList);
+            // Simple SVG QR-like pattern
+            const size = 120;
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+            svg += `<rect width="${size}" height="${size}" fill="white"/>`;
+
+            // Generate pseudo-QR pattern
+            const modules = 21;
+            const moduleSize = size / modules;
+            const seed = this.referralLink.length;
+
+            for (let row = 0; row < modules; row++) {
+                for (let col = 0; col < modules; col++) {
+                    // Create deterministic pattern based on referral link
+                    const hash = (row * 31 + col * 17 + seed) % 100;
+                    if (hash < 40 || (row < 7 && col < 7) || (row < 7 && col > modules - 8) || (row > modules - 8 && col < 7)) {
+                        svg += `<rect x="${col * moduleSize}" y="${row * moduleSize}" width="${moduleSize}" height="${moduleSize}" fill="#0a0e1a"/>`;
                     }
                 }
             }
-            return;
-        }
-        
-        // Clear existing (except header)
-        const cards = listContainer.querySelectorAll('.subordinate-card');
-        cards.forEach(card => card.remove());
-        
-        if (!subordinates || subordinates.length === 0) {
-            const emptyMsg = document.createElement('div');
-            emptyMsg.style.cssText = 'text-align:center;padding:15px;color:rgba(255,255,255,0.3);font-size:10px;';
-            emptyMsg.textContent = 'No subordinates yet. Share your link!';
-            listContainer.appendChild(emptyMsg);
-            return;
-        }
-        
-        // Render each subordinate
-        subordinates.forEach(sub => {
-            const card = document.createElement('div');
-            card.className = 'subordinate-card';
-            card.style.cssText = `
-                background:rgba(0,0,0,0.2);
-                border:1px solid rgba(255,255,255,0.06);
-                border-radius:10px;
-                padding:10px 12px;
-                margin-bottom:6px;
-                display:flex;
-                align-items:center;
-                justify-content:space-between;
-            `;
-            
-            const vipTitles = ['🥉', '🥈', '🥇', '💎', '👑', '🌟'];
-            const vipIcon = vipTitles[sub.vip_level] || '🥉';
-            const joinDate = formatAgentDate(sub.created_at);
-            
-            card.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:14px;">${vipIcon}</span>
-                    <div>
-                        <span style="color:white;font-size:10px;font-weight:bold;">${sub.username || 'Player'}</span>
-                        <span style="color:rgba(255,255,255,0.4);font-size:8px;display:block;">ID: ${(sub.casino_id || '---').substring(0, 8)}</span>
-                    </div>
-                </div>
-                <span style="color:rgba(255,255,255,0.4);font-size:8px;">${joinDate}</span>
-            `;
-            
-            listContainer.appendChild(card);
+
+            svg += '</svg>';
+            qrContainer.innerHTML = svg;
+        }, 100);
+    },
+
+    bindEvents() {
+        // Tab switching
+        this.container.querySelectorAll('.agent-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.activeTab = tab.dataset.tab;
+                this.render();
+                this.bindEvents();
+                if (this.activeTab === 'referral') this.generateQR();
+            });
         });
-        
-    } catch (error) {
-        console.error('❌ AGENT: Render subordinates error:', error);
-    }
-}
 
-// ============================================
-// SECTION 5: COPY LINK HANDLER
-// ============================================
-
-/**
- * Handle copy link button click
- * Called from the "Copy" button in invite view
- */
-async function handleCopyReferralLink() {
-    try {
-        const link = window._agentReferralLink || (await generateReferralLink()).link;
-        await copyReferralLink(link);
-    } catch (error) {
-        console.error('❌ AGENT: Copy handler error:', error);
-        showAgentToast('❌ Failed to copy. Try again.');
-    }
-}
-
-// ============================================
-// SECTION 6: AUTO-REFRESH
-// ============================================
-
-let agentRefreshInterval = null;
-
-/**
- * Setup auto-refresh for agent dashboard
- */
-function setupAgentAutoRefresh() {
-    // Clear existing
-    if (agentRefreshInterval) {
-        clearInterval(agentRefreshInterval);
-    }
-    
-    agentRefreshInterval = setInterval(async () => {
-        console.log('🔄 AGENT: Auto-refreshing...');
-        await updateSubordinateDisplay();
-    }, AGENT_CONFIG.REFRESH_INTERVAL);
-    
-    console.log('🔄 AGENT: Auto-refresh started');
-}
-
-/**
- * Stop auto-refresh
- */
-function stopAgentAutoRefresh() {
-    if (agentRefreshInterval) {
-        clearInterval(agentRefreshInterval);
-        agentRefreshInterval = null;
-    }
-}
-
-// ============================================
-// SECTION 7: TOAST NOTIFICATION
-// ============================================
-
-/**
- * Show a toast notification for agent actions
- * @param {string} message - Message to display
- */
-function showAgentToast(message) {
-    try {
-        // Try using global toast if available
-        if (typeof window.emeraldDB?.showToast === 'function') {
-            window.emeraldDB.showToast(message);
-            return;
+        // Copy referral link
+        const copyBtn = this.container.querySelector('#copy-referral-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const input = this.container.querySelector('#referral-link-input');
+                if (input) {
+                    input.select();
+                    navigator.clipboard.writeText(input.value).then(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<i class="fas fa-copy mr-1"></i> Copy';
+                        }, 2000);
+                    });
+                }
+            });
         }
-        
-        // Fallback toast
-        const existingToast = document.getElementById('agent-toast');
-        if (existingToast) existingToast.remove();
-        
-        const toast = document.createElement('div');
-        toast.id = 'agent-toast';
-        toast.textContent = message;
-        toast.style.cssText = `
-            position:fixed;
-            bottom:100px;
-            left:50%;
-            transform:translateX(-50%);
-            background:#02231c;
-            color:#00e676;
-            padding:12px 24px;
-            border-radius:25px;
-            font-size:13px;
-            font-weight:bold;
-            z-index:9999;
-            border:1px solid rgba(0,230,118,0.3);
-            box-shadow:0 10px 30px rgba(0,0,0,0.5);
-            animation:fadeIn 0.3s ease;
-        `;
-        
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.3s';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-        
-    } catch (error) {
-        console.error('❌ AGENT: Toast error:', error);
-    }
-}
 
-// ============================================
-// SECTION 8: UTILITY FUNCTIONS
-// ============================================
-
-/**
- * Format date for agent display
- * @param {string} dateString - ISO date string
- * @returns {string} Formatted relative date
- */
-function formatAgentDate(dateString) {
-    try {
-        if (!dateString) return '--';
-        
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return diffMins + 'm ago';
-        if (diffHours < 24) return diffHours + 'h ago';
-        if (diffDays < 7) return diffDays + 'd ago';
-        
-        return date.toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short'
+        // Share buttons
+        this.container.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const platform = btn.dataset.platform;
+                const link = encodeURIComponent(this.referralLink);
+                const text = encodeURIComponent('Join Elite Gaming and earn rewards!');
+                const urls = {
+                    facebook: `https://facebook.com/sharer/sharer.php?u=${link}`,
+                    twitter: `https://twitter.com/intent/tweet?url=${link}&text=${text}`,
+                    whatsapp: `https://wa.me/?text=${text}%20${link}`,
+                    telegram: `https://t.me/share/url?url=${link}&text=${text}`
+                };
+                window.open(urls[platform], '_blank', 'width=600,height=400');
+            });
         });
-        
-    } catch (error) {
-        return '--';
     }
-}
-
-// ============================================
-// SECTION 9: COPY REFERRAL (GLOBAL)
-// ============================================
-
-// Override the existing copyReferral function to use agent system
-window.copyReferral = async function() {
-    await handleCopyReferralLink();
 };
 
-// Also expose as agent-specific function
-window.copyAgentLink = handleCopyReferralLink;
-
-// ============================================
-// SECTION 10: INVITE VIEW ENHANCEMENT
-// ============================================
-
-/**
- * Enhance the invite view with agent data when it becomes visible
- */
-function enhanceInviteView() {
-    try {
-        // Watch for hash changes to detect invite view
-        window.addEventListener('hashchange', () => {
-            if (window.location.hash === '#invite-view') {
-                setTimeout(async () => {
-                    await updateReferralLinkDisplay();
-                    await updateSubordinateDisplay();
-                }, 300);
-            }
-        });
-        
-        // Also check on load
-        if (window.location.hash === '#invite-view') {
-            setTimeout(async () => {
-                await updateReferralLinkDisplay();
-                await updateSubordinateDisplay();
-            }, 500);
-        }
-        
-        console.log('👥 AGENT: Invite view enhancement active');
-        
-    } catch (error) {
-        console.error('❌ AGENT: Invite enhancement error:', error);
-    }
-}
-
-// ============================================
-// SECTION 11: GLOBAL EXPORT
-// ============================================
-
-window.emeraldAgent = {
-    // Core functions
-    init: initializeAgentCenter,
-    generateLink: generateReferralLink,
-    copyLink: copyReferralLink,
-    getStats: fetchSubordinateStats,
-    
-    // UI updates
-    updateLink: updateReferralLinkDisplay,
-    updateStats: updateSubordinateDisplay,
-    
-    // Utilities
-    showToast: showAgentToast,
-    
-    // Config
-    config: AGENT_CONFIG
-};
-
-// Expose copy handler globally
-window.copyReferralLink = handleCopyReferralLink;
-
-// ============================================
-// SECTION 12: AUTO-INITIALIZE
-// ============================================
-
-function initializeAgentModule() {
-    try {
-        console.log('👥 Initializing Agent Referral Module...');
-        
-        // Initialize agent center
-        initializeAgentCenter();
-        
-        // Setup invite view enhancement
-        enhanceInviteView();
-        
-        console.log('✅ Agent Referral Module Ready');
-        console.log('📋 Available: window.emeraldAgent');
-        console.log('🔗 Copy link: window.copyReferral()');
-        console.log('⚠️ Commission claims NOT included - Demo Only');
-        
-    } catch (error) {
-        console.error('❌ AGENT: Module initialization error:', error);
-    }
-}
-
-// Start when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(initializeAgentModule, 1000);
-    });
-} else {
-    setTimeout(initializeAgentModule, 1000);
-}
-
-console.log('👥 Agent Referral Module v1.0.0 Loaded (No Commission Claims)');
+// Export
+window.AgentModule = AgentModule;
+console.log('👥 Agent Module Loaded');
