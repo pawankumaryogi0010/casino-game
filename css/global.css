@@ -1,0 +1,102 @@
+/* ============================================
+   EMERALD KING - GLOBAL STYLES
+   File: css/global.css
+   ============================================ */
+
+:root {
+    --bg-deep: #011713;
+    --bg-obsidian: #02231c;
+    --bg-light: #033826;
+    --neon-mint: #00e676;
+    --neon-gold: #FFD700;
+    --neon-blue: #00b0ff;
+    --neon-red: #ff4444;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255,255,255,0.7);
+    --text-dim: rgba(255,255,255,0.5);
+    --text-muted: rgba(255,255,255,0.3);
+    --border-subtle: rgba(255,255,255,0.08);
+    --border-default: rgba(255,255,255,0.12);
+    --border-mint: rgba(0,230,118,0.3);
+    --border-gold: rgba(255,215,0,0.3);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    line-height: 1.5;
+    overflow-x: hidden;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,230,118,0.3); border-radius: var(--radius-full); }
+
+#app-viewport { min-height: calc(100vh - 120px); }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+}
+
+.glass-card:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+
+.nav-link {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-link:hover { color: var(--neon-mint) !important; }
+.nav-link:active { transform: scale(0.9); }
+
+button {
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+input[type="text"], input[type="email"], input[type="number"], input[type="password"] {
+    transition: all 0.3s ease;
+}
+
+input:focus { outline: none; border-color: rgba(0,230,118,0.5) !important; box-shadow: 0 0 0 3px rgba(0,230,118,0.1); }
+
+@keyframes viewFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: viewFadeIn 0.3s ease; }
+
+.skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
