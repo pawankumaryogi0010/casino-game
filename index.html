@@ -4,12 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#011713" />
-  <title>Obsidian Casino — Mobile</title>
+  <title>Real King Casino — Mobile</title>
 
-  <!-- Tailwind CDN; we extend config below for theme colors -->
-  <script>
-    tailwind = {};
-  </script>
+  <!-- Tailwind CDN -->
+  <script>tailwind = {}</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -17,7 +15,7 @@
         extend: {
           colors: {
             obsidian: '#011713',
-            obsidian-2: '#02231c',
+            obsidian2: '#02231c',
             mint: '#00e676',
             gold: '#FFD700'
           }
@@ -26,64 +24,53 @@
     }
   </script>
 
-  <!-- Supabase JS (v2) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <!-- Supabase JS (optional) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js" defer></script>
 
   <!-- App styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- PWA manifest placeholder — will be populated by script.js -->
+  <!-- PWA manifest (set by script.js at runtime) -->
   <link rel="manifest" id="site-manifest" href="#" />
 
-  <!-- Apple meta -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <style>
-    /* Constrain layout center and mobile-first: max-width 450px */
-    :root {
-      --max-width: 450px;
-    }
+    :root { --max-width: 450px; }
+    .bottom-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
   </style>
 </head>
 
-<body class="min-h-screen bg-gradient-to-b from-obsidian via-obsidian-2 to-obsidian text-mint">
-  <main class="min-h-screen flex items-start justify-center p-4">
-    <div class="w-full max-w-[var(--max-width)]">
+<body class="min-h-screen bg-gradient-to-b from-obsidian2 via-obsidian to-obsidian text-mint">
+  <main class="min-h-screen flex items-start justify-center py-4 bottom-safe">
+    <div class="w-full max-w-[var(--max-width)] px-4">
       <!-- Header -->
       <header class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-obsidian-2 to-obsidian glass drop-shadow-neon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="12" cy="12" r="10" fill="url(#g)"/>
-              <defs>
-                <linearGradient id="g" x1="0" x2="1">
-                  <stop offset="0" stop-color="#02231c"/>
-                  <stop offset="1" stop-color="#011713"/>
-                </linearGradient>
-              </defs>
-              <path d="M7 12h10" stroke="#00e676" stroke-width="1.5" stroke-linecap="round" />
-              <path d="M12 7v10" stroke="#FFD700" stroke-width="1.5" stroke-linecap="round" />
+          <div class="logo-circle" aria-hidden>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="12" cy="12" r="10" fill="#02231c" />
+              <path d="M7 12h10" stroke="#00e676" stroke-width="1.6" stroke-linecap="round" />
+              <path d="M12 7v10" stroke="#FFD700" stroke-width="1.6" stroke-linecap="round" />
             </svg>
           </div>
+
           <div>
-            <h1 class="text-white text-lg font-semibold">Obsidian Casino</h1>
-            <p class="text-xs text-emerald-200/60 -mt-1">Mobile-first · Neon · Glass</p>
+            <h1 class="text-white text-lg font-semibold">Real King Casino</h1>
+            <p class="text-xs text-emerald-200/60 -mt-1">Mobile • Neon • Glass</p>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <button id="btn-settings" class="px-3 py-2 rounded-lg glass text-xs text-white/90 ring-1 ring-emerald-300/10">
-            Settings
-          </button>
-          <button id="btn-auth" class="px-3 py-2 rounded-lg bg-mint text-obsidian-2 text-xs font-medium shadow-neon">
-            Sign in
-          </button>
+          <button id="btn-settings" class="px-3 py-2 rounded-lg glass text-xs text-white/90 ring-1 ring-emerald-300/10">Settings</button>
+          <button id="btn-auth" class="px-3 py-2 rounded-lg bg-mint text-obsidian text-xs font-medium shadow-neon">Sign in</button>
         </div>
       </header>
 
-      <!-- Balance + quick actions -->
-      <section class="mb-4">
+      <!-- Dashboard -->
+      <section id="dashboard" class="space-y-4">
+        <!-- Balance card -->
         <div class="glass p-4 rounded-2xl flex items-center justify-between">
           <div>
             <p class="text-xs text-emerald-200/70">Balance</p>
@@ -94,58 +81,204 @@
           </div>
 
           <div class="flex flex-col items-end gap-2">
-            <button id="btn-topup" class="text-xs px-3 py-1 rounded-full glass text-white/90">Top up</button>
-            <button id="btn-withdraw" class="text-xs px-3 py-1 rounded-full glass text-white/90">Withdraw</button>
+            <button id="topup-btn" class="text-xs px-3 py-1 rounded-full glass text-white/90">Top up</button>
+            <button id="withdraw-btn" class="text-xs px-3 py-1 rounded-full glass text-white/90">Withdraw</button>
           </div>
         </div>
-      </section>
 
-      <!-- Game area: simple 3-reel slot demo -->
-      <section class="mb-4">
-        <div class="glass p-4 rounded-2xl">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-white font-semibold">Neon Slot</h2>
-            <div class="text-xs text-emerald-200/60">Bet</div>
-          </div>
-
-          <div class="flex items-center justify-center gap-3 mb-3">
-            <div class="reel w-20 h-20 rounded-xl bg-obsidian/30 flex items-center justify-center text-xl font-mono text-white shadow-inner" data-index="0">—</div>
-            <div class="reel w-20 h-20 rounded-xl bg-obsidian/30 flex items-center justify-center text-xl font-mono text-white shadow-inner" data-index="1">—</div>
-            <div class="reel w-20 h-20 rounded-xl bg-obsidian/30 flex items-center justify-center text-xl font-mono text-white shadow-inner" data-index="2">—</div>
-          </div>
-
-          <div class="flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <label for="bet" class="text-xs text-emerald-200/70">Stake</label>
-              <input id="bet" type="number" min="1" value="1" class="w-20 p-2 rounded-lg bg-obsidian/20 text-white text-sm outline-none" />
+        <!-- Views -->
+        <div id="views" class="space-y-4">
+          <!-- HOME -->
+          <div id="view-home" class="view">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-white text-base font-semibold">Games</h2>
+              <div class="text-xs text-emerald-200/60">Featured</div>
             </div>
-            <div class="flex items-center gap-2">
-              <button id="btn-spin" class="px-4 py-2 rounded-lg bg-mint text-obsidian-2 font-semibold shadow-neon">SPIN</button>
+
+            <!-- Featured game -->
+            <div class="game-card glass p-3 rounded-2xl mb-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-16 h-16 rounded-md bg-obsidian-2 flex items-center justify-center text-3xl">🎰</div>
+                  <div>
+                    <div class="text-white font-semibold">Real King Slots</div>
+                    <div class="text-xs text-emerald-200/60">3-reel classic • JACKPOT</div>
+                    <div class="mt-1 flex items-center gap-2">
+                      <span class="crown-badge">KING</span>
+                      <span class="text-xs text-emerald-200/50">RTP 96%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-2">
+                  <div class="text-sm text-emerald-200/60">Bet</div>
+                  <div class="flex gap-2">
+                    <button id="play-classic" class="btn btn-mint">Play</button>
+                    <button id="info-classic" class="btn btn-glass">Info</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Games grid -->
+            <div class="grid grid-cols-3 gap-3">
+              <div class="glass p-3 rounded-xl text-center">
+                <div class="text-2xl mb-1">✈️</div>
+                <div class="text-xs text-emerald-200/70">Aviator</div>
+              </div>
+              <div class="glass p-3 rounded-xl text-center">
+                <div class="text-2xl mb-1">🎡</div>
+                <div class="text-xs text-emerald-200/70">Roulette</div>
+              </div>
+              <div class="glass p-3 rounded-xl text-center">
+                <div class="text-2xl mb-1">🃏</div>
+                <div class="text-xs text-emerald-200/70">Blackjack</div>
+              </div>
+              <div class="glass p-3 rounded-xl text-center">
+                <div class="text-2xl mb-1">🎲</div>
+                <div class="text-xs text-emerald-200/70">Baccarat</div>
+              </div>
+              <div class="glass p-3 rounded-xl text-center">
+                <div class="text-2xl mb-1">💣</div>
+                <div class="text-xs text-emerald-200/70">Mines</div>
+              </div>
+              <div class="glass p-3 rounded-xl text-center">
+                <div class="text-2xl mb-1">🎯</div>
+                <div class="text-xs text-emerald-200/70">Plinko</div>
+              </div>
             </div>
           </div>
 
-          <div id="result" class="mt-3 text-xs text-emerald-200/70">Good luck!</div>
+          <!-- WALLET -->
+          <div id="view-wallet" class="view hidden">
+            <h2 class="text-white text-base font-semibold mb-2">Wallet</h2>
+
+            <div class="glass p-3 rounded-2xl mb-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-emerald-200/60">Available</p>
+                  <div id="wallet-balance" class="text-2xl font-bold text-white">—</div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                  <button id="wallet-topup" class="btn btn-mint">Top up</button>
+                  <button id="wallet-withdraw" class="btn btn-glass">Withdraw</button>
+                </div>
+              </div>
+
+              <div class="divider my-3"></div>
+
+              <div>
+                <h3 class="text-sm text-white font-semibold mb-2">Deposit Methods</h3>
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="glass p-2 rounded-md text-center text-xs">Nagad</div>
+                  <div class="glass p-2 rounded-md text-center text-xs">Bkash</div>
+                  <div class="glass p-2 rounded-md text-center text-xs">USDT</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass p-3 rounded-2xl">
+              <h3 class="text-sm font-semibold mb-2">Recent Transactions</h3>
+              <ul id="wallet-transactions" class="text-xs text-emerald-200/60 space-y-2">
+                <li class="text-center text-emerald-200/30">No transactions yet</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- REFER -->
+          <div id="view-refer" class="view hidden">
+            <h2 class="text-white text-base font-semibold mb-2">Refer & Earn</h2>
+
+            <div class="glass p-4 rounded-2xl mb-3 text-center">
+              <div class="text-sm text-emerald-200/70 mb-2">Share your referral link — earn bonuses when friends join</div>
+              <div id="referral-code" class="crown-badge mx-auto mb-3">TAC-XXXXXX</div>
+              <div class="flex gap-2 justify-center">
+                <button id="copy-ref" class="btn btn-mint text-sm px-4">Copy</button>
+                <button id="share-ref" class="btn btn-glass text-sm px-4">Share</button>
+              </div>
+            </div>
+
+            <div class="glass p-3 rounded-2xl">
+              <h3 class="text-sm font-semibold mb-2">Your Network</h3>
+              <p class="text-xs text-emerald-200/60">You have <strong id="ref-count">0</strong> referrals</p>
+            </div>
+          </div>
+
+          <!-- HISTORY -->
+          <div id="view-history" class="view hidden">
+            <h2 class="text-white text-base font-semibold mb-2">Play History</h2>
+
+            <div class="glass p-3 rounded-2xl">
+              <ul id="history" class="text-xs text-emerald-200/60 space-y-2 max-h-72 overflow-auto">
+                <li class="text-center text-emerald-200/30">No plays yet</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- PROFILE -->
+          <div id="view-profile" class="view hidden">
+            <h2 class="text-white text-base font-semibold mb-2">Profile</h2>
+
+            <div class="glass p-4 rounded-2xl mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-md bg-obsidian-2 flex items-center justify-center text-2xl">👑</div>
+                <div>
+                  <div id="profile-username" class="text-white font-semibold">Guest</div>
+                  <div id="profile-email" class="text-xs text-emerald-200/60">Not signed in</div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button id="edit-profile" class="btn btn-glass text-sm">Edit</button>
+                <button id="btn-signout" class="btn btn-mint text-sm">Sign out</button>
+                <button id="view-vip" class="btn btn-glass text-sm">VIP</button>
+                <button id="view-settings-small" class="btn btn-glass text-sm">Settings</button>
+              </div>
+            </div>
+
+            <div class="glass p-3 rounded-2xl">
+              <h3 class="text-sm font-semibold mb-2">Account</h3>
+              <p class="text-xs text-emerald-200/60">UID: <span id="profile-uid">—</span></p>
+              <p class="text-xs text-emerald-200/60 mt-1">Status: <strong id="profile-status">Guest</strong></p>
+            </div>
+          </div>
         </div>
       </section>
-
-      <!-- History / Transactions -->
-      <section class="mb-6">
-        <div class="glass p-3 rounded-2xl">
-          <h3 class="text-white text-sm font-medium mb-2">Recent</h3>
-          <ul id="history" class="text-xs text-emerald-200/60 space-y-2 max-h-40 overflow-auto">
-            <li class="text-center text-emerald-200/30">No plays yet</li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="text-center text-[10px] text-emerald-200/50 pb-8">
-        <p>Obsidian Casino • PWA ready • Built with vanilla HTML/CSS/JS and Supabase</p>
-      </footer>
     </div>
   </main>
 
-  <!-- Settings modal (hidden by default) -->
+  <!-- Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian/80 to-transparent border-t border-white/5">
+    <div class="w-full max-w-[var(--max-width)] mx-auto flex items-center justify-between px-6 py-2">
+      <button class="nav-link flex flex-col items-center text-xs text-white/60" data-target="home" aria-label="Home">
+        <div class="text-2xl">🏠</div>
+        <div class="mt-1">Home</div>
+      </button>
+
+      <button class="nav-link flex flex-col items-center text-xs text-white/60" data-target="wallet" aria-label="Wallet">
+        <div class="text-2xl">💳</div>
+        <div class="mt-1">Wallet</div>
+      </button>
+
+      <button class="nav-link flex flex-col items-center text-xs text-white/60" data-target="refer" aria-label="Refer">
+        <div class="text-2xl">🎁</div>
+        <div class="mt-1">Refer</div>
+      </button>
+
+      <button class="nav-link flex flex-col items-center text-xs text-white/60" data-target="history" aria-label="History">
+        <div class="text-2xl">📜</div>
+        <div class="mt-1">History</div>
+      </button>
+
+      <button class="nav-link flex flex-col items-center text-xs text-white/60" data-target="profile" aria-label="Profile">
+        <div class="text-2xl">👤</div>
+        <div class="mt-1">Profile</div>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Settings modal -->
   <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="w-full max-w-[var(--max-width)]">
       <div class="glass p-4 rounded-2xl">
@@ -162,26 +295,144 @@
           <input id="supabase-key" type="text" placeholder="anon-key..." class="w-full p-2 rounded-lg bg-obsidian/20 text-white text-sm outline-none" />
 
           <div class="flex items-center gap-2">
-            <button id="save-credentials" class="px-3 py-2 rounded-lg bg-mint text-obsidian-2 text-sm">Save</button>
+            <button id="save-credentials" class="px-3 py-2 rounded-lg bg-mint text-obsidian text-sm">Save</button>
             <button id="clear-credentials" class="px-3 py-2 rounded-lg glass text-white/90 text-sm">Clear</button>
           </div>
 
-          <p class="text-xs text-emerald-200/50">Supabase credentials are stored locally in your browser. Use a free project on supabase.com to create a project and anon key.</p>
+          <p class="text-xs text-emerald-200/50">Supabase credentials are stored locally in your browser. Use a free project on supabase.com and paste anon key here.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Inline minimal svg icons for splash/shortcut (meta icon fallback) -->
-  <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" class="hidden" aria-hidden>
-    <defs>
-      <symbol id="icon-coin" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" stroke="gold" stroke-width="1.2" fill="none"></circle>
-      </symbol>
-    </defs>
-  </svg>
-
-  <!-- App script -->
+  <!-- Game module and app scripts -->
+  <script src="js/games/classic-slots.js" defer></script>
   <script src="script.js" defer></script>
+
+  <!-- Local view-switching and wiring -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // initial UI updates
+      try { updateBalanceUI(); } catch(e) {}
+      try { renderHistory(); } catch(e) {}
+
+      const navButtons = Array.from(document.querySelectorAll('.nav-link'));
+
+      function showView(name) {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        const mapping = {
+          home: 'view-home',
+          wallet: 'view-wallet',
+          refer: 'view-refer',
+          history: 'view-history',
+          profile: 'view-profile'
+        };
+        const id = mapping[name] || 'view-home';
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+
+        navButtons.forEach(b => {
+          if (b.getAttribute('data-target') === name) {
+            b.classList.add('text-neon-mint');
+            b.classList.remove('text-white/60');
+          } else {
+            b.classList.remove('text-neon-mint');
+            b.classList.add('text-white/60');
+          }
+        });
+      }
+
+      navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const t = btn.getAttribute('data-target');
+          showView(t);
+        });
+      });
+
+      // default
+      showView('home');
+
+      // Wallet buttons
+      document.getElementById('topup-btn')?.addEventListener('click', () => { if (typeof openTopupPrompt === 'function') openTopupPrompt(); });
+      document.getElementById('withdraw-btn')?.addEventListener('click', () => { if (typeof openWithdrawPrompt === 'function') openWithdrawPrompt(); });
+      document.getElementById('wallet-topup')?.addEventListener('click', () => { if (typeof openTopupPrompt === 'function') openTopupPrompt(); });
+      document.getElementById('wallet-withdraw')?.addEventListener('click', () => { if (typeof openWithdrawPrompt === 'function') openWithdrawPrompt(); });
+
+      // Play classic slots
+      document.getElementById('play-classic')?.addEventListener('click', () => {
+        if (typeof createClassicSlots === 'function') {
+          createClassicSlots(null, null, { bet: 5 });
+          return;
+        }
+        if (window.emeraldGames && typeof window.emeraldGames.launch === 'function') {
+          window.emeraldGames.launch('classic-slots');
+          return;
+        }
+        if (typeof showToast === 'function') showToast('Game engine not loaded', 'error'); else alert('Game engine not loaded');
+      });
+
+      // Info / paytable
+      document.getElementById('info-classic')?.addEventListener('click', () => {
+        const paytable = Object.entries({ '7': 'Jackpot 100x', '💎': '25x', '⭐': '15x', '🔔': '10x', '🍊': '8x', '🍋': '6x', '🍒': '5x' })
+          .map(([k,v]) => `${k} — ${v}`).join('\n');
+        alert('Paytable:\n' + paytable);
+      });
+
+      // Referral
+      document.getElementById('copy-ref')?.addEventListener('click', () => {
+        const codeEl = document.getElementById('referral-code');
+        const val = codeEl ? codeEl.textContent.trim() : 'TAC-XXXX';
+        navigator.clipboard?.writeText(val).then(() => {
+          if (typeof showToast === 'function') showToast('Referral copied', 'success'); else alert('Copied: ' + val);
+        }).catch(() => alert('Copy not supported'));
+      });
+
+      document.getElementById('share-ref')?.addEventListener('click', () => {
+        const val = document.getElementById('referral-code')?.textContent || 'TAC-XXXX';
+        if (navigator.share) {
+          navigator.share({ title: 'Join Real King', text: 'Join Real King Casino with my code: ' + val, url: location.href });
+        } else {
+          navigator.clipboard?.writeText(val).then(() => {
+            if (typeof showToast === 'function') showToast('Referral copied', 'success'); else alert('Copied: ' + val);
+          });
+        }
+      });
+
+      // Profile sign out
+      document.getElementById('btn-signout')?.addEventListener('click', async () => {
+        if (typeof signOut === 'function') await signOut();
+        if (typeof showToast === 'function') showToast('Signed out', 'info');
+        try { document.getElementById('profile-username').textContent = 'Guest'; } catch(e){}
+        try { document.getElementById('profile-email').textContent = 'Not signed in'; } catch(e){}
+      });
+
+      // Open settings (small)
+      document.getElementById('view-settings-small')?.addEventListener('click', () => {
+        document.getElementById('btn-settings')?.click();
+      });
+
+      // Sync UI when storage changes in other tabs
+      window.addEventListener('storage', (e) => {
+        if (e.key && e.key.startsWith('rk_')) {
+          try { updateBalanceUI(); } catch(e) {}
+          try { renderHistory(); } catch(e) {}
+        }
+      });
+
+      // Periodic refresh
+      setInterval(() => {
+        try { updateBalanceUI(); } catch(e) {}
+        try { renderHistory(); } catch(e) {}
+      }, 1500);
+
+      // Update wallet balance display
+      function updateWalletBalance() {
+        const b = document.getElementById('balance')?.textContent || '—';
+        const el = document.getElementById('wallet-balance');
+        if (el) el.textContent = b + ' USD';
+      }
+      setInterval(updateWalletBalance, 1200);
+    });
+  </script>
 </body>
 </html>
