@@ -1,43 +1,37 @@
-/**
- * js/games-lobby.js
- * Improved Real King Games Lobby — mobile-first, 20 cards, logos, lazy loader & launcher
- *
- * Drop into: js/games-lobby.js
- * Add to index.html after script.js:
- *    <script src="js/games-lobby.js" defer></script>
- *
- * Behavior:
- * - Renders 20 game cards into #games-grid (or creates it)
- * - Uses asset logos if present at /assets/games/{id}.png (or .webp/.jpg) else emoji fallback
- * - Play: lazy-loads js/games/{file} and instantiates with several fallbacks
- * - If game isn't implemented, shows polished demo modal
- */
+// js/games-lobby.js
+// Real King Casino — Lobby renderer with injected UI styles, 20 game cards,
+// lazy script loading and polished modal/demo fallback.
+// Save as js/games-lobby.js and include after script.js in index.html.
 
 (function () {
+  'use strict';
+
+  // --- CONFIG: list of 20 games (id must match js/games/<file> names and optional assets/games/<id>.png) ---
   const GAMES = [
-    { id: 'classic-slots', title: 'Real King Slots', file: 'classic-slots.js', icon: '🎰', rtp: '96%', tags: ['Slot','Jackpot'], ctor: 'ClassicSlotsFullGame' },
-    { id: 'aviator', title: 'Aviator', file: 'aviator.js', icon: '✈️', rtp: '94%', tags: ['Crash'], ctor: 'AviatorFullGame' },
-    { id: 'roulette', title: 'Roulette', file: 'roulette.js', icon: '🎡', rtp: '97.3%', tags: ['Wheel'], ctor: 'RouletteFullGame' },
-    { id: 'blackjack', title: 'Blackjack', file: 'blackjack.js', icon: '🃏', rtp: '99%', tags: ['Table'], ctor: 'BlackjackFullGame' },
-    { id: 'baccarat', title: 'Baccarat', file: 'baccarat.js', icon: '🎲', rtp: '98%', tags: ['Table'], ctor: 'BaccaratFullGame' },
-    { id: 'mines', title: 'Mines', file: 'mines.js', icon: '💣', rtp: '95%', tags: ['Arcade'], ctor: 'MinesFullGame' },
-    { id: 'plinko', title: 'Plinko', file: 'plinko.js', icon: '🎯', rtp: '96%', tags: ['Arcade'], ctor: 'PlinkoFullGame' },
-    { id: 'teen-patti', title: 'Teen Patti', file: 'teen-patti.js', icon: '♠️', rtp: '97%', tags: ['Card'], ctor: 'TeenPattiFullGame' },
-    { id: 'andar-bahar', title: 'Andar Bahar', file: 'andar-bahar.js', icon: '🂡', rtp: '96%', tags: ['Card'], ctor: 'AndarBaharFullGame' },
-    { id: 'sic-bo', title: 'Sic Bo', file: 'sic-bo.js', icon: '🎲', rtp: '95%', tags: ['Dice'], ctor: 'SicBoFullGame' },
-    { id: 'video-poker', title: 'Video Poker', file: 'video-poker.js', icon: '🃏', rtp: '98%', tags: ['Poker'], ctor: 'VideoPokerFullGame' },
-    { id: 'wheel-fortune', title: 'Wheel of Fortune', file: 'wheel-fortune.js', icon: '🛞', rtp: '96%', tags: ['Wheel'], ctor: 'WheelOfFortuneFullGame' },
-    { id: 'keno-jackpot', title: 'Keno Jackpot', file: 'keno-jackpot.js', icon: '🎯', rtp: '94%', tags: ['Lottery'], ctor: 'KenoJackpotFullGame' },
-    { id: 'jhandi-munda', title: 'Jhandi Munda', file: 'jhandi-munda.js', icon: '🎲', rtp: '95%', tags: ['Traditional'], ctor: 'JhandiMundaFullGame' },
-    { id: 'dragon-tiger', title: 'Dragon Tiger', file: 'dragon-tiger.js', icon: '🐉', rtp: '97%', tags: ['Card'], ctor: 'DragonTigerFullGame' },
-    { id: 'red-dog', title: 'Red Dog', file: 'red-dog.js', icon: '🂮', rtp: '96%', tags: ['Card'], ctor: 'RedDogFullGame' },
-    { id: 'hi-low', title: 'Hi-Low', file: 'hi-low.js', icon: '🔢', rtp: '95%', tags: ['Card'], ctor: 'HiLowFullGame' },
-    { id: 'ludo-betting', title: 'Ludo Betting', file: 'ludo-betting.js', icon: '🎲', rtp: '93%', tags: ['Multiplayer'], ctor: 'LudoBettingFullGame' },
-    { id: 'car-roulette', title: 'Car Roulette', file: 'car-roulette.js', icon: '🏎️', rtp: '95%', tags: ['Race'], ctor: 'CarRouletteFullGame' },
-    { id: 'classic-slots-2', title: 'Slots – Mega', file: 'classic-slots.js', icon: '🎰', rtp: '96%', tags: ['Slot'], ctor: 'ClassicSlotsFullGame' }
+    { id: 'classic-slots', title: 'Real King Slots', file: 'classic-slots.js', emoji: '🎰', rtp: '96%', provider: 'WG', ctor: 'ClassicSlotsFullGame' },
+    { id: 'aviator', title: 'Aviator', file: 'aviator.js', emoji: '✈️', rtp: '94%', provider: 'JDB', ctor: 'AviatorFullGame' },
+    { id: 'roulette', title: 'Roulette', file: 'roulette.js', emoji: '🎡', rtp: '97.3%', provider: 'MG', ctor: 'RouletteFullGame' },
+    { id: 'blackjack', title: 'Blackjack', file: 'blackjack.js', emoji: '🃏', rtp: '99%', provider: 'NT', ctor: 'BlackjackFullGame' },
+    { id: 'baccarat', title: 'Baccarat', file: 'baccarat.js', emoji: '🎲', rtp: '98%', provider: 'DT', ctor: 'BaccaratFullGame' },
+    { id: 'mines', title: 'Mines', file: 'mines.js', emoji: '💣', rtp: '95%', provider: 'IN', ctor: 'MinesFullGame' },
+    { id: 'plinko', title: 'Plinko', file: 'plinko.js', emoji: '🎯', rtp: '96%', provider: 'PL', ctor: 'PlinkoFullGame' },
+    { id: 'teen-patti', title: 'Teen Patti', file: 'teen-patti.js', emoji: '♠️', rtp: '97%', provider: 'TP', ctor: 'TeenPattiFullGame' },
+    { id: 'andar-bahar', title: 'Andar Bahar', file: 'andar-bahar.js', emoji: '🂡', rtp: '96%', provider: 'AB', ctor: 'AndarBaharFullGame' },
+    { id: 'sic-bo', title: 'Sic Bo', file: 'sic-bo.js', emoji: '🎲', rtp: '95%', provider: 'SB', ctor: 'SicBoFullGame' },
+    { id: 'video-poker', title: 'Video Poker', file: 'video-poker.js', emoji: '🃏', rtp: '98%', provider: 'VP', ctor: 'VideoPokerFullGame' },
+    { id: 'wheel-fortune', title: 'Wheel of Fortune', file: 'wheel-fortune.js', emoji: '🛞', rtp: '96%', provider: 'WF', ctor: 'WheelOfFortuneFullGame' },
+    { id: 'keno-jackpot', title: 'Keno Jackpot', file: 'keno-jackpot.js', emoji: '🎯', rtp: '94%', provider: 'KN', ctor: 'KenoJackpotFullGame' },
+    { id: 'jhandi-munda', title: 'Jhandi Munda', file: 'jhandi-munda.js', emoji: '🎲', rtp: '95%', provider: 'JM', ctor: 'JhandiMundaFullGame' },
+    { id: 'dragon-tiger', title: 'Dragon Tiger', file: 'dragon-tiger.js', emoji: '🐉', rtp: '97%', provider: 'DT', ctor: 'DragonTigerFullGame' },
+    { id: 'red-dog', title: 'Red Dog', file: 'red-dog.js', emoji: '🂮', rtp: '96%', provider: 'RD', ctor: 'RedDogFullGame' },
+    { id: 'hi-low', title: 'Hi-Low', file: 'hi-low.js', emoji: '🔢', rtp: '95%', provider: 'HL', ctor: 'HiLowFullGame' },
+    { id: 'ludo-betting', title: 'Ludo Betting', file: 'ludo-betting.js', emoji: '🎲', rtp: '93%', provider: 'LD', ctor: 'LudoBettingFullGame' },
+    { id: 'car-roulette', title: 'Car Roulette', file: 'car-roulette.js', emoji: '🏎️', rtp: '95%', provider: 'CR', ctor: 'CarRouletteFullGame' },
+    { id: 'classic-slots-2', title: 'Slots — Mega', file: 'classic-slots.js', emoji: '🎰', rtp: '96%', provider: 'WG', ctor: 'ClassicSlotsFullGame' }
   ];
 
-  const assetPaths = [
+  // Possible logo locations to try (order matters)
+  const LOGO_PATHS = [
     id => `/assets/games/${id}.png`,
     id => `/assets/games/${id}.webp`,
     id => `/assets/games/${id}.jpg`,
@@ -45,15 +39,52 @@
     id => `/images/games/${id}.webp`
   ];
 
-  // DOM helper
-  function create(tag, props = {}, children = []) {
+  // inject CSS for the lobby cards to match screenshot (gold border, thumbnail fills card, badges)
+  (function injectStyles() {
+    const css = `
+    /* Real King lobby card styles injected by games-lobby.js */
+    #games-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:8px; }
+    .rk-game-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      min-height: 120px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+      border: 2px solid rgba(255,255,255,0.02);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .rk-game-thumb { width:100%; height: 72%; background-size: cover; background-position: center; display:block; }
+    .rk-game-meta { padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .rk-title { font-weight:700; color:#fff; font-size:13px; line-height:1; text-align:left; }
+    .rk-rtp { font-size:11px; color: rgba(255,255,255,0.7); }
+    .rk-provider { position:absolute; left:8px; top:8px; background:linear-gradient(90deg,#0004,#0002); padding:4px 6px; border-radius:8px; font-size:11px; color:#fff; display:flex; gap:6px; align-items:center; }
+    .rk-hot { position:absolute; right:8px; top:8px; background:#ff6b3d; color:#fff; padding:4px 6px; border-radius:8px; font-size:11px; box-shadow: 0 4px 12px rgba(255,107,61,0.12); }
+    .rk-card-badge { position:absolute; right:8px; bottom:44px; background:linear-gradient(90deg,#ffd700,#ffb84d); color:#011713; padding:6px 8px; border-radius:999px; font-weight:800; font-size:12px; box-shadow:0 6px 18px rgba(255,215,0,0.08); }
+    .rk-game-card:active { transform: translateY(2px); }
+    .rk-actions { display:flex; gap:6px; }
+    .rk-full-click { position:absolute; inset:0; z-index:2; }
+    @media (min-width:480px) {
+      #games-grid { grid-template-columns: repeat(4,1fr); }
+    }
+    `;
+    const s = document.createElement('style');
+    s.type = 'text/css';
+    s.appendChild(document.createTextNode(css));
+    document.head.appendChild(s);
+  })();
+
+  // Helper to create DOM element quickly
+  function $create(tag, props = {}, children = []) {
     const el = document.createElement(tag);
-    Object.entries(props).forEach(([k, v]) => {
-      if (k === 'class') el.className = v;
-      else if (k === 'html') el.innerHTML = v;
-      else if (k.startsWith('data-')) el.setAttribute(k, v);
-      else el[k] = v;
-    });
+    for (const k of Object.keys(props)) {
+      if (k === 'class') el.className = props[k];
+      else if (k === 'html') el.innerHTML = props[k];
+      else el.setAttribute(k, props[k]);
+    }
     (Array.isArray(children) ? children : [children]).forEach(c => {
       if (!c) return;
       if (typeof c === 'string') el.appendChild(document.createTextNode(c));
@@ -62,135 +93,197 @@
     return el;
   }
 
-  // Lazy script loader cache
-  const scriptCache = new Map();
-  function loadScript(src) {
-    if (scriptCache.has(src)) return scriptCache.get(src);
-    const p = new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.async = true;
-      s.onload = () => res(src);
-      s.onerror = () => rej(new Error('Failed to load ' + src));
-      document.head.appendChild(s);
-    });
-    scriptCache.set(src, p);
-    return p;
+  // Small toast helper using existing showToast from script.js if present
+  function toast(msg, type = 'info') {
+    if (typeof showToast === 'function') { showToast(msg, type); return; }
+    console.log('[toast]', type, msg);
   }
 
-  // Try to get logo URL that exists (by trying to preload image)
-  function findLogoFor(id) {
+  // tries to detect logo file existence by creating Image
+  function findLogo(id) {
     return new Promise((resolve) => {
-      let found = false;
       let tried = 0;
-      assetPaths.forEach((fn, idx) => {
-        const url = fn(id);
+      let found = false;
+      LOGO_PATHS.forEach(pathFn => {
+        const url = pathFn(id);
         const img = new Image();
         img.onload = () => { if (!found) { found = true; resolve(url); } };
-        img.onerror = () => { tried++; if (tried === assetPaths.length && !found) resolve(null); };
+        img.onerror = () => {
+          tried++;
+          if (tried === LOGO_PATHS.length && !found) resolve(null);
+        };
         img.src = url;
       });
     });
   }
 
-  // Create or get games-grid container
-  function getGamesGrid() {
+  // load script (cached)
+  const SCRIPT_CACHE = new Map();
+  function loadScript(src) {
+    if (SCRIPT_CACHE.has(src)) return SCRIPT_CACHE.get(src);
+    const p = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve(src);
+      s.onerror = (e) => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+    SCRIPT_CACHE.set(src, p);
+    return p;
+  }
+
+  // Create or return #games-grid
+  function ensureGrid() {
     let grid = document.getElementById('games-grid');
     if (!grid) {
-      // try find first .grid.grid-cols-3 in home view
-      grid = document.querySelector('#view-home .grid.grid-cols-3');
-    }
-    if (!grid) {
       const home = document.getElementById('view-home') || document.body;
-      grid = create('div', { id: 'games-grid', class: 'grid grid-cols-3 gap-3' });
-      // insert after featured card if present
+      // locate insertion point (after featured .game-card)
       const featured = home.querySelector('.game-card');
+      grid = $create('div', { id: 'games-grid', class: 'grid grid-cols-3 gap-3' });
       if (featured && featured.parentNode) featured.parentNode.insertBefore(grid, featured.nextSibling);
       else home.appendChild(grid);
     }
     return grid;
   }
 
+  // Build card for a single game (returns element)
   async function buildCard(game) {
-    const card = create('div', { class: 'glass p-3 rounded-xl text-center', role: 'button', tabindex: 0, 'data-game-id': game.id, style: 'display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10px;height:130px;' });
+    const card = $create('div', { class: 'rk-game-card', role: 'button', tabindex: 0, 'data-game': game.id });
+    // clickable overlay to ensure full-card taps
+    const clickOverlay = $create('div', { class: 'rk-full-click', tabindex: -1 });
+    card.appendChild(clickOverlay);
 
-    const logoWrap = create('div', { style: 'width:68px;height:68px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.005));margin-bottom:8px;' });
-    const title = create('div', { class: 'text-xs text-emerald-200/70', html: game.title, style: 'font-weight:700;margin-bottom:6px' });
-    const meta = create('div', { class: 'text-[11px] text-emerald-200/50', html: `RTP ${game.rtp}` });
+    // provider badge top-left
+    const prov = $create('div', { class: 'rk-provider' }, [
+      $create('span', {}, game.provider || ''),
+      $create('small', { style: 'opacity:.9;font-weight:700;font-size:11px' }, '')
+    ]);
+    card.appendChild(prov);
 
-    // Try find logo; set placeholder first
-    const placeholder = create('div', { class: 'text-3xl', html: game.icon });
-    logoWrap.appendChild(placeholder);
+    // hot ribbon optionally
+    if (Math.random() < 0.35) { // show HOT on some cards to match screenshots; in prod derive from metadata
+      const hot = $create('div', { class: 'rk-hot' }, 'HOT');
+      card.appendChild(hot);
+    }
 
-    // async replace with real image if exists
-    findLogoFor(game.id).then(url => {
-      if (url) {
-        logoWrap.innerHTML = '';
-        const img = create('img', { src: url, alt: game.title + ' logo', style: 'width:100%;height:100%;object-fit:cover;display:block;' });
-        logoWrap.appendChild(img);
-      }
-    });
+    // thumbnail area
+    const thumb = $create('div', { class: 'rk-game-thumb' });
+    // placeholder background color + emoji
+    thumb.style.display = 'flex';
+    thumb.style.alignItems = 'center';
+    thumb.style.justifyContent = 'center';
+    thumb.style.fontSize = '34px';
+    thumb.textContent = game.emoji || '🎮';
+    card.appendChild(thumb);
 
-    // Action row
-    const actions = create('div', { style: 'display:flex;gap:6px;margin-top:8px' });
-    const playBtn = create('button', { class: 'btn btn-mint text-xs', type: 'button', html: 'Play' });
-    const infoBtn = create('button', { class: 'btn btn-glass text-xs', type: 'button', html: 'Info' });
-    actions.appendChild(playBtn);
-    actions.appendChild(infoBtn);
-
-    card.appendChild(logoWrap);
-    card.appendChild(title);
+    // meta area (title + rtp)
+    const meta = $create('div', { class: 'rk-game-meta' });
+    const title = $create('div', { class: 'rk-title' }, game.title);
+    const rtp = $create('div', { class: 'rk-rtp' }, `RTP ${game.rtp}`);
+    meta.appendChild(title);
+    meta.appendChild(rtp);
     card.appendChild(meta);
+
+    // optional gold badge
+    if (Math.random() < 0.25) {
+      const badge = $create('div', { class: 'rk-card-badge' }, 'VIP');
+      card.appendChild(badge);
+    }
+
+    // Actions container (small)
+    const actions = $create('div', { class: 'rk-actions', style: 'position:absolute;left:10px;right:10px;bottom:10px;display:flex;justify-content:space-between;gap:8px;z-index:5' });
+    const play = $create('button', { class: 'btn btn-mint text-xs', type: 'button' }, 'Play');
+    const info = $create('button', { class: 'btn btn-glass text-xs', type: 'button' }, 'Info');
+    actions.appendChild(info);
+    actions.appendChild(play);
     card.appendChild(actions);
 
-    // clicking card or playBtn launches
-    const launchHandler = (e) => {
-      e.stopPropagation();
+    // try to replace thumbnail with real image if available
+    try {
+      const logoUrl = await findLogo(game.id);
+      if (logoUrl) {
+        thumb.style.backgroundImage = `url("${logoUrl}")`;
+        thumb.style.backgroundSize = 'cover';
+        thumb.style.backgroundPosition = 'center';
+        thumb.textContent = '';
+      } else {
+        // use provider color / gradient to feel rich
+        thumb.style.background = 'linear-gradient(135deg,#0a1f16,#02231c)';
+        thumb.style.color = '#fff';
+      }
+    } catch (e) {
+      thumb.style.background = 'linear-gradient(135deg,#0a1f16,#02231c)';
+    }
+
+    // event handlers: whole card click launches
+    const launch = (ev) => {
+      ev && ev.stopPropagation();
       launchGame(game);
     };
-    const infoHandler = (e) => {
-      e.stopPropagation();
+    const showInfo = (ev) => {
+      ev && ev.stopPropagation();
       showInfoModal(game);
     };
 
-    card.addEventListener('click', launchHandler);
-    card.addEventListener('touchstart', (e) => { e.stopPropagation(); launchHandler(e); }, { passive: true });
-    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') launchHandler(e); });
-
-    playBtn.addEventListener('click', launchHandler);
-    infoBtn.addEventListener('click', infoHandler);
+    clickOverlay.addEventListener('click', launch);
+    play.addEventListener('click', launch);
+    info.addEventListener('click', showInfo);
+    card.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') launch(ev); });
 
     return card;
   }
 
-  // Build entire grid
-  async function renderGrid() {
-    const grid = getGamesGrid();
-    grid.innerHTML = '';
-    const fragment = document.createDocumentFragment();
+  // Render entire grid (fast)
+  async function renderAll() {
+    const grid = ensureGrid();
+    grid.innerHTML = ''; // clear existing
+    const frag = document.createDocumentFragment();
     for (const g of GAMES) {
-      const c = await buildCard(g);
-      fragment.appendChild(c);
+      try {
+        const c = await buildCard(g);
+        frag.appendChild(c);
+      } catch (e) {
+        console.error('buildCard error for', g.id, e);
+      }
     }
-    grid.appendChild(fragment);
+    grid.appendChild(frag);
   }
 
-  // Modal creator (returns {overlay, canvas, close})
-  function createModal(title, opts = {}) {
-    const overlay = create('div', { class: 'fixed inset-0 z-60 flex items-center justify-center p-4' });
-    overlay.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85))';
-    const container = create('div', { class: 'glass rounded-2xl', style: 'width:100%;max-width:450px;padding:12px;display:flex;flex-direction:column;gap:8px;' });
+  // Info modal (simple)
+  function showInfoModal(game) {
+    const m = createModal(game.title + ' — Info');
+    const ctx = m.canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#011713';
+    ctx.fillRect(0, 0, m.canvas.width, m.canvas.height);
+    ctx.fillStyle = '#00e676';
+    ctx.font = 'bold 16px system-ui';
+    ctx.fillText(game.title, 12, 28);
+    ctx.font = '12px system-ui';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    const lines = [`Provider: ${game.provider || '—'}`, `RTP: ${game.rtp}`, '', 'Tap PLAY to launch the game module.'];
+    let y = 56;
+    lines.forEach(l => { ctx.fillText(l, 12, y); y += 18; });
+    m.spinBtn.style.display = 'none';
+  }
 
-    const header = create('div', { class: 'flex items-center justify-between' }, [
-      create('div', { html: `<strong style="color:#fff">${title}</strong>` }),
-      create('div', {}, [ create('button', { class: 'btn btn-glass', id: 'rk-close' }, 'Close') ])
+  // Modal helper (returns canvas, spin button, close function)
+  function createModal(title) {
+    const overlay = $create('div', { class: 'fixed inset-0 z-60 flex items-center justify-center p-4' });
+    overlay.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85))';
+    const container = $create('div', { class: 'glass rounded-2xl', style: 'width:100%;max-width:480px;padding:12px;display:flex;flex-direction:column;gap:8px;' });
+
+    const header = $create('div', { class: 'flex items-center justify-between' }, [
+      $create('div', { html: `<strong style="color:#fff">${title}</strong>` }),
+      $create('div', {}, [$create('button', { class: 'btn btn-glass', id: 'rk-close' }, 'Close')])
     ]);
 
-    const canvas = create('canvas', { style: 'width:100%;height:auto;border-radius:12px;background:#011713;' });
-    // footer: spin + bet + balance
-    const footer = create('div', { class: 'flex items-center justify-between' }, [
-      create('div', { html: '<small class="text-emerald-200/60">Tap canvas or SPIN</small>' }),
-      create('div', {}, [ create('button', { class: 'btn btn-mint', id: 'rk-spin' }, 'SPIN') ])
+    const canvas = $create('canvas', { style: 'width:100%;height:auto;border-radius:12px;background:#011713;' });
+    const footer = $create('div', { class: 'flex items-center justify-between' }, [
+      $create('div', { html: '<small class="text-emerald-200/60">Tap canvas or SPIN</small>' }),
+      $create('div', {}, [$create('button', { class: 'btn btn-mint', id: 'rk-spin' }, 'SPIN')])
     ]);
 
     container.appendChild(header);
@@ -199,105 +292,93 @@
     overlay.appendChild(container);
     document.body.appendChild(overlay);
 
+    // size canvas for device
+    const parentWidth = Math.min(window.innerWidth - 28, 450);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = parentWidth + 'px';
+    canvas.width = Math.round(parentWidth * dpr);
+    canvas.height = Math.round(parentWidth * 0.65 * dpr);
+    canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+
     const closeBtn = overlay.querySelector('#rk-close');
     const spinBtn = overlay.querySelector('#rk-spin');
 
     const close = () => { try { overlay.remove(); } catch (e) {} };
-
     closeBtn.addEventListener('click', close);
-    // also close on overlay click outside container
     overlay.addEventListener('click', (ev) => { if (ev.target === overlay) close(); });
 
     return { overlay, canvas, spinBtn, close };
   }
 
-  // Instantiate game using multiple fallbacks
-  async function instantiate(game, canvas) {
-    const ctx = canvas.getContext('2d');
-    // 1) createGameInstance(gameId, canvas, ctx)
+  // Instantiate fallback strategy
+  async function instantiateGame(game, canvas) {
     try {
+      // 1) createGameInstance(id, canvas, ctx)
       if (typeof window.createGameInstance === 'function') {
-        const inst = window.createGameInstance(game.id, canvas, ctx);
-        if (inst) return inst;
+        try {
+          const ctx = canvas.getContext('2d');
+          const inst = window.createGameInstance(game.id, canvas, ctx);
+          if (inst) return inst;
+        } catch (e) { console.warn('createGameInstance failed', e); }
       }
-    } catch (e) { console.warn('createGameInstance failed', e); }
-
-    // 2) create{PascalName}()
-    try {
+      // 2) create{ClassName}()
       const pascal = game.ctor ? game.ctor.replace(/FullGame$/, '') : null;
-      const createName = pascal ? 'create' + pascal : null;
-      if (createName && typeof window[createName] === 'function') {
-        return window[createName](canvas, ctx, { bet: 5 });
+      if (pascal) {
+        const createName = 'create' + pascal;
+        if (typeof window[createName] === 'function') {
+          try { return window[createName](canvas, canvas.getContext('2d'), { bet: 5 }); } catch (e) { console.warn(createName, e); }
+        }
       }
-    } catch (e) { console.warn('createX failed', e); }
-
-    // 3) new window[Ctor]()
-    try {
+      // 3) new window[ctor]()
       if (game.ctor && typeof window[game.ctor] === 'function') {
-        return new window[game.ctor](canvas, ctx);
+        try { return new window[game.ctor](canvas, canvas.getContext('2d')); } catch (e) { console.warn('ctor new failed', e); }
       }
-    } catch (e) { console.warn('ctor new failed', e); }
-
-    // 4) try common name derived from id
-    try {
-      const pascalFromId = game.id.split(/[-_]/).map(s => s[0].toUpperCase()+s.slice(1)).join('') + 'FullGame';
-      if (typeof window[pascalFromId] === 'function') return new window[pascalFromId](canvas, ctx);
-    } catch (e) {}
-
+      // 4) try common class name from id
+      try {
+        const cls = game.id.split(/[-_]/).map(s => s[0].toUpperCase()+s.slice(1)).join('') + 'FullGame';
+        if (typeof window[cls] === 'function') return new window[cls](canvas, canvas.getContext('2d'));
+      } catch (e) {}
+    } catch (e) { console.warn('instantiateGame outer', e); }
     return null;
   }
 
-  // Launch game: try instantiate immediately, else load script then try, else fallback demo
+  // Launch flow: instantiate immediately or load script then instantiate or fallback demo
   async function launchGame(game) {
+    toast('Launching ' + game.title, 'info');
+    const modal = createModal(game.title);
+    const canvas = modal.canvas;
+
+    // try instantiate now (module may be already loaded)
     try {
-      // create modal
-      const modal = createModal(game.title);
-      const canvas = modal.canvas;
-      // size canvas
-      const parentWidth = Math.min(window.innerWidth - 28, 450);
-      const dpr = window.devicePixelRatio || 1;
-      canvas.style.width = parentWidth + 'px';
-      canvas.width = Math.round(parentWidth * dpr);
-      canvas.height = Math.round((parentWidth * 0.65) * dpr);
-      canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+      let inst = await instantiateGame(game, canvas);
+      if (inst) { startInstance(inst, modal); return; }
+    } catch (e) { console.warn('early instantiate failed', e); }
 
-      // try instantiate (maybe module already loaded)
-      let inst = await instantiate(game, canvas);
-      if (inst) {
-        startInstanceLoop(inst, modal);
-        return;
-      }
-
-      // load script file
-      const src = `js/games/${game.file}`;
-      try {
-        await loadScript(src);
-      } catch (e) {
-        console.warn('Script load failed', e);
-      }
-
-      // try instantiate again
-      inst = await instantiate(game, canvas);
-      if (inst) {
-        startInstanceLoop(inst, modal);
-        return;
-      }
-
-      // fallback polished demo
-      fallbackDemo(game, canvas, modal);
-    } catch (err) {
-      console.error('launchGame error', err);
-      alert('Unable to launch: ' + (err.message || err));
+    // load script
+    const scriptSrc = `js/games/${game.file}`;
+    try {
+      await loadScript(scriptSrc);
+    } catch (e) {
+      console.warn('script load failed', scriptSrc, e);
+      // still attempt instantiate - script may attach asynchronously
     }
+
+    try {
+      const inst2 = await instantiateGame(game, canvas);
+      if (inst2) { startInstance(inst2, modal); return; }
+    } catch (e) { console.warn('instantiate after load failed', e); }
+
+    // fallback polished demo
+    polishedDemo(game, canvas, modal);
   }
 
-  // Start instance loop (if render exists)
-  function startInstanceLoop(inst, modal) {
+  // Start instance: init, resize, loop (if render exists). Wire destroy on modal close.
+  function startInstance(inst, modal) {
     const canvas = modal.canvas;
-    const ctx = canvas.getContext('2d');
-    // call lifecycle methods if available
-    try { if (typeof inst.resize === 'function') inst.resize(); } catch (e) {}
-    try { if (typeof inst.init === 'function') inst.init(); } catch (e) {}
+    try {
+      if (typeof inst.resize === 'function') inst.resize();
+      if (typeof inst.init === 'function') inst.init();
+    } catch (e) { console.warn('init error', e); }
     let raf = null;
     function loop(ts) {
       try {
@@ -307,23 +388,25 @@
       raf = requestAnimationFrame(loop);
     }
     raf = requestAnimationFrame(loop);
-    // wire close to destroy
+
+    // override modal close to cleanup
     const prevClose = modal.close;
     modal.close = function () {
       try { if (typeof inst.destroy === 'function') inst.destroy(); } catch (e) {}
       cancelAnimationFrame(raf);
       prevClose();
     };
-    // spin button: try call instance.play
-    modal.spinBtn.addEventListener('click', () => {
-      try {
-        if (typeof inst.play === 'function') inst.play(modal.bet || 1);
-      } catch (e) { console.warn('play error', e); }
-    });
+
+    // spin button: call play if available
+    try {
+      modal.spinBtn.addEventListener('click', () => {
+        try { if (typeof inst.play === 'function') inst.play( modal.bet || 1 ); } catch (e) { console.warn('play error', e); }
+      });
+    } catch (e) {}
   }
 
-  // Polished fallback demo when module not present
-  function fallbackDemo(game, canvas, modal) {
+  // Polished demo when module missing - animated symbols + fake wins
+  function polishedDemo(game, canvas, modal) {
     const ctx = canvas.getContext('2d');
     const symbols = ['🍒','🍋','🍊','🔔','💎','⭐','7'];
     let t0 = performance.now();
@@ -336,7 +419,7 @@
       ctx.fillStyle = '#00e676';
       ctx.font = 'bold 16px system-ui';
       ctx.textAlign = 'left';
-      ctx.fillText(game.title + ' — Demo', 12, 26);
+      ctx.fillText(game.title + ' — Demo', 12, 28);
       ctx.font = '48px serif';
       ctx.textAlign = 'center';
       for (let i=0;i<3;i++) {
@@ -346,85 +429,37 @@
         ctx.fillText(symbols[Math.floor((t*2 + i)) % symbols.length], x, y);
       }
       ctx.font = '12px system-ui';
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.textAlign = 'center';
-      ctx.fillText('Module missing — playing polished demo', canvas.width/2, canvas.height - 24);
+      ctx.fillText('Module not implemented — demo running', canvas.width/2, canvas.height - 24);
       raf = requestAnimationFrame(draw);
     }
     raf = requestAnimationFrame(draw);
+
     modal.spinBtn.addEventListener('click', () => {
-      // small fake win toast
-      const win = (Math.random()*30 + 1).toFixed(2);
-      const toast = create('div', { style: 'position:fixed;left:50%;top:18px;transform:translateX(-50%);background:linear-gradient(90deg,rgba(255,215,0,0.12),rgba(0,230,118,0.06));color:#fff;padding:8px 12px;border-radius:999px;z-index:9999;font-weight:700;' }, `🎉 Demo WIN +${win} USD`);
-      document.body.appendChild(toast);
-      setTimeout(()=>{ toast.style.transition='all .4s'; toast.style.opacity='0'; toast.style.transform='translateX(-50%) translateY(-30px)'; }, 1000);
-      setTimeout(()=> toast.remove(), 1600);
+      const win = (Math.random()*80 + 1).toFixed(2);
+      const notice = $create('div', { style: 'position:fixed;left:50%;top:18px;transform:translateX(-50%);background:linear-gradient(90deg,#ffd700,#ffb84d);color:#011713;padding:8px 14px;border-radius:999px;z-index:99999;font-weight:800;' }, `🎉 WIN +${win} USD`);
+      document.body.appendChild(notice);
+      setTimeout(()=> { notice.style.transition='all .45s'; notice.style.opacity='0'; notice.style.transform='translateX(-50%) translateY(-26px)'; }, 900);
+      setTimeout(()=> notice.remove(), 1600);
     });
+
     const prevClose = modal.close;
     modal.close = function () { cancelAnimationFrame(raf); prevClose(); };
   }
 
-  // Show info modal (small)
-  function showInfoModal(game) {
-    const modal = createModal(game.title + ' — Info');
-    const ctx = modal.canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#011713';
-    ctx.fillRect(0,0,modal.canvas.width, modal.canvas.height);
-    ctx.fillStyle = '#00e676';
-    ctx.font = 'bold 16px system-ui';
-    ctx.fillText(game.title, 16, 28);
-    ctx.font = '12px system-ui';
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    const lines = [
-      `Type: ${game.tags.join(', ')}`,
-      `RTP: ${game.rtp}`,
-      '',
-      'Description: Premium Real King experience. Tap Play to launch the game.'
-    ];
-    let y = 56;
-    lines.forEach(l => { ctx.fillText(l, 16, y); y += 18; });
-    modal.spinBtn.style.display = 'none';
-  }
-
-  // createModal used above - reuse small helper from earlier to keep consistent
-  function createModal(title) {
-    const overlay = create('div', { class: 'fixed inset-0 z-60 flex items-center justify-center p-4' });
-    overlay.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85))';
-    const container = create('div', { class: 'glass rounded-2xl', style: 'width:100%;max-width:450px;padding:12px;display:flex;flex-direction:column;gap:8px;' });
-    const header = create('div', { class: 'flex items-center justify-between' }, [
-      create('div', { html: `<strong style="color:#fff">${title}</strong>` }),
-      create('div', {}, [ create('button', { class: 'btn btn-glass', id: 'rk-close' }, 'Close') ])
-    ]);
-    const canvas = create('canvas', { style: 'width:100%;height:auto;border-radius:12px;background:#011713;' });
-    const footer = create('div', { class: 'flex items-center justify-between' }, [
-      create('div', { html: '<small class="text-emerald-200/60">Tap canvas or SPIN</small>' }),
-      create('div', {}, [ create('button', { class: 'btn btn-mint', id: 'rk-spin' }, 'SPIN') ])
-    ]);
-    container.appendChild(header);
-    container.appendChild(canvas);
-    container.appendChild(footer);
-    overlay.appendChild(container);
-    document.body.appendChild(overlay);
-    const closeBtn = overlay.querySelector('#rk-close');
-    const spinBtn = overlay.querySelector('#rk-spin');
-    const close = () => { try { overlay.remove(); } catch (e) {} };
-    closeBtn.addEventListener('click', close);
-    overlay.addEventListener('click', (ev) => { if (ev.target === overlay) close(); });
-    return { overlay, canvas, spinBtn, close };
-  }
-
-  // Initialize lobby on DOM ready
+  // Initialize lobby once DOM ready
   function init() {
-    renderGrid().catch(e => console.error('renderGrid error', e));
-    // also ensure play-classic button from index header is wired
+    renderAll().then(() => console.log('✅ Games lobby rendered')).catch(err => console.error('renderAll failed', err));
+    // wire existing "play-classic" in index (if present)
     const playClassic = document.getElementById('play-classic');
     if (playClassic) playClassic.addEventListener('click', () => launchGame(GAMES[0]));
-    console.log('✅ Real King Games Lobby ready — total games:', GAMES.length);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+
+  // expose for debug
+  window.RKGamesLobby = { GAMES, launchGame };
 
 })();
