@@ -1,0 +1,431 @@
+/**
+ * js/games-lobby.js
+ * Real King Casino - Games Lobby renderer + lazy loader + launcher
+ *
+ * - Mobile-first lobby UI for the 20+ games in your repo
+ * - Lazy-loads game script files on demand
+ * - Attempts multiple instantiation fallbacks:
+ *     - createGameInstance(gameId, canvas, ctx)
+ *     - create{PascalName} (e.g., createClassicSlots)
+ *     - window.{PascalName} (e.g., window.ClassicSlotsFullGame)
+ * - Shows polished modal frame for games (glass UI) and fallback demo when module incomplete
+ *
+ * Installation:
+ * - Place file at js/games-lobby.js
+ * - Add <script src="js/games-lobby.js" defer></script> to index.html after script.js
+ *
+ * Usage:
+ * - The lobby will auto-render into the element with id="games-grid" if present.
+ * - If no #games-grid, it will replace the static games area (the first .grid element it finds)
+ *
+ * Notes:
+ * - This file does not replace or modify other game modules.
+ * - For any game that has missing implementation (placeholders), the launcher will open a rich demo/fallback UI so user still sees a Real King experience.
+ */
+
+(function () {
+  const GAMES = [
+    { id: 'classic-slots', title: 'Real King Slots', file: 'classic-slots.js', icon: '🎰', rtp: '96%', tags: ['Classic','Jackpot'], ctor: 'ClassicSlotsFullGame' },
+    { id: 'aviator', title: 'Aviator', file: 'aviator.js', icon: '✈️', rtp: '94%', tags: ['Crash'], ctor: 'AviatorFullGame' },
+    { id: 'roulette', title: 'Roulette', file: 'roulette.js', icon: '🎡', rtp: '97.3%', tags: ['Live'], ctor: 'RouletteFullGame' },
+    { id: 'blackjack', title: 'Blackjack', file: 'blackjack.js', icon: '🃏', rtp: '99%', tags: ['Table'], ctor: 'BlackjackFullGame' },
+    { id: 'baccarat', title: 'Baccarat', file: 'baccarat.js', icon: '🎲', rtp: '98%', tags: ['Table'], ctor: 'BaccaratFullGame' },
+    { id: 'mines', title: 'Mines', file: 'mines.js', icon: '💣', rtp: '95%', tags: ['Arcade'], ctor: 'MinesFullGame' },
+    { id: 'plinko', title: 'Plinko', file: 'plinko.js', icon: '🎯', rtp: '96%', tags: ['Arcade'], ctor: 'PlinkoFullGame' },
+    { id: 'teen-patti', title: 'Teen Patti', file: 'teen-patti.js', icon: '♠️', rtp: '97%', tags: ['Card'], ctor: 'TeenPattiFullGame' },
+    { id: 'andar-bahar', title: 'Andar Bahar', file: 'andar-bahar.js', icon: '🂡', rtp: '96%', tags: ['Card'], ctor: 'AndarBaharFullGame' },
+    { id: 'sic-bo', title: 'Sic Bo', file: 'sic-bo.js', icon: '🎲', rtp: '95%', tags: ['Dice'], ctor: 'SicBoFullGame' },
+    { id: 'video-poker', title: 'Video Poker', file: 'video-poker.js', icon: '🃏', rtp: '98%', tags: ['Poker'], ctor: 'VideoPokerFullGame' },
+    { id: 'wheel-fortune', title: 'Wheel of Fortune', file: 'wheel-fortune.js', icon: '🛞', rtp: '96%', tags: ['Wheel'], ctor: 'WheelOfFortuneFullGame' },
+    { id: 'keno-jackpot', title: 'Keno Jackpot', file: 'keno-jackpot.js', icon: '🎯', rtp: '94%', tags: ['Lottery'], ctor: 'KenoJackpotFullGame' },
+    { id: 'jhandi-munda', title: 'Jhandi Munda', file: 'jhandi-munda.js', icon: '🎲', rtp: '95%', tags: ['Traditional'], ctor: 'JhandiMundaFullGame' },
+    { id: 'dragon-tiger', title: 'Dragon Tiger', file: 'dragon-tiger.js', icon: '🐉', rtp: '97%', tags: ['Card'], ctor: 'DragonTigerFullGame' },
+    { id: 'red-dog', title: 'Red Dog', file: 'red-dog.js', icon: '🂮', rtp: '96%', tags: ['Card'], ctor: 'RedDogFullGame' },
+    { id: 'hi-low', title: 'Hi-Low', file: 'hi-low.js', icon: '🔢', rtp: '95%', tags: ['Card'], ctor: 'HiLowFullGame' },
+    { id: 'ludo-betting', title: 'Ludo Betting', file: 'ludo-betting.js', icon: '🎲', rtp: '93%', tags: ['Multiplayer'], ctor: 'LudoBettingFullGame' },
+    { id: 'car-roulette', title: 'Car Roulette', file: 'car-roulette.js', icon: '🏎️', rtp: '95%', tags: ['Race'], ctor: 'CarRouletteFullGame' },
+    { id: 'classic-slots-2', title: 'Classic Slots II', file: 'classic-slots.js', icon: '🎰', rtp: '96%', tags: ['Classic'], ctor: 'ClassicSlotsFullGame' } // duplicate as demo
+  ];
+
+  // Utility: convert id to path
+  function scriptPathFor(game) {
+    return `js/games/${game.file}`;
+  }
+
+  // DOM helpers
+  function el(tag, props = {}, children = []) {
+    const d = document.createElement(tag);
+    Object.entries(props).forEach(([k, v]) => {
+      if (k === 'class') d.className = v;
+      else if (k === 'html') d.innerHTML = v;
+      else if (k.startsWith('data-')) d.setAttribute(k, v);
+      else d[k] = v;
+    });
+    (Array.isArray(children) ? children : [children]).forEach(c => {
+      if (!c) return;
+      if (typeof c === 'string') d.appendChild(document.createTextNode(c));
+      else d.appendChild(c);
+    });
+    return d;
+  }
+
+  // Lazy loader (cache)
+  const loadedScripts = new Map();
+  function lazyLoadScript(src) {
+    if (loadedScripts.has(src)) return loadedScripts.get(src);
+    const p = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve(src);
+      s.onerror = (e) => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+    loadedScripts.set(src, p);
+    return p;
+  }
+
+  // Nice modal wrapper with canvas
+  function createGameModal(title) {
+    // overlay
+    const overlay = el('div', { class: 'fixed inset-0 z-50 flex items-center justify-center p-4', style: '' });
+    overlay.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85))';
+
+    const card = el('div', { class: 'glass rounded-2xl', style: 'width:100%; max-width:450px; padding:12px; display:flex; flex-direction:column; gap:10px;' });
+
+    const header = el('div', { class: 'flex items-center justify-between' }, [
+      el('div', { html: `<strong style="color:#fff">${title}</strong>` }),
+      el('div', {}, [
+        el('button', { class: 'btn btn-glass', id: 'rk-modal-close' }, 'Close')
+      ])
+    ]);
+
+    const canvas = el('canvas', { width: 420, height: 360, style: 'width:100%; height:auto; border-radius:12px; background:transparent;' });
+
+    const footer = el('div', { class: 'flex items-center justify-between' }, [
+      el('div', { html: '<small class="text-emerald-200/60">Tap canvas or SPIN to play</small>' }),
+      el('div', {}, [
+        el('button', { class: 'btn btn-mint', id: 'rk-modal-spin' }, 'SPIN')
+      ])
+    ]);
+
+    card.appendChild(header);
+    card.appendChild(canvas);
+    card.appendChild(footer);
+    overlay.appendChild(card);
+
+    document.body.appendChild(overlay);
+
+    // Close handler
+    overlay.querySelector('#rk-modal-close').addEventListener('click', () => {
+      teardown();
+    });
+
+    function teardown() {
+      try { if (overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay); } catch (e) {}
+    }
+
+    return { overlay, canvas, teardown, spinBtn: overlay.querySelector('#rk-modal-spin') };
+  }
+
+  // Attempt to instantiate game using fallbacks
+  async function instantiateGame(game, canvas) {
+    const ctorName = game.ctor;
+    // 1) global createGameInstance(gameId, canvas, ctx)
+    if (typeof window.createGameInstance === 'function') {
+      try {
+        const ctx = canvas.getContext('2d');
+        const inst = window.createGameInstance(game.id, canvas, ctx);
+        return inst;
+      } catch (e) { /* continue */ }
+    }
+
+    // 2) create{PascalName}
+    const pascal = ctorName ? ctorName.replace(/FullGame$/, '') : null;
+    const createFnName = pascal ? ('create' + pascal) : null;
+    if (createFnName && typeof window[createFnName] === 'function') {
+      try {
+        const inst = window[createFnName](canvas, canvas.getContext('2d'), { bet: 5 });
+        return inst;
+      } catch (e) {}
+    }
+
+    // 3) constructor on window
+    if (ctorName && typeof window[ctorName] === 'function') {
+      try {
+        const C = window[ctorName];
+        const inst = new C(canvas, canvas.getContext('2d'));
+        return inst;
+      } catch (e) {}
+    }
+
+    // 4) module might attach a different name - try common names
+    const commonNames = [
+      game.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()).replace(/^([a-z])/, (m) => m.toUpperCase()) + 'FullGame'
+    ];
+    for (const name of commonNames) {
+      if (typeof window[name] === 'function') {
+        try { return new window[name](canvas, canvas.getContext('2d')); } catch (e) {}
+      }
+    }
+
+    // Nothing available
+    return null;
+  }
+
+  // Launch flow: lazy-load script then instantiate + render modal
+  async function launchGame(game) {
+    try {
+      // create modal
+      const modal = createGameModal(game.title);
+      const canvas = modal.canvas;
+
+      // size canvas for mobile
+      const parentWidth = Math.min(window.innerWidth - 32, 450);
+      canvas.style.width = parentWidth + 'px';
+      canvas.width = Math.round(parentWidth * (window.devicePixelRatio || 1));
+      canvas.height = Math.round((parentWidth * 0.65) * (window.devicePixelRatio || 1));
+      canvas.getContext('2d').setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+
+      // Try to instantiate already-loaded
+      let instance = await instantiateGame(game, canvas);
+      if (instance) {
+        startGameInstance(instance, modal);
+        return;
+      }
+
+      // Load script
+      const src = scriptPathFor(game);
+      try {
+        await lazyLoadScript(src);
+      } catch (err) {
+        console.warn('Game script load failed', err);
+      }
+
+      // Try instantiate again
+      instance = await instantiateGame(game, canvas);
+      if (instance) {
+        startGameInstance(instance, modal);
+        return;
+      }
+
+      // If still null -> show polished fallback demo inside modal
+      showFallbackDemo(game, canvas, modal);
+    } catch (err) {
+      console.error('launchGame error', err);
+      alert('Failed to launch game: ' + err.message);
+    }
+  }
+
+  // Start a game instance: call init, bind close teardown
+  function startGameInstance(instance, modal) {
+    // If instance has init, setBet etc.
+    try {
+      if (typeof instance.resize === 'function') instance.resize();
+      if (typeof instance.init === 'function') instance.init();
+      // If the game exposes a game loop API (render/update), we attempt to start it.
+      if (typeof instance.render === 'function') {
+        let raf;
+        const loop = (ts) => {
+          try {
+            if (typeof instance.update === 'function') instance.update(ts);
+            instance.render(ts);
+          } catch (e) { /* swallow*/ }
+          raf = requestAnimationFrame(loop);
+        };
+        raf = requestAnimationFrame(loop);
+        // when modal closes, destroy instance and cancel raf
+        const oldTeardown = modal.teardown;
+        modal.teardown = function () {
+          try { if (typeof instance.destroy === 'function') instance.destroy(); } catch (e) {}
+          cancelAnimationFrame(raf);
+          oldTeardown();
+        };
+      } else {
+        // no render loop; fallback: call play on spin
+        modal.spinBtn.addEventListener('click', () => {
+          try {
+            if (typeof instance.play === 'function') instance.play(modal.bet || 1);
+            if (typeof instance.render === 'function') instance.render();
+          } catch (e) { console.warn('play error', e); }
+        });
+      }
+    } catch (e) {
+      console.warn('startGameInstance error', e);
+    }
+  }
+
+  // High-quality fallback demo (for missing/incomplete modules)
+  function showFallbackDemo(game, canvas, modal) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    // simple animated demo: neon slot-like placeholder
+    let t0 = performance.now();
+    let raf;
+    const draw = (ts) => {
+      const t = (ts - t0) / 1000;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // dark panel
+      ctx.fillStyle = '#011713';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      // title
+      ctx.fillStyle = '#00e676';
+      ctx.font = `${14 * (window.devicePixelRatio||1)}px system-ui`;
+      ctx.textAlign = 'left';
+      ctx.fillText(game.title + ' — Demo', 16, 28);
+
+      // animated symbols
+      const symbols = ['🍒','🍋','🍊','🔔','💎','⭐','7'];
+      ctx.font = `${48 * (window.devicePixelRatio||1)}px serif`;
+      ctx.textAlign = 'center';
+      for (let i=0;i<3;i++) {
+        const x = canvas.width/4 + i*(canvas.width/4);
+        const y = canvas.height/2 + Math.sin(t*2 + i)*30;
+        ctx.fillStyle = '#fff';
+        ctx.fillText(symbols[(Math.floor(t*2+i)) % symbols.length], x, y);
+      }
+
+      // footer small text
+      ctx.font = `${12 * (window.devicePixelRatio||1)}px system-ui`;
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game module not fully implemented on client — demo shown', canvas.width/2, canvas.height - 24);
+
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+
+    // Bind spin to temporary animation + fake payout
+    modal.spinBtn.addEventListener('click', () => {
+      playQuickWin(ctx, canvas);
+    });
+
+    const oldTeardown = modal.teardown;
+    modal.teardown = function () {
+      cancelAnimationFrame(raf);
+      oldTeardown();
+    };
+  }
+
+  // Quick animated win for fallback
+  function playQuickWin(ctx, canvas) {
+    const w = canvas.width, h = canvas.height;
+    // flash
+    const overlay = el('div', { style: 'position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:10010;padding:8px 14px;border-radius:999px;background:linear-gradient(90deg, rgba(255,215,0,0.12), rgba(0,230,118,0.06));color:#fff;font-weight:700;' }, `🎉 WIN +${(Math.random()*50+5).toFixed(2)} USD`);
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.transition = 'all 420ms'; overlay.style.transform = 'translateX(-50%) translateY(-36px)'; overlay.style.opacity = '0'; }, 900);
+    setTimeout(()=> overlay.remove(), 1500);
+    try { if (typeof playSound === 'function') playSound('playWin'); } catch(e) {}
+  }
+
+  // Render lobby grid into DOM
+  function renderLobby() {
+    // Find target: #games-grid or first .grid element
+    let container = document.getElementById('games-grid');
+    if (!container) {
+      // try find first grid in .view (we used .grid in index earlier)
+      container = document.querySelector('.grid.grid-cols-3') || null;
+    }
+
+    // If still not found, create a new container inside view-home
+    if (!container) {
+      const home = document.getElementById('view-home');
+      container = el('div', { id: 'games-grid', class: 'grid grid-cols-3 gap-3' });
+      // try to append after featured card
+      const featured = home.querySelector('.game-card');
+      if (featured && featured.parentElement) featured.parentElement.appendChild(container);
+      else home.appendChild(container);
+    } else {
+      // clear existing content
+      container.innerHTML = '';
+      container.id = 'games-grid';
+    }
+
+    // For each game, create card
+    GAMES.forEach(game => {
+      const card = el('div', { class: 'glass p-3 rounded-xl text-center', title: game.title, style: 'display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px;height:120px;' });
+
+      const icon = el('div', { class: 'text-2xl mb-1', html: game.icon });
+      const title = el('div', { class: 'text-xs text-emerald-200/70 mb-1', html: game.title });
+      const rtp = el('div', { class: 'text-[11px] text-emerald-200/50 mb-2', html: `RTP ${game.rtp}` });
+      const actions = el('div', { style: 'display:flex;gap:6px' }, [
+        el('button', { class: 'btn btn-mint text-xs', type: 'button' , 'data-game': game.id }, 'Play'),
+        el('button', { class: 'btn btn-glass text-xs', type: 'button' , 'data-info': game.id }, 'Info')
+      ]);
+
+      card.appendChild(icon);
+      card.appendChild(title);
+      card.appendChild(rtp);
+      card.appendChild(actions);
+
+      // bind events
+      actions.querySelector('[data-game]')?.addEventListener('click', () => launchGame(game));
+      actions.querySelector('[data-info]')?.addEventListener('click', () => showGameInfo(game));
+
+      container.appendChild(card);
+    });
+  }
+
+  // Show info modal
+  function showGameInfo(game) {
+    const modal = createGameModal(game.title + ' — Info');
+    const ctx = modal.canvas.getContext('2d');
+    const w = modal.canvas.clientWidth, h = modal.canvas.clientHeight;
+    ctx.clearRect(0,0,modal.canvas.width, modal.canvas.height);
+    ctx.fillStyle = '#011713';
+    ctx.fillRect(0,0,modal.canvas.width, modal.canvas.height);
+
+    ctx.fillStyle = '#00e676';
+    ctx.font = `${16 * (window.devicePixelRatio||1)}px system-ui`;
+    ctx.textAlign = 'left';
+    ctx.fillText(game.title, 16, 28);
+
+    ctx.font = `${12 * (window.devicePixelRatio||1)}px system-ui`;
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    const lines = [
+      `Type: ${game.tags.join(', ')}`,
+      `RTP: ${game.rtp}`,
+      '',
+      'Description: High-quality Real King experience. Tap Play to load the module.',
+      '',
+      'If the game module is missing, a polished demo will run instead.'
+    ];
+    let y = 56;
+    lines.forEach(line => { ctx.fillText(line, 16, y); y += 18 * (window.devicePixelRatio||1); });
+
+    // disable spin on info modal
+    modal.spinBtn.style.display = 'none';
+  }
+
+  // small audio play helper (uses window.soundManager or fallback beep)
+  function playSound(name) {
+    if (window.soundManager && typeof window.soundManager[name] === 'function') {
+      try { window.soundManager[name](); } catch (e) {}
+    } else {
+      // fallback: simple short tone using WebAudio
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = (name === 'playWin') ? 1200 : 800;
+        g.gain.value = 0.02;
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); setTimeout(()=> { o.stop(); ctx.close(); }, 80);
+      } catch (e) {}
+    }
+  }
+
+  // Public init: render lobby once DOM ready
+  function initLobby() {
+    renderLobby();
+    // expose for debug
+    window.RealKingGames = { list: GAMES, launch: launchGame, render: renderLobby };
+    console.log('🎮 Real King Games Lobby initialized — games available:', GAMES.length);
+  }
+
+  // Run on DOMContentLoaded or immediately if already ready
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initLobby);
+  else initLobby();
+
+})();
