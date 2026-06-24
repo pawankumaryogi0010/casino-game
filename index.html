@@ -1,561 +1,684 @@
 <!doctype html>
-<html lang="en" class="antialiased">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#011713" />
-  <title>Real King Casino — Mobile</title>
-
-  <!-- Tailwind CDN -->
-  <script>tailwind = {}</script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            obsidian: '#011713',
-            obsidian2: '#02231c',
-            mint: '#00e676',
-            gold: '#FFD700'
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Supabase JS (optional) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js" defer></script>
-
-  <!-- App styles (your style.css) -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- PWA manifest (script.js will set it) -->
-  <link rel="manifest" id="site-manifest" href="#" />
-
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-  <style>
-    :root { --max-width: 450px; }
-    /* small additions to match requested Real King look */
-    .banner { border-radius:12px; overflow:hidden; background:linear-gradient(90deg,#0a3,#022); color:#fff; padding:10px; display:flex; align-items:center; gap:8px; }
-    .category-btn { display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center; padding:8px; border-radius:12px; min-width:54px; }
-    .game-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; }
-    @media (min-width:460px) { .game-grid { grid-template-columns: repeat(4, 1fr); } }
-    .game-card { border-radius:12px; overflow:hidden; position:relative; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03); background:linear-gradient(180deg, rgba(0,0,0,0.14), rgba(255,255,255,0.01)); height:106px; display:flex; flex-direction:column; }
-    .game-thumb { flex:1; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; font-size:28px; }
-    .game-meta { padding:6px 8px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
-    .provider-badge { position:absolute; left:8px; top:8px; background:linear-gradient(90deg,#0006,#0003); padding:4px 6px; border-radius:8px; color:#fff; font-weight:700; font-size:11px; z-index:6; }
-    .hot-ribbon { position:absolute; right:8px; top:8px; background:#ff6b3d; color:#fff; padding:4px 6px; border-radius:8px; font-size:11px; z-index:6;}
-    .view { display:none; }
-    .view.active { display:block; }
-    .bottom-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
-    /* Profile menu */
-    .profile-menu .row { display:flex; align-items:center; justify-content:space-between; padding:12px 10px; border-bottom:1px solid rgba(255,255,255,0.02); }
-    .small-muted { color: rgba(255,255,255,0.6); font-size:13px; }
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0f0f1a" />
+    <title>Real King Casino — Demo</title>
+    <!-- Tailwind CDN (optional utilities) -->
+    <script>tailwind = {}</script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ========================= CSS START - All styles (single-file) ========================= -->
+    <style>
+        /* Theme tokens */
+        :root{ --bg:#0f0f1a; --card:#1a1a2e; --gold:#f5b342; --gold-deep:#e0a93a; --text:#f5f7f6; --muted: rgba(255,255,255,0.12); --glass: rgba(255,255,255,0.02); --radius:14px; --maxw:450px; }
+        * { box-sizing:border-box; }
+        html,body { height:100%; }
+        body{ margin:0; min-height:100vh; display:flex; justify-content:center; background: linear-gradient(180deg,var(--bg) 0%, #07120f 100%); color:var(--text); font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; padding:12px; }
+        .app { width:100%; max-width:var(--maxw); margin:8px 0 68px; }
+        .glass { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.04); border-radius:var(--radius); padding:12px; box-shadow: 0 18px 44px rgba(0,0,0,0.6); }
+        header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+        .logo{display:flex;gap:10px;align-items:center}
+        .logo .circle{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#06110c,#082219);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--gold)}
+        h1{font-size:18px;margin:0}
+        p.sub{font-size:12px;margin:0;color:rgba(255,255,255,0.65)}
+        .banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border-radius:12px;background:linear-gradient(90deg,#081a14,#11221a);border:1px solid rgba(245,179,66,0.06);margin-bottom:12px}
+        .banner .cta{background:linear-gradient(90deg,var(--gold),var(--gold-deep));color:#07110a;font-weight:800;padding:6px 10px;border-radius:10px}
+        .cats{display:flex;gap:8px;overflow:auto;padding-bottom:6px;margin-bottom:10px}
+        .cat{width:64px;min-width:64px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.85)}
+        .game-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+        @media(min-width:420px){ .game-grid{grid-template-columns:repeat(4,1fr)} }
+        .game-card{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));border-radius:10px;overflow:hidden;height:108px;position:relative;cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+        .game-thumb{height:60%;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,#081a14,#071018)}
+        .game-meta{padding:7px 8px;display:flex;justify-content:space-between;align-items:center}
+        .provider{position:absolute;left:8px;top:8px;background:rgba(0,0,0,0.45);padding:4px 8px;border-radius:8px;font-size:11px;color:var(--text)}
+        .hot{position:absolute;right:8px;top:8px;background:#ff6b3d;color:#fff;padding:4px 8px;border-radius:8px;font-size:11px}
+        .gold-badge{position:absolute;right:8px;bottom:36px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));color:#07110a;padding:6px 8px;border-radius:999px;font-weight:800;font-size:12px}
+        .center{text-align:center;margin-top:8px}
+        .page{display:none}
+        .page.active{display:block}
+        .balance-card{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02);margin-bottom:12px}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+        .btn-primary{background:linear-gradient(90deg,var(--gold),var(--gold-deep));color:#07110a}
+        .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
+        .row{display:flex;gap:8px}
+        input[type=number], input[type=text], input[type=email] { width:100%; padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);color:var(--text) }
+        .profile-menu .item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid rgba(255,255,255,0.02)}
+        .list{display:flex;flex-direction:column;gap:8px}
+        .list .item{padding:8px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,0.01),rgba(255,255,255,0.005));display:flex;justify-content:space-between;align-items:center;font-size:13px}
+        nav.bottom{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(0,0,0,0.45), transparent);border-top:1px solid rgba(255,255,255,0.03);display:flex;justify-content:center;padding:8px 0;z-index:50}
+        .nav-inner{width:100%;max-width:var(--maxw);display:flex;justify-content:space-between;padding:0 14px}
+        .nav-btn{display:flex;flex-direction:column;align-items:center;font-size:12px;color:rgba(255,255,255,0.7);background:transparent;border:none}
+        .auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:80;padding:12px}
+        .auth-card{width:100%;max-width:420px;border-radius:16px;background:linear-gradient(180deg,#14141c,#0f0f14);border:1px solid rgba(255,255,255,0.04);overflow:hidden}
+        .auth-tabs{display:flex;background:transparent;padding:12px;gap:8px}
+        .auth-tab{flex:1;padding:8px;border-radius:10px;text-align:center;cursor:pointer;font-weight:800;color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.02)}
+        .auth-tab.active{background:linear-gradient(90deg,var(--gold),var(--gold-deep));color:#07110a}
+        .auth-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+        .rk-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+        .rk-popup{width:100%;max-width:420px;border-radius:14px;background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);overflow:hidden}
+        .rk-hero{display:flex;gap:12px;padding:14px;background:linear-gradient(90deg, rgba(245,179,66,0.06), rgba(245,179,66,0.02))}
+        .rk-hero .icon{width:60px;height:60px;border-radius:12px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));display:flex;align-items:center;justify-content:center;font-weight:900}
+        .rk-body{padding:12px}
+        .rk-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:8px}
+        .rk-task{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,0.01),rgba(255,255,255,0.005))}
+        .muted{color:rgba(255,255,255,0.65);font-size:13px}
+        .center{text-align:center}
+        @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+    </style>
+    <!-- ========================= CSS END ========================= -->
 </head>
-
-<body class="min-h-screen bg-gradient-to-b from-obsidian2 via-obsidian to-obsidian text-mint">
-  <main class="min-h-screen flex items-start justify-center py-4 bottom-safe">
-    <div class="w-full max-w-[var(--max-width)] px-4">
-      <!-- Header -->
-      <header class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
-          <div class="logo-circle" aria-hidden>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="12" cy="12" r="10" fill="#02231c" />
-              <path d="M7 12h10" stroke="#00e676" stroke-width="1.6" stroke-linecap="round" />
-              <path d="M12 7v10" stroke="#FFD700" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-white text-lg font-semibold">Real King Casino</h1>
-            <p class="text-xs text-emerald-200/60 -mt-1">Mobile • Neon • Glass</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button id="btn-settings" class="px-3 py-2 rounded-lg glass text-xs text-white/90 ring-1 ring-emerald-300/10">Settings</button>
-          <button id="btn-auth" class="px-3 py-2 rounded-lg bg-mint text-obsidian text-xs font-medium shadow-neon">Sign in</button>
-        </div>
-      </header>
-
-      <!-- Pages container -->
-      <section id="pages" class="space-y-4">
-        <!-- HOME -->
-        <div id="view-home" class="view active">
-          <!-- Banner -->
-          <div class="banner mb-3">
-            <div style="flex:1">
-              <strong>USDT DEPOSIT BONUS</strong>
-              <div class="small-muted">Unlimited 2% Cashback on eligible deposits</div>
-            </div>
-            <div class="text-sm" style="font-weight:800;background:#ffd700;padding:8px 10px;border-radius:8px;color:#011713">Deposit</div>
-          </div>
-
-          <!-- categories -->
-          <div class="flex items-center justify-between mb-3 overflow-x-auto">
-            <button class="category-btn glass text-xs"><div class="text-xl">🔥</div><div class="small-muted">Hot</div></button>
-            <button class="category-btn glass text-xs"><div class="text-xl">🎰</div><div class="small-muted">Slot</div></button>
-            <button class="category-btn glass text-xs"><div class="text-xl">⛓️</div><div class="small-muted">Blockchain</div></button>
-            <button class="category-btn glass text-xs"><div class="text-xl">⚽</div><div class="small-muted">Sports</div></button>
-            <button class="category-btn glass text-xs"><div class="text-xl">🎟️</div><div class="small-muted">Lottery</div></button>
-          </div>
-
-          <!-- Featured row: Hot -->
-          <div class="flex items-center justify-between mb-2">
-            <h2 class="text-white text-base font-semibold">Hot</h2>
-            <button id="view-all-games" class="text-xs text-emerald-200/70">View All</button>
-          </div>
-
-          <!-- Games grid (4 columns) - renders initial 8, 'View All' shows all -->
-          <div id="game-grid" class="game-grid mb-3"></div>
-
-          <!-- See more button (when collapsed) -->
-          <div id="view-all-wrap" class="text-center">
-            <button id="expand-games" class="btn btn-mint px-6">View All Games</button>
-          </div>
-        </div>
-
-        <!-- WALLET -->
-        <div id="view-wallet" class="view">
-          <h2 class="text-white text-base font-semibold mb-2">Wallet</h2>
-          <div class="glass p-3 rounded-2xl mb-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs text-emerald-200/60">Available</p>
-                <div id="wallet-balance" class="text-2xl font-bold text-white">—</div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <button id="wallet-topup" class="btn btn-mint">Deposit</button>
-                <button id="wallet-withdraw" class="btn btn-glass">Withdraw</button>
-              </div>
-            </div>
-
-            <div class="divider my-3"></div>
-
-            <div>
-              <h3 class="text-sm text-white font-semibold mb-2">Add Money</h3>
-              <div class="flex gap-2">
-                <input id="add-amount" type="number" placeholder="Amount" class="w-2/3 p-2 rounded-lg bg-obsidian/20 text-white" />
-                <button id="add-money-btn" class="btn btn-mint w-1/3">Add</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="glass p-3 rounded-2xl">
-            <h3 class="text-sm font-semibold mb-2">Transaction History</h3>
-            <ul id="wallet-transactions" class="text-xs text-emerald-200/60 space-y-2 max-h-56 overflow-auto">
-              <li class="text-center text-emerald-200/30">No transactions yet</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- REFER -->
-        <div id="view-refer" class="view">
-          <h2 class="text-white text-base font-semibold mb-2">Referral</h2>
-
-          <div class="glass p-4 rounded-2xl mb-3 text-center">
-            <div class="text-sm text-emerald-200/70 mb-2">Invite friends and earn rewards</div>
-            <div id="referral-code" class="crown-badge mx-auto mb-3">TAC-103570915</div>
-            <div class="flex gap-2 justify-center">
-              <button id="invite-btn" class="btn btn-mint px-4">Invite Friends</button>
-              <button id="copy-ref-btn" class="btn btn-glass px-4">Copy</button>
-            </div>
-          </div>
-
-          <div class="glass p-3 rounded-2xl">
-            <h3 class="text-sm font-semibold mb-2">Rewards</h3>
-            <ul class="text-xs text-emerald-200/60 space-y-2">
-              <li>Invite a friend — <strong>₹200</strong> reward</li>
-              <li>Tier bonuses for VIP</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- HISTORY -->
-        <div id="view-history" class="view">
-          <h2 class="text-white text-base font-semibold mb-2">History</h2>
-
-          <div class="glass p-3 rounded-2xl mb-3">
-            <div class="flex gap-2 mb-3">
-              <button class="history-tab btn btn-glass text-xs active" data-tab="bets">Betting History</button>
-              <button class="history-tab btn btn-glass text-xs" data-tab="deposits">Deposits</button>
-              <button class="history-tab btn btn-glass text-xs" data-tab="withdraws">Withdrawals</button>
-            </div>
-
-            <div id="history-list" class="text-xs text-emerald-200/60 max-h-64 overflow-auto">
-              <div class="text-center text-emerald-200/30">No records yet</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- PROFILE -->
-        <div id="view-profile" class="view">
-          <h2 class="text-white text-base font-semibold mb-2">Profile</h2>
-
-          <div class="glass p-4 rounded-2xl mb-3">
-            <div class="flex items-center gap-3">
-              <div class="w-14 h-14 rounded-md bg-obsidian-2 flex items-center justify-center text-2xl">👑</div>
-              <div>
-                <div id="profile-username" class="text-white font-semibold">ejon6444</div>
-                <div id="profile-id" class="text-xs text-emerald-200/60">ID: 103570915</div>
-                <div id="profile-balance" class="mt-2 text-2xl font-bold text-white">0.00</div>
-              </div>
-            </div>
-
-            <div class="mt-4 flex gap-2">
-              <button id="profile-deposit" class="btn btn-mint flex-1">Deposit</button>
-              <button id="profile-withdraw" class="btn btn-glass flex-1">Withdraw</button>
-            </div>
-
-            <div class="mt-3">
-              <div class="banner p-3 rounded-lg">Link N@ Wallet deposit/withdrawal free + draw <strong>77,777.70</strong></div>
-            </div>
-
-            <div class="mt-3">
-              <div class="text-sm text-emerald-200/80 mb-2">VIP Level</div>
-              <div class="glass p-3 rounded-xl flex items-center justify-between">
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="circle">RK</div>
                 <div>
-                  <div class="text-white font-bold">V1</div>
-                  <div class="text-xs text-emerald-200/60">Bonus 20.00</div>
+                    <h1>Real King Casino</h1>
+                    <p class="sub">Mobile • Neon • Glass</p>
                 </div>
-                <div style="flex:1;margin-left:10px;">
-                  <div style="background:rgba(255,255,255,0.03);height:10px;border-radius:6px;overflow:hidden;">
-                    <div id="vip-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#ffd700,#ffb84d)"></div>
-                  </div>
-                  <div class="text-xs small-muted mt-1">0.00/50,000.00</div>
+            </div>
+            <div>
+                <button id="btn-settings" class="btn btn-ghost mr-2">Settings</button>
+                <button id="btn-auth" class="btn btn-primary">Sign in</button>
+            </div>
+        </header>
+
+        <!-- PAGES -->
+        <main>
+            <!-- HOME -->
+            <section id="page-home" class="page active">
+                <div class="banner">
+                    <div>
+                        <div style="font-weight:800">USDT DEPOSIT BONUS</div>
+                        <div class="muted">Unlimited 2% Cashback on eligible deposits</div>
+                    </div>
+                    <div class="cta">Deposit</div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <div class="glass p-0 rounded-2xl profile-menu">
-            <div class="row px-4 py-3">
-              <div>My records</div><div class="small-muted">Details, bets, reports</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Manage withdrawal</div><div class="small-muted">Withdraw methods</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Invite</div><div class="small-muted">Get ₹200</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Profile</div><div class="small-muted">Edit details</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Security Center</div><div class="small-muted">2FA, passwords</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Find us</div><div class="small-muted">Contact</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Language</div><div class="small-muted">English</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>FAQ</div><div class="small-muted">Help</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>About</div><div class="small-muted">About Real King</div>
-            </div>
-            <div class="row px-4 py-3">
-              <div>Quit</div><div class="small-muted">Logout</div>
-            </div>
-          </div>
-        </div>
-      </section>
+                <div class="glass balance-card">
+                    <div>
+                        <div class="muted">Balance</div>
+                        <div id="balance" style="font-weight:900;font-size:20px">0.00</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <button id="btn-topup" class="btn btn-primary">Top up</button>
+                        <button id="btn-withdraw" class="btn btn-ghost">Withdraw</button>
+                    </div>
+                </div>
+
+                <div class="cats" id="categories">
+                    <div class="cat"><div style="font-size:18px">🔥</div><div class="muted">Hot</div></div>
+                    <div class="cat"><div style="font-size:18px">🎰</div><div class="muted">Slot</div></div>
+                    <div class="cat"><div style="font-size:18px">⛓️</div><div class="muted">Blockchain</div></div>
+                    <div class="cat"><div style="font-size:18px">⚽</div><div class="muted">Sports</div></div>
+                    <div class="cat"><div style="font-size:18px">🎟️</div><div class="muted">Lottery</div></div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+                    <h2 style="margin:0;font-size:16px">Hot</h2>
+                    <button id="view-all-toggle" class="btn btn-ghost">View All</button>
+                </div>
+
+                <div id="game-grid" class="game-grid" aria-live="polite"></div>
+
+                <div class="center" style="margin-top:10px">
+                    <button id="expand-games" class="btn btn-primary">View All Games</button>
+                </div>
+            </section>
+
+            <!-- PROMO -->
+            <section id="page-promo" class="page">
+                <div class="glass">
+                    <h3>Promotions</h3>
+                    <p class="muted">Promo content placeholder.</p>
+                </div>
+            </section>
+
+            <!-- WALLET -->
+            <section id="page-wallet" class="page">
+                <h2 style="font-size:16px">Wallet</h2>
+                <div class="glass" style="margin-top:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div class="muted">Available</div>
+                            <div id="wallet-balance" style="font-weight:900;font-size:18px">0.00</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:8px">
+                            <button id="wallet-deposit" class="btn btn-primary">Deposit</button>
+                            <button id="wallet-withdraw-btn" class="btn btn-ghost">Withdraw</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px">
+                        <div style="font-weight:700;margin-bottom:6px">Add Money</div>
+                        <div class="row">
+                            <input id="add-amount" type="number" placeholder="Amount" />
+                            <button id="add-money-btn" class="btn btn-primary">Add</button>
+                        </div>
+
+                        <div style="margin-top:8px;display:flex;gap:8px">
+                            <button id="cashfree-btn" class="btn btn-primary">Deposit via Cashfree</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass" style="margin-top:10px">
+                    <h3 style="margin:0">Transaction History</h3>
+                    <div id="wallet-transactions" style="margin-top:8px" class="list">
+                        <div class="item muted center">No transactions yet</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SUPPORT -->
+            <section id="page-support" class="page">
+                <div class="glass">
+                    <h3>Support</h3>
+                    <p class="muted">Support options and chat (placeholder).</p>
+                </div>
+            </section>
+
+            <!-- PROFILE -->
+            <section id="page-profile" class="page">
+                <h2 style="font-size:16px">Profile</h2>
+                <div class="glass" style="margin-top:8px">
+                    <div style="display:flex;gap:12px;align-items:center">
+                        <div style="width:58px;height:58px;border-radius:12px;background:linear-gradient(135deg,#07120f,#083126);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--gold)">👑</div>
+                        <div>
+                            <div id="profile-username" style="font-weight:800">Guest</div>
+                            <div id="profile-id" class="muted">ID: 103570915</div>
+                            <div id="profile-balance" style="font-weight:900;margin-top:6px">0.00</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:8px;margin-top:12px">
+                        <button id="profile-deposit-btn" class="btn btn-primary">Deposit</button>
+                        <button id="profile-withdraw-btn" class="btn btn-ghost">Withdraw</button>
+                    </div>
+
+                    <div style="margin-top:12px" class="banner">
+                        <div>Link N@ Wallet deposit/withdrawal free + draw <strong>77,777.70</strong></div>
+                        <div class="muted">Link</div>
+                    </div>
+
+                    <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
+                        <div style="width:72px;height:72px;border-radius:12px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));display:flex;align-items:center;justify-content:center;color:#07110a;font-weight:900">V1</div>
+                        <div style="flex:1">
+                            <div style="font-weight:800">VIP Level — V1</div>
+                            <div class="muted">Bonus 20.00 • Bets required 50,000.00</div>
+                            <div style="margin-top:8px;background:rgba(255,255,255,0.03);height:12px;border-radius:8px;overflow:hidden">
+                                <div id="vip-progress" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#ffcc66)"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass" style="margin-top:10px">
+                    <div class="profile-menu">
+                        <div class="item"><div>My records</div><div class="muted">Details, bets, reports</div></div>
+                        <div class="item"><div>Manage withdrawal</div><div class="muted">Methods</div></div>
+                        <div class="item"><div id="invite-menu">Invite</div><div class="muted">Get ₹200</div></div>
+                        <div class="item"><div>Profile</div><div class="muted">Edit</div></div>
+                        <div class="item"><div>Security Center</div><div class="muted">2FA</div></div>
+                        <div class="item"><div>Find us</div><div class="muted">Contact</div></div>
+                        <div class="item"><div>Language</div><div class="muted">English</div></div>
+                        <div class="item"><div>FAQ</div><div class="muted">Help</div></div>
+                        <div class="item"><div>About</div><div class="muted">About Real King</div></div>
+                        <div class="item"><div id="quit-btn">Quit</div><div class="muted">Logout</div></div>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
-  </main>
 
-  <!-- Bottom Navigation -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian/80 to-transparent border-t border-white/5">
-    <div class="w-full max-w-[var(--max-width)] mx-auto flex items-center justify-between px-6 py-2">
-      <button class="nav-btn flex flex-col items-center text-xs text-white/60" data-target="home" aria-label="Home">
-        <div class="text-2xl">🏠</div>
-        <div class="mt-1">Home</div>
-      </button>
-
-      <button class="nav-btn flex flex-col items-center text-xs text-white/60" data-target="promo" aria-label="Promo">
-        <div class="text-2xl">🎁</div>
-        <div class="mt-1">Promo</div>
-      </button>
-
-      <button class="nav-btn flex flex-col items-center text-xs text-white/60" data-target="wallet" aria-label="Withdraw">
-        <div class="text-2xl">💳</div>
-        <div class="mt-1">Wallet</div>
-      </button>
-
-      <button class="nav-btn flex flex-col items-center text-xs text-white/60" data-target="support" aria-label="Support">
-        <div class="text-2xl">🎧</div>
-        <div class="mt-1">Support</div>
-      </button>
-
-      <button class="nav-btn flex flex-col items-center text-xs text-white/60" data-target="profile" aria-label="Profile">
-        <div class="text-2xl">👤</div>
-        <div class="mt-1">Profile</div>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Auth Modal (hidden) -->
-  <div id="auth-modal" class="fixed inset-0 z-70 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.6);">
-    <div class="glass p-4 rounded-2xl w-full max-w-[var(--max-width)]">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-white font-semibold">Sign in / Register</h3>
-        <button id="auth-close" class="text-emerald-200">Close</button>
-      </div>
-
-      <div id="auth-forms" class="space-y-3">
-        <div>
-          <label class="text-xs text-emerald-200/60">Email</label>
-          <input id="auth-email" type="email" class="w-full p-2 rounded-lg bg-obsidian/20 text-white" placeholder="you@domain.com" />
+    <!-- Bottom navigation -->
+    <nav class="bottom">
+        <div class="nav-inner">
+            <button class="nav-btn" data-target="home">🏠<div style="font-size:11px">Home</div></button>
+            <button class="nav-btn" data-target="promo">🎁<div style="font-size:11px">Promo</div></button>
+            <button class="nav-btn" data-target="wallet">💳<div style="font-size:11px">Wallet</div></button>
+            <button class="nav-btn" data-target="support">🎧<div style="font-size:11px">Support</div></button>
+            <button class="nav-btn" data-target="profile">👤<div style="font-size:11px">Profile</div></button>
         </div>
-        <div class="flex gap-2">
-          <button id="auth-login" class="btn btn-mint flex-1">Sign in (magic link)</button>
-          <button id="auth-register" class="btn btn-glass flex-1">Register</button>
-        </div>
-        <div class="text-xs text-emerald-200/60">Signing in will use a magic link (if Supabase configured)</div>
-      </div>
-    </div>
-  </div>
+    </nav>
 
-  <!-- Include game modules and app script -->
-  <script src="script.js" defer></script>
-  <script src="js/games/classic-slots.js" defer></script>
-  <script src="js/games-lobby.js" defer></script>
+    <!-- ========================= JS START - All logic (single-file) - SPA routing, games UI, auth overlay, popups, cashfree mock ========================= -->
+    <script>
+        (function() {
+            "use strict";
+            
+            /* Small helpers */
+            const $ = (s, ctx = document) => ctx.querySelector(s);
+            const $$ = (s, ctx = document) => Array.from(ctx.querySelectorAll(s));
+            const el = (tag, props = {}, children = []) => {
+                const d = document.createElement(tag);
+                for (const k in props) {
+                    if (k === 'class') d.className = props[k];
+                    else if (k === 'html') d.innerHTML = props[k];
+                    else d.setAttribute(k, props[k]);
+                }
+                (Array.isArray(children) ? children : [children]).flat().forEach(c => {
+                    if (c == null) return;
+                    if (typeof c === 'string' || typeof c === 'number') d.appendChild(document.createTextNode(String(c)));
+                    else d.appendChild(c);
+                });
+                return d;
+            };
 
-  <!-- Page wiring: navigation, games grid, view toggles, auth, wallet actions -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Simple router: map nav buttons to views
-      const navButtons = document.querySelectorAll('.nav-btn');
-      const views = {
-        home: document.getElementById('view-home'),
-        promo: document.getElementById('view-home'), // promo can reuse home for now
-        wallet: document.getElementById('view-wallet'),
-        support: document.getElementById('view-home'), // placeholder
-        profile: document.getElementById('view-profile'),
-      };
+            /* Games list */
+            const gamesList = [
+                { id: 'classic-slots', name: 'Real King Slots', icon: '🎰', category: 'Slot' },
+                { id: 'aviator', name: 'Aviator', icon: '✈️', category: 'Arcade' },
+                { id: 'roulette', name: 'Roulette', icon: '🎡', category: 'Table' },
+                { id: 'blackjack', name: 'Blackjack', icon: '🃏', category: 'Card' },
+                { id: 'baccarat', name: 'Baccarat', icon: '🎲', category: 'Card' },
+                { id: 'mines', name: 'Mines', icon: '💣', category: 'Arcade' },
+                { id: 'plinko', name: 'Plinko', icon: '🎯', category: 'Arcade' },
+                { id: 'teen-patti', name: 'Teen Patti', icon: '♠️', category: 'Card' },
+                { id: 'andar-bahar', name: 'Andar Bahar', icon: '🂡', category: 'Card' },
+                { id: 'sic-bo', name: 'Sic Bo', icon: '🎲', category: 'Dice' },
+                { id: 'video-poker', name: 'Video Poker', icon: '🃏', category: 'Poker' },
+                { id: 'wheel-fortune', name: 'Wheel of Fortune', icon: '🛞', category: 'Wheel' },
+                { id: 'keno-jackpot', name: 'Keno Jackpot', icon: '🎯', category: 'Lottery' },
+                { id: 'jhandi-munda', name: 'Jhandi Munda', icon: '🎲', category: 'Traditional' },
+                { id: 'dragon-tiger', name: 'Dragon Tiger', icon: '🐉', category: 'Card' },
+                { id: 'red-dog', name: 'Red Dog', icon: '🂮', category: 'Card' },
+                { id: 'hi-low', name: 'Hi-Low', icon: '🔢', category: 'Card' },
+                { id: 'ludo-betting', name: 'Ludo Betting', icon: '🎲', category: 'Multiplayer' },
+                { id: 'car-roulette', name: 'Car Roulette', icon: '🏎️', category: 'Race' },
+                { id: 'classic-slots-2', name: 'Slots - Mega', icon: '🎰', category: 'Slot' }
+            ];
 
-      function showView(name) {
-        // hide all
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        // show selected or home
-        const view = views[name] || views.home;
-        view.classList.add('active');
-        // update active nav style
-        navButtons.forEach(b => {
-          if (b.dataset.target === name) { b.classList.add('text-neon-mint'); b.classList.remove('text-white/60'); }
-          else { b.classList.remove('text-neon-mint'); b.classList.add('text-white/60'); }
-        });
-      }
+            /* SPA routing */
+            const navButtons = $$('.nav-btn');
 
-      navButtons.forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.target)));
-      // default
-      showView('home');
+            function showPage(name) {
+                const mapping = {
+                    home: 'page-home',
+                    promo: 'page-promo',
+                    wallet: 'page-wallet',
+                    support: 'page-support',
+                    profile: 'page-profile'
+                };
+                $$('.page').forEach(p => p.classList.remove('active'));
+                const id = mapping[name] || 'page-home';
+                const view = document.getElementById(id);
+                if (view) view.classList.add('active');
+                navButtons.forEach(b => b.style.color = (b.dataset.target === name ? 'var(--gold)' : 'rgba(255,255,255,0.7)'));
+                // for accessibility focus first focusable element in view
+                setTimeout(() => {
+                    const focusable = document.querySelector(`#${id} button, #${id} a, #${id} input`);
+                    if (focusable) focusable.focus();
+                }, 80);
+            }
 
-      // Games dataset (20 items)
-      const GAMES = [
-        { id:'classic-slots', title:'Real King Slots', provider:'WG', emoji:'🎰' },
-        { id:'aviator', title:'Aviator', provider:'JDB', emoji:'✈️' },
-        { id:'super-ace', title:'Super Ace', provider:'JILI', emoji:'🂡' },
-        { id:'fortune-gems', title:'Fortune Gems', provider:'JILI', emoji:'🪙' },
-        { id:'crazy777', title:'Crazy777', provider:'WG', emoji:'7️⃣' },
-        { id:'chicken-road', title:'Chicken Road', provider:'IN', emoji:'🐔' },
-        { id:'money-coming', title:'Money Coming', provider:'WG', emoji:'💵' },
-        { id:'rocket-crash', title:'Crash', provider:'WG', emoji:'🚀' },
-        { id:'aviator-2', title:'Aviator Classic', provider:'SP', emoji:'✈️' },
-        { id:'keno-jackpot', title:'Keno Jackpot', provider:'KN', emoji:'🎯' },
-        { id:'plinko', title:'Plinko', provider:'PL', emoji:'🎯' },
-        { id:'roulette', title:'Roulette', provider:'MG', emoji:'🎡' },
-        { id:'blackjack', title:'Blackjack', provider:'NT', emoji:'🃏' },
-        { id:'baccarat', title:'Baccarat', provider:'DT', emoji:'🎲' },
-        { id:'mines', title:'Mines', provider:'IN', emoji:'💣' },
-        { id:'teen-patti', title:'Teen Patti', provider:'TP', emoji:'♠️' },
-        { id:'andar-bahar', title:'Andar Bahar', provider:'AB', emoji:'🂡' },
-        { id:'sic-bo', title:'Sic Bo', provider:'SB', emoji:'🎲' },
-        { id:'video-poker', title:'Video Poker', provider:'VP', emoji:'🃏' },
-        { id:'ludo-betting', title:'Ludo Betting', provider:'LD', emoji:'🎲' }
-      ];
+            navButtons.forEach(b => b.addEventListener('click', () => showPage(b.dataset.target)));
 
-      const grid = document.getElementById('game-grid');
-      const expandBtn = document.getElementById('expand-games');
-      let showingAll = false;
+            /* Games grid rendering */
+            const gridEl = document.getElementById('game-grid');
+            const expandBtn = document.getElementById('expand-games');
+            let showingAll = false;
 
-      function renderGames(limit = 8) {
-        grid.innerHTML = '';
-        const list = showingAll ? GAMES : GAMES.slice(0, limit);
-        list.forEach(g => {
-          const card = document.createElement('div');
-          card.className = 'game-card';
-          card.innerHTML = `
-            <div class="provider-badge">${g.provider}</div>
-            ${Math.random() < 0.25 ? '<div class="hot-ribbon">HOT</div>' : ''}
-            <div class="game-thumb" data-game="${g.id}" style="background:linear-gradient(135deg,#0a1f16,#02231c);">${g.emoji}</div>
-            <div class="game-meta">
-              <div style="font-weight:700;color:#fff;font-size:12px">${g.title}</div>
-              <div style="color:rgba(255,255,255,0.7);font-size:11px">RTP 95%</div>
-            </div>`;
-          // click handlers
-          card.addEventListener('click', (e) => {
-            e.stopPropagation();
-            launchGameById(g.id, g);
-          }, { passive: true });
-          // small play via clicking thumbnail
-          grid.appendChild(card);
-        });
-      }
+            function renderGames(limit = 8) {
+                gridEl.innerHTML = '';
+                const list = showingAll ? gamesList : gamesList.slice(0, limit);
+                list.forEach(g => {
+                    const card = el('div', { class: 'game-card', role: 'button', tabindex: 0 });
+                    const prov = el('div', { class: 'provider' }, g.category);
+                    const hot = (Math.random() < 0.25) ? el('div', { class: 'hot' }, 'HOT') : null;
+                    const thumb = el('div', { class: 'game-thumb' }, g.icon);
+                    const meta = el('div', { class: 'game-meta' });
+                    meta.appendChild(el('div', { class: 'title' }, g.name));
+                    meta.appendChild(el('div', { class: 'rtp' }, 'RTP 95%'));
+                    card.appendChild(prov);
+                    if (hot) card.appendChild(hot);
+                    card.appendChild(thumb);
+                    card.appendChild(meta);
+                    // click handler: alert launching
+                    card.addEventListener('click', () => {
+                        alert('Launching ' + g.name + ' game....');
+                    }, { passive: true });
+                    card.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            alert('Launching ' + g.name + ' game....');
+                        }
+                    });
+                    gridEl.appendChild(card);
+                });
+            }
 
-      function toggleAll() {
-        showingAll = !showingAll;
-        renderGames();
-        expandBtn.textContent = showingAll ? 'Show Less' : 'View All Games';
-      }
+            expandBtn.addEventListener('click', () => {
+                showingAll = !showingAll;
+                renderGames();
+                expandBtn.textContent = showingAll ? 'Show Less' : 'View All Games';
+            });
+            renderGames(8);
 
-      expandBtn.addEventListener('click', toggleAll);
-      renderGames();
+            /* AUTH overlay (mock) */
+            const AUTH_KEY = 'rk_user';
 
-      // Launch logic: tries several fallbacks so Play works even if modules incomplete
-      async function launchGameById(id, meta) {
-        // Prefer games-lobby/loader if available
-        try {
-          if (window.launchGame && typeof window.launchGame === 'function') { window.launchGame(id); return; }
-          if (window.createClassicSlots && id === 'classic-slots') { window.createClassicSlots(null,null,{bet:5}); return; }
-          if (window.emeraldGames && typeof window.emeraldGames.launch === 'function') { window.emeraldGames.launch(id); return; }
-        } catch (err) {
-          console.warn('Launcher fallback failed', err);
-        }
-        // Final fallback: show polished demo modal (quick)
-        showDemoModal(meta);
-      }
+            function currentUser() {
+                try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { return null; }
+            }
 
-      // Quick demo modal
-      function showDemoModal(meta) {
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.background = 'rgba(0,0,0,0.7)'; overlay.style.zIndex = 9999; overlay.style.display='flex'; overlay.style.alignItems='center'; overlay.style.justifyContent='center';
-        const card = document.createElement('div');
-        card.style.width='92%'; card.style.maxWidth='420px'; card.style.borderRadius='14px'; card.style.padding='12px'; card.style.background='linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))';
-        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="color:#fff">${meta.title}</strong><button id="rk-close-demo" class="btn btn-glass">Close</button></div><canvas id="rk-demo-canvas" style="width:100%;height:240px;border-radius:10px;background:#011713"></canvas><div style="display:flex;gap:8px;margin-top:8px"><button id="rk-demo-spin" class="btn btn-mint flex-1">SPIN</button></div>`;
-        overlay.appendChild(card);
-        document.body.appendChild(overlay);
+            function setUser(u) { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
 
-        const canvas = document.getElementById('rk-demo-canvas');
-        const dpr = window.devicePixelRatio || 1;
-        const width = card.clientWidth; const height = 240;
-        canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
-        canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
-        const ctx = canvas.getContext('2d');
+            function clearUser() { localStorage.removeItem(AUTH_KEY); }
 
-        let raf;
-        let t0 = performance.now();
-        function anim(ts) {
-          const t = (ts - t0)/1000;
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-          ctx.fillStyle = '#011713'; ctx.fillRect(0,0,canvas.width,canvas.height);
-          ctx.fillStyle = '#00e676'; ctx.font = 'bold 16px system-ui'; ctx.fillText(meta.title + ' — Demo', 12, 26);
-          ctx.font = '48px serif'; ctx.textAlign='center';
-          const symbols = ['🍒','🍋','🍊','🔔','💎','⭐','7'];
-          for (let i=0;i<3;i++) { const x = canvas.width/ (dpr*4) + i*(canvas.width/(dpr*4)); const y = 120 + Math.sin(t*2 + i)*20; ctx.fillStyle='#fff'; ctx.fillText(symbols[Math.floor((t*2 + i)) % symbols.length], x, y); }
-          raf = requestAnimationFrame(anim);
-        }
-        raf = requestAnimationFrame(anim);
+            function buildAuthOverlay() {
+                if ($('#rk-auth-overlay')) return;
+                const ov = el('div', { class: 'auth-overlay', id: 'rk-auth-overlay' });
+                const card = el('div', { class: 'auth-card' });
+                const tabs = el('div', { class: 'auth-tabs' });
+                const tLogin = el('button', { class: 'auth-tab active', id: 'rk-tab-login' }, 'Login');
+                const tSignup = el('button', { class: 'auth-tab', id: 'rk-tab-signup' }, 'Sign Up');
+                tabs.appendChild(tLogin);
+                tabs.appendChild(tSignup);
+                const body = el('div', { class: 'auth-body' });
+                const fLogin = el('div', { id: 'rk-form-login' });
+                fLogin.appendChild(el('label', {}, 'Email or Mobile'));
+                fLogin.appendChild(el('input', { id: 'rk-login-identity', type: 'text', placeholder: 'you@domain.com or mobile' }));
+                fLogin.appendChild(el('label', {}, 'Password'));
+                fLogin.appendChild(el('input', { id: 'rk-login-password', type: 'password', placeholder: 'password' }));
+                fLogin.appendChild(el('div', { style: 'display:flex;gap:8px' }, [
+                    el('button', { id: 'rk-login-btn', class: 'btn btn-primary' }, 'Login'),
+                    el('button', { id: 'rk-guest-btn', class: 'btn btn-ghost' }, 'Guest')
+                ]));
+                const fSignup = el('div', { id: 'rk-form-signup', style: 'display:none' });
+                fSignup.appendChild(el('label', {}, 'Username'));
+                fSignup.appendChild(el('input', { id: 'rk-sign-username', type: 'text', placeholder: 'username' }));
+                fSignup.appendChild(el('label', {}, 'Email'));
+                fSignup.appendChild(el('input', { id: 'rk-sign-email', type: 'email', placeholder: 'you@domain.com' }));
+                fSignup.appendChild(el('label', {}, 'Password'));
+                fSignup.appendChild(el('input', { id: 'rk-sign-password', type: 'password', placeholder: 'password' }));
+                fSignup.appendChild(el('label', {}, 'Confirm'));
+                fSignup.appendChild(el('input', { id: 'rk-sign-confirm', type: 'password', placeholder: 'confirm password' }));
+                fSignup.appendChild(el('div', { style: 'display:flex;gap:8px' }, [
+                    el('button', { id: 'rk-signup-btn', class: 'btn btn-primary' }, 'Sign Up'),
+                    el('button', { id: 'rk-cancel-sign', class: 'btn btn-ghost' }, 'Cancel')
+                ]));
+                body.appendChild(fLogin);
+                body.appendChild(fSignup);
+                card.appendChild(tabs);
+                card.appendChild(body);
+                ov.appendChild(card);
+                document.body.appendChild(ov);
 
-        overlay.querySelector('#rk-demo-spin').addEventListener('click', () => {
-          const win = (Math.random()*80+1).toFixed(2);
-          alert('Demo WIN +' + win + ' USD');
-        });
-        overlay.querySelector('#rk-close-demo').addEventListener('click', () => {
-          cancelAnimationFrame(raf);
-          overlay.remove();
-        });
-      }
+                // wiring
+                tLogin.addEventListener('click', () => {
+                    tLogin.classList.add('active');
+                    tSignup.classList.remove('active');
+                    fLogin.style.display = 'block';
+                    fSignup.style.display = 'none';
+                });
+                tSignup.addEventListener('click', () => {
+                    tSignup.classList.add('active');
+                    tLogin.classList.remove('active');
+                    fSignup.style.display = 'block';
+                    fLogin.style.display = 'none';
+                });
+                $('#rk-guest-btn').addEventListener('click', () => {
+                    const guest = { id: 'guest-' + Date.now(), username: 'Guest', balance: 0 };
+                    setUser(guest);
+                    onLoginSuccess(guest);
+                    hideAuthOverlay();
+                });
+                $('#rk-login-btn').addEventListener('click', () => {
+                    const ident = $('#rk-login-identity').value.trim();
+                    const pwd = $('#rk-login-password').value.trim();
+                    if (!ident || !pwd) { alert('Enter identity and password (mock)'); return; }
+                    const user = { id: 'U' + Math.floor(Math.random() * 900000000 + 100000000), username: ident.includes('@') ? ident.split('@')[0] : ident, balance: 0 };
+                    setUser(user);
+                    onLoginSuccess(user);
+                    hideAuthOverlay();
+                });
+                $('#rk-signup-btn').addEventListener('click', () => {
+                    const u = $('#rk-sign-username').value.trim();
+                    const e = $('#rk-sign-email').value.trim();
+                    const p = $('#rk-sign-password').value;
+                    const c = $('#rk-sign-confirm').value;
+                    if (!u || !e || !p || !c) { alert('Complete fields'); return; }
+                    if (p !== c) { alert('Passwords do not match'); return; }
+                    const user = { id: 'U' + Math.floor(Math.random() * 900000000 + 100000000), username: u, email: e, balance: 0 };
+                    setUser(user);
+                    onLoginSuccess(user);
+                    hideAuthOverlay();
+                    // show registration popup
+                    showPopup1(user);
+                });
+                $('#rk-cancel-sign').addEventListener('click', () => tLogin.click());
+            }
 
-      // wallet actions
-      document.getElementById('wallet-topup')?.addEventListener('click', () => { if (typeof openTopupPrompt === 'function') openTopupPrompt(); else alert('Top up dialog not configured'); });
-      document.getElementById('wallet-withdraw')?.addEventListener('click', () => { if (typeof openWithdrawPrompt === 'function') openWithdrawPrompt(); else alert('Withdraw dialog not configured'); });
-      document.getElementById('add-money-btn')?.addEventListener('click', () => {
-        const amt = Number(document.getElementById('add-amount').value || 0);
-        if (!amt || amt <= 0) return alert('Enter amount');
-        if (typeof openTopupPrompt === 'function') { openTopupPrompt(); }
-        else { alert('Add money: ' + amt); }
-      });
+            function showAuthOverlay() {
+                buildAuthOverlay();
+                $('#rk-auth-overlay').style.display = 'flex';
+            }
 
-      // referral actions
-      document.getElementById('copy-ref-btn')?.addEventListener('click', () => {
-        const code = document.getElementById('referral-code').textContent || 'TAC-103570915';
-        navigator.clipboard?.writeText(code).then(() => { if (typeof showToast === 'function') showToast('Referral copied', 'success'); else alert('Copied: ' + code); });
-      });
-      document.getElementById('invite-btn')?.addEventListener('click', () => { if (navigator.share) navigator.share({ title:'Join Real King', text:'Use code TAC-103570915', url:location.href }); else alert('Share not available'); });
+            function hideAuthOverlay() {
+                const o = $('#rk-auth-overlay');
+                if (o) o.remove();
+            }
 
-      // profile deposit/withdraw
-      document.getElementById('profile-deposit')?.addEventListener('click', () => document.getElementById('wallet-topup').click());
-      document.getElementById('profile-withdraw')?.addEventListener('click', () => document.getElementById('wallet-withdraw').click());
+            // if no user, show auth overlay
+            if (!currentUser()) setTimeout(() => showAuthOverlay(), 600);
+            else onLoginSuccess(currentUser());
 
-      // history tabs
-      document.querySelectorAll('.history-tab').forEach(btn => btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.history-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const tab = btn.dataset.tab;
-        const list = document.getElementById('history-list');
-        list.innerHTML = '';
-        // sample items (replace with actual history from script.js or Supabase)
-        if (tab === 'bets') {
-          list.innerHTML = '<div class="p-3">No bets yet</div>';
-        } else if (tab === 'deposits') {
-          list.innerHTML = '<div class="p-3">No deposits yet</div>';
-        } else {
-          list.innerHTML = '<div class="p-3">No withdrawals yet</div>';
-        }
-      }));
+            function onLoginSuccess(user) {
+                $('#profile-username').textContent = user.username || 'Player';
+                $('#profile-id').textContent = 'ID: ' + (user.id || '—');
+                $('#profile-balance').textContent = (user.balance || 0).toFixed(2);
+                $('#balance').textContent = (user.balance || 0).toFixed(2);
+                $('#wallet-balance').textContent = (user.balance || 0).toFixed(2);
+                const authBtn = document.getElementById('btn-auth');
+                if (authBtn) {
+                    authBtn.textContent = 'Sign out';
+                    authBtn.classList.remove('btn-primary');
+                    authBtn.classList.add('btn-ghost');
+                    authBtn.onclick = () => {
+                        if (confirm('Sign out?')) {
+                            clearUser();
+                            location.reload();
+                        }
+                    };
+                }
+            }
 
-      // auth modal wiring
-      const authModal = document.getElementById('auth-modal');
-      document.getElementById('btn-auth')?.addEventListener('click', () => { authModal.classList.remove('hidden'); authModal.style.display = 'flex'; });
-      document.getElementById('auth-close')?.addEventListener('click', () => { authModal.classList.add('hidden'); authModal.style.display = 'none'; });
-      document.getElementById('auth-login')?.addEventListener('click', async () => {
-        const email = document.getElementById('auth-email').value;
-        if (!email) return alert('Enter email');
-        if (typeof signInMagic === 'function') {
-          await signInMagic(email);
-          authModal.classList.add('hidden'); authModal.style.display = 'none';
-        } else {
-          alert('Magic link not configured. Provide Supabase details in Settings.');
-        }
-      });
-      document.getElementById('auth-register')?.addEventListener('click', () => {
-        const email = document.getElementById('auth-email').value;
-        if (!email) return alert('Enter email');
-        // for now use same magic flow; in prod implement proper register flow
-        if (typeof signInMagic === 'function') signInMagic(email);
-      });
+            /* Popups handling */
+            function shouldShowPopup(n) {
+                if (localStorage.getItem(`popup_${n}_never`) === '1') return false;
+                const raw = localStorage.getItem(`popup_${n}_dont_today`);
+                if (raw) {
+                    try {
+                        const o = JSON.parse(raw);
+                        if (o && o.ts) {
+                            const d = new Date(o.ts),
+                                now = new Date();
+                            if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) return false;
+                        }
+                    } catch (e) {}
+                }
+                return true;
+            }
 
-      // settings open handled by script.js if button id matches
-      document.getElementById('btn-settings')?.addEventListener('click', () => {
-        document.getElementById('modal-overlay')?.classList.remove('hidden');
-      });
+            function createPopup(cfg) {
+                if (!shouldShowPopup(cfg.id)) return;
+                const ov = el('div', { class: 'rk-popup-overlay', id: `rk-popup-${cfg.id}` });
+                const box = el('div', { class: 'rk-popup' });
+                const hero = el('div', { class: 'rk-hero' }, [
+                    el('div', { class: 'icon' }, cfg.icon || '🎉'),
+                    el('div', {}, [
+                        el('div', { class: 'title' }, cfg.title || ''),
+                        el('div', { class: 'muted' }, cfg.subtitle || '')
+                    ])
+                ]);
+                box.appendChild(hero);
+                const body = el('div', { class: 'rk-body' });
+                if (cfg.tasks && Array.isArray(cfg.tasks)) {
+                    cfg.tasks.forEach(t => body.appendChild(el('div', { class: 'rk-task' }, [
+                        el('div', {}, t.label),
+                        el('div', {}, t.value)
+                    ])));
+                } else if (cfg.contentHtml) {
+                    body.innerHTML = cfg.contentHtml;
+                }
+                box.appendChild(body);
+                const footer = el('div', { class: 'rk-footer' });
+                const actions = el('div', { class: 'actions' });
+                const cta = el('button', { class: 'btn btn-primary', id: `rk-popup-cta-${cfg.id}` }, cfg.ctaLabel || 'OK');
+                const close = el('button', { class: 'btn btn-ghost', id: `rk-popup-close-${cfg.id}` }, 'Close');
+                actions.appendChild(cta);
+                actions.appendChild(close);
+                footer.appendChild(actions);
+                const checkboxRow = el('div', { class: 'center' }, [
+                    el('label', {}, [
+                        el('input', { type: 'checkbox', id: `popup_${cfg.id}_dont_today` }),
+                        ' Don\'t show again today'
+                    ]),
+                    el('label', {}, [
+                        el('input', { type: 'checkbox', id: `popup_${cfg.id}_never` }),
+                        ' Never remind'
+                    ])
+                ]);
+                footer.appendChild(checkboxRow);
+                box.appendChild(footer);
+                ov.appendChild(box);
+                document.body.appendChild(ov);
+                $(`#rk-popup-close-${cfg.id}`).addEventListener('click', () => ov.remove());
+                $(`#rk-popup-cta-${cfg.id}`).addEventListener('click', () => {
+                    if (typeof cfg.onCta === 'function') cfg.onCta();
+                    ov.remove();
+                });
+                $(`#popup_${cfg.id}_dont_today`).addEventListener('change', (e) => {
+                    if (e.target.checked) localStorage.setItem(`popup_${cfg.id}_dont_today`, JSON.stringify({ ts: Date.now() }));
+                    else localStorage.removeItem(`popup_${cfg.id}_dont_today`);
+                });
+                $(`#popup_${cfg.id}_never`).addEventListener('change', (e) => {
+                    if (e.target.checked) localStorage.setItem(`popup_${cfg.id}_never`, '1');
+                    else localStorage.removeItem(`popup_${cfg.id}_never`);
+                });
+            }
 
-      // update UI balance periodically using script.js helper if available
-      function refreshBalances() {
-        try {
-          if (typeof updateBalanceUI === 'function') updateBalanceUI();
-          // update wallet/profile elements from #balance if available
-          const balEl = document.getElementById('balance');
-          if (balEl) {
-            const b = balEl.textContent || '0.00';
-            const walletEl = document.getElementById('wallet-balance');
-            const profileBal = document.getElementById('profile-balance');
-            if (walletEl) walletEl.textContent = b;
-            if (profileBal) profileBal.textContent = b;
-          }
-        } catch (e) {}
-      }
-      setInterval(refreshBalances, 1200);
+            function showPopup1(user) {
+                createPopup({
+                    id: 1,
+                    icon: '🎉',
+                    title: 'Congratulations on Successful Registration!',
+                    subtitle: `Welcome ${user.username || ''}`,
+                    contentHtml: `<div style="padding:8px 12px"><p>Your account has been created. Deposit now to claim bonuses.</p></div>`,
+                    ctaLabel: 'Deposit Now',
+                    onCta: () => showPage('wallet')
+                });
+            }
 
-      // initial call
-      refreshBalances();
-    });
-  </script>
+            function showPopup2() {
+                createPopup({
+                    id: 2,
+                    icon: '🏆',
+                    title: 'First Deposit Extra Reward',
+                    subtitle: 'Complete these tasks to claim rewards',
+                    tasks: [
+                        { label: 'Deposit ₹100', value: 'Reward 10' },
+                        { label: 'Deposit ₹300', value: 'Reward 30' },
+                        { label: 'Deposit ₹500', value: 'Reward 60' },
+                        { label: 'Deposit ₹1000', value: 'Reward 150' },
+                        { label: 'Play 10 rounds', value: 'Reward 25' },
+                        { label: 'Invite a friend', value: 'Reward 200' },
+                        { label: 'Complete KYC', value: 'Reward 300' }
+                    ],
+                    ctaLabel: 'Got it'
+                });
+            }
+
+            function showPopup3() {
+                createPopup({
+                    id: 3,
+                    icon: '📲',
+                    title: 'Download the app and get ₹57 for free',
+                    subtitle: 'Install from the store',
+                    contentHtml: `<div style="padding:8px 12px;display:flex;gap:8px;justify-content:center"><button id="dl-speed" class="btn btn-primary">Speed App</button><button id="dl-native" class="btn btn-ghost">Native App</button></div>`,
+                    ctaLabel: 'Close'
+                });
+                setTimeout(() => {
+                    const s = $('#dl-speed');
+                    if (s) s.addEventListener('click', () => alert('Speed app mock'));
+                    const n = $('#dl-native');
+                    if (n) n.addEventListener('click', () => alert('Native app mock'));
+                }, 50);
+            }
+            setTimeout(() => showPopup3(), 1200);
+
+            /* Cashfree mock function */
+            window.initiateCashfreePayment = async function(amount) {
+                const amt = Number(amount);
+                if (!amt || amt <= 0) {
+                    alert('Enter a valid amount');
+                    return;
+                }
+                const ov = el('div', { class: 'rk-popup-overlay' });
+                const box = el('div', { class: 'rk-popup' });
+                box.innerHTML = `<div class="rk-hero"><div class="icon">💳</div><div><div class="title">Redirecting to Cashfree Gateway... (Mock)</div><div class="muted">Processing ${amt}</div></div></div><div style="padding:12px" class="center">Please wait...</div>`;
+                ov.appendChild(box);
+                document.body.appendChild(ov);
+                await new Promise(r => setTimeout(r, 2000));
+                ov.remove();
+                const user = currentUser() || { id: 'guest', username: 'Guest', balance: 0 };
+                const newBal = (Number(user.balance || 0) + amt);
+                const updated = Object.assign({}, user, { balance: newBal });
+                setUser(updated);
+                $('#balance').textContent = newBal.toFixed(2);
+                $('#wallet-balance').textContent = newBal.toFixed(2);
+                $('#profile-balance').textContent = newBal.toFixed(2);
+                const txList = $('#wallet-transactions');
+                const item = el('div', { class: 'item' }, [
+                    el('div', {}, `Deposit via Cashfree (mock)`),
+                    el('div', {}, `+${amt.toFixed(2)}`)
+                ]);
+                if (txList) {
+                    if (txList.querySelector('.muted')) txList.innerHTML = '';
+                    txList.insertBefore(item, txList.firstChild);
+                }
+                if (!localStorage.getItem('rk_first_deposit_done')) {
+                    localStorage.setItem('rk_first_deposit_done', '1');
+                    setTimeout(() => showPopup2(), 500);
+                }
+                alert('Cashfree: Payment successful (mock) +' + amt.toFixed(2));
+                return { status: 'success', amount: amt };
+            };
+
+            /* Wire cashfree button */
+            $('#cashfree-btn').addEventListener('click', () => {
+                const val = Number($('#add-amount').value || 0);
+                if (!val) {
+                    const v = prompt('Enter deposit amount (mock):', '100');
+                    if (!v) return;
+                    initiateCashfreePayment(Number(v));
+                } else initiateCashfreePayment(val);
+            });
+
+            /* Wallet/page wiring */
+            $('#wallet-deposit').addEventListener('click', () => showPage('wallet'));
+            $('#wallet-withdraw-btn').addEventListener('click', () => alert('Withdraw flow (mock)'));
+            $('#btn-topup').addEventListener('click', () => showPage('wallet'));
+            $('#btn-withdraw').addEventListener('click', () => alert('Withdraw flow (mock)'));
+            $('#profile-deposit-btn').addEventListener('click', () => showPage('wallet'));
+            $('#profile-withdraw-btn').addEventListener('click', () => alert('Withdraw mock'));
+            $('#invite-menu').addEventListener('click', () => {
+                showPage('profile');
+                setTimeout(() => alert('Invite friends: share referral code TAC-103570915'), 200);
+            });
+            $('#quit-btn').addEventListener('click', () => {
+                if (confirm('Quit / Logout?')) {
+                    clearUser();
+                    location.reload();
+                }
+            });
+
+            /* Start on home */
+            showPage('home');
+        })();
+    </script>
+    <!-- ========================= JS END ========================= -->
 </body>
 </html>
