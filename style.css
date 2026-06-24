@@ -1,67 +1,67 @@
 /* style.css
-   Mobile-first, dark obsidian + neon mint + gold, glassmorphism
-   Designed to match a "Real King Casino" neon/glass aesthetic
+   Real King Casino - Theme + UI
+   Theme: Dark (#0f0f1a), Gold accent (#f5b342), Card bg (#1a1a2e)
+   Mobile-first (max width 450px)
 */
 
-/* Color tokens */
-:root{
-  --obsidian: #011713;
-  --obsidian-2: #02231c;
-  --mint: #00e676;
-  --gold: #FFD700;
-  --glass-bg: rgba(255,255,255,0.03);
-  --glass-border: rgba(255,255,255,0.06);
-  --muted: rgba(255,255,255,0.12);
+/* ---------- Color tokens ---------- */
+:root {
+  --bg: #0f0f1a;               /* main background */
+  --bg-alt: #0b0b12;           /* slight alternate */
+  --card-bg: #1a1a2e;          /* card surface */
+  --glass-bg: rgba(255,255,255,0.02);
+  --glass-border: rgba(255,255,255,0.04);
+  --gold: #f5b342;             /* primary gold accent */
+  --gold-deep: #e0a93a;
+  --mint: #00e676;             /* neon accent if needed */
+  --text: #f5f7f6;
+  --muted: rgba(245,179,66,0.20);
+  --muted-2: rgba(255,255,255,0.12);
+  --danger: #ff6b6b;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
   --max-width: 450px;
-  --radius-lg: 18px;
-  --radius-md: 12px;
-  --shadow-neon: 0 8px 30px rgba(0,230,118,0.06), inset 0 1px 0 rgba(255,255,255,0.02);
-  --glow-mint: 0 0 12px rgba(0,230,118,0.14), 0 6px 30px rgba(0,230,118,0.06);
-  --glow-gold: 0 0 8px rgba(255,215,0,0.12);
+  --shadow: 0 8px 28px rgba(0,0,0,0.65);
 }
 
-/* Base layout & typography */
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
+/* ---------- Base ---------- */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body { height:100%; }
+body {
   margin:0;
-  min-height:100vh;
-  background:
-    radial-gradient(1200px 800px at 10% 10%, rgba(0,230,118,0.02), transparent 8%),
-    linear-gradient(180deg, var(--obsidian-2) 0%, var(--obsidian) 100%);
-  color: #dffdf2;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  -webkit-text-size-adjust:100%;
-  padding: 0 14px;
+  padding: 0 12px;
   display:flex;
   justify-content:center;
 }
 
-/* Center mobile container */
-.main-container {
+/* Center container */
+.main-container, .app-root {
   width:100%;
   max-width:var(--max-width);
-  margin: 12px 0 40px;
+  margin: 12px 0 32px;
 }
 
-/* Glass card base */
+/* ---------- Glass Card ---------- */
 .glass {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   backdrop-filter: blur(8px) saturate(140%);
   -webkit-backdrop-filter: blur(8px) saturate(140%);
-  box-shadow: var(--shadow-neon);
+  box-shadow: var(--shadow);
+  padding: 12px;
 }
 
-/* Small glass (rounded) */
-.glass.rounded-sm {
-  border-radius: var(--radius-md);
-}
+/* Rounded variants */
+.glass.rounded-sm { border-radius: var(--radius-md); padding:10px; }
 
-/* Header logo circle */
+/* ---------- Header / Logo ---------- */
 .logo-circle {
   width:54px;
   height:54px;
@@ -71,15 +71,10 @@ body{
   justify-content:center;
   background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   border:1px solid rgba(0,0,0,0.25);
-  box-shadow: var(--glow-mint);
+  box-shadow: 0 8px 28px rgba(245,179,66,0.04);
 }
 
-/* Buttons */
-button {
-  font-family: inherit;
-  -webkit-tap-highlight-color: transparent;
-}
-
+/* ---------- Buttons ---------- */
 .btn {
   display:inline-flex;
   align-items:center;
@@ -87,205 +82,256 @@ button {
   gap:8px;
   border-radius:12px;
   padding:8px 12px;
-  font-weight:600;
+  font-weight:700;
   font-size:14px;
   cursor:pointer;
   border: none;
-  transition: transform .12s ease, box-shadow .12s ease;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  user-select:none;
 }
-
 .btn:active{ transform: translateY(1px); }
 
 .btn-mint {
-  background: linear-gradient(180deg, rgba(0,230,118,0.14), rgba(0,230,118,0.06));
-  color: var(--obsidian);
-  box-shadow: var(--glow-mint);
+  background: linear-gradient(180deg, rgba(0,230,118,0.12), rgba(0,230,118,0.06));
+  color: var(--bg);
+  box-shadow: 0 10px 30px rgba(0,230,118,0.04), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .btn-glass {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.04);
-  color: #eafff0;
+  color: var(--text);
   box-shadow: none;
 }
 
-/* Balance card */
-.balance-card {
-  padding:14px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-radius:16px;
+.btn-danger {
+  background: linear-gradient(180deg, #ff6b6b, #ff4848);
+  color: #111;
+  font-weight:800;
 }
 
-.balance-label { font-size:12px; color: rgba(223,255,242,0.6); }
-.balance-amount { font-size:22px; font-weight:700; color: #ffffff; }
+/* Gradient gold CTAs */
+.btn-gold {
+  background: linear-gradient(90deg,var(--gold) 0%, var(--gold-deep) 100%);
+  color: #07110a;
+  font-weight:900;
+  box-shadow: 0 10px 30px rgba(245,179,66,0.08);
+}
 
-/* Slot reels */
-.slot-card { padding:14px; border-radius:16px; }
-.reels { display:flex; gap:10px; justify-content:center; align-items:center; }
-.reel {
-  width:72px;
-  height:72px;
+/* ---------- Banner ---------- */
+.banner {
+  border-radius:14px;
+  overflow:hidden;
+  background: linear-gradient(90deg,#081a14, #11221a);
+  color: var(--text);
+  padding: 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border: 1px solid rgba(245,179,66,0.06);
+}
+
+/* ---------- Categories ---------- */
+.category-btn {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:center;
+  justify-content:center;
+  padding:8px;
+  border-radius:10px;
+  min-width:60px;
+  text-align:center;
+  color:var(--text);
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* ---------- Game Grid / Cards (4 columns) ---------- */
+.game-grid {
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:10px;
+}
+@media (min-width:480px) {
+  .game-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.game-card {
   border-radius:12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border:1px solid rgba(255,255,255,0.04);
+  overflow:hidden;
+  position:relative;
+  height:116px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  background: linear-gradient(180deg, var(--card-bg), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+}
+
+/* Thumbnail fills top 2/3 */
+.game-thumb {
+  height:68%;
+  background-size:cover;
+  background-position:center;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
-  font-size:22px;
+  font-size:28px;
+  color: #fff;
+}
+
+/* Card meta bottom */
+.game-meta {
+  padding:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+}
+.game-meta .title { font-weight:800; color:var(--text); font-size:12px; text-align:left; }
+.game-meta .rtp { font-size:11px; color: rgba(255,255,255,0.75); }
+
+/* Provider badge, HOT ribbon, GOLD badge */
+.provider-badge {
+  position:absolute;
+  left:8px; top:8px;
+  background: rgba(0,0,0,0.45);
+  padding:5px 8px;
+  border-radius:8px;
+  font-size:11px;
+  color:var(--text);
+  z-index:6;
+}
+.hot-ribbon {
+  position:absolute;
+  right:8px; top:8px;
+  background: #ff6b3d;
   color:#fff;
-  box-shadow: inset 0 -6px 18px rgba(0,0,0,0.45), 0 6px 24px rgba(0,0,0,0.6);
-  position:relative;
+  padding:5px 8px;
+  border-radius:8px;
+  font-size:11px;
+  z-index:6;
+}
+.card-gold-badge {
+  position:absolute;
+  right:8px; bottom:44px;
+  background: linear-gradient(90deg,var(--gold),var(--gold-deep));
+  color:#07110a;
+  padding:6px 8px;
+  border-radius:999px;
+  font-weight:900;
+  z-index:6;
+}
+
+/* full-card tap area (for accessibility) */
+.card-tap-area { position:absolute; inset:0; z-index:2; }
+
+/* ---------- Profile & Wallet UI ---------- */
+.balance-amount { font-size:22px; font-weight:800; color:var(--text); }
+.small-muted { color: rgba(255,255,255,0.6); font-size:13px; }
+
+/* VIP progress */
+.vip-progress {
+  height:12px;
+  background: rgba(255,255,255,0.03);
+  border-radius:8px;
   overflow:hidden;
 }
-
-/* Reel "strip" (animated numbers) */
-.reel .strip {
-  width:100%;
-  text-align:center;
-}
-.reel.spin .strip {
-  animation: reelSpin 720ms cubic-bezier(.16,.92,.32,1) both;
+.vip-progress > div {
+  height:100%;
+  background: linear-gradient(90deg,var(--gold), #ffcc66);
+  width:0%;
 }
 
-/* small win highlight */
-.reel.win {
-  box-shadow: var(--glow-mint), 0 0 18px rgba(255,215,0,0.06);
-  transform: scale(1.03);
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-
-/* Spin keyframes: quick vertical scroll effect */
-@keyframes reelSpin {
-  0% { transform: translateY(-120%); opacity:0.1; }
-  30% { opacity:1; }
-  70% { transform: translateY(15%); }
-  100% { transform: translateY(0%); opacity:1; }
-}
-
-/* Result text */
-#result {
-  font-size:13px;
-  color: rgba(223,255,242,0.65);
-}
-
-/* History list */
-#history {
-  list-style:none;
-  margin:0;
-  padding:0;
-}
-#history li {
-  padding:8px 10px;
+/* ---------- History list ---------- */
+.list-item {
+  padding:10px;
   border-radius:10px;
   background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
   border: 1px solid rgba(255,255,255,0.02);
-  color: rgba(223,255,242,0.6);
-  font-size:13px;
   display:flex;
   justify-content:space-between;
   gap:8px;
-}
-#history li small { color: rgba(223,255,242,0.45); }
-
-/* Inputs */
-input[type="number"], input[type="url"], input[type="text"] {
-  width:100%;
-  padding:10px 12px;
-  border-radius:10px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.03);
-  color: #eafff0;
-  font-size:14px;
-  outline:none;
-}
-input:focus {
-  box-shadow: 0 6px 20px rgba(0,230,118,0.06);
-  border-color: rgba(0,230,118,0.18);
+  font-size:13px;
 }
 
-/* Modal overlay (index.html toggles 'hidden') */
-#modal-overlay {
+/* ---------- Popups (strict style matching screenshots) ---------- */
+.rk-popup-overlay {
   position:fixed;
   inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:60;
-  padding:18px;
-}
-#modal-overlay.hidden { display:none; }
-#modal-overlay .glass {
-  width:100%;
-  max-width:var(--max-width);
+  background: rgba(0,0,0,0.6);
+  z-index:99999;
   padding:16px;
+}
+
+.rk-popup {
+  width:100%;
+  max-width:420px;
   border-radius:16px;
+  overflow:hidden;
+  background: linear-gradient(180deg, var(--card-bg), rgba(255,255,255,0.01));
+  border:1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.7);
+  color:var(--text);
 }
 
-/* Footer tiny */
-footer { font-size:11px; color: rgba(223,255,242,0.38); text-align:center; margin-top:6px; }
+/* popup header hero */
+.rk-popup .hero {
+  padding:18px;
+  background: linear-gradient(90deg, rgba(245,179,66,0.08), rgba(245,179,66,0.03));
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+}
+.rk-popup .hero .icon {
+  width:64px; height:64px; border-radius:12px;
+  background: linear-gradient(90deg,var(--gold), var(--gold-deep));
+  display:flex; align-items:center; justify-content:center; font-size:28px; color:#07110a; font-weight:900;
+}
+.rk-popup .hero .title { font-weight:900; font-size:16px; margin-bottom:4px; }
+.rk-popup .hero .subtitle { font-size:13px; color: rgba(255,255,255,0.85); }
 
-/* Tiny neon/gold accents */
-.accent-mint { color: var(--mint); text-shadow: 0 2px 8px rgba(0,230,118,0.12); }
-.accent-gold { color: var(--gold); text-shadow: 0 2px 10px rgba(255,215,0,0.08); }
-
-/* Utility: small translucent divider */
-.divider {
-  height:1px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  margin:10px 0;
+/* popup body */
+.rk-popup .body {
+  padding:14px;
+  font-size:13px;
+  color: rgba(255,255,255,0.92);
 }
 
-/* Scrollbar for history (small/mobile) */
-#history::-webkit-scrollbar { height:6px; width:6px; }
-#history::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.4); border-radius:6px; }
-
-/* Small responsive tweaks */
-@media (min-width: 460px) {
-  body { padding: 24px; }
-  .logo-circle { width:64px; height:64px; border-radius:16px; }
-  .reel { width:84px; height:84px; font-size:26px; border-radius:14px; }
+/* popup tasks list */
+.rk-popup .tasks { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.rk-popup .task {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px; background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+  border-radius:10px; border:1px solid rgba(255,255,255,0.02);
 }
 
-/* Tiny crown/gold badge (used by JS to inject) */
-.crown-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  background: linear-gradient(90deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
-  color: var(--gold);
-  padding:6px 10px;
-  border-radius:999px;
-  border: 1px solid rgba(255,215,0,0.08);
-  box-shadow: var(--glow-gold);
-  font-weight:700;
-  font-size:12px;
+/* popup footer: actions & checkboxes */
+.rk-popup .footer {
+  padding:12px; display:flex; flex-direction:column; gap:10px;
+  border-top:1px solid rgba(255,255,255,0.02);
+}
+.rk-popup .actions { display:flex; gap:8px; }
+.rk-popup .checkbox-row { display:flex; gap:12px; align-items:center; font-size:13px; color:rgba(255,255,255,0.8); }
+
+/* checkbox custom */
+.rk-checkbox {
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+}
+.rk-checkbox input[type="checkbox"] { width:18px; height:18px; accent-color: var(--gold); }
+
+/* small utilities */
+.text-muted { color: rgba(255,255,255,0.6); font-size:13px; }
+.center { text-align:center; }
+
+/* ---------- Accessibility & reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation-duration: 0.001ms !important; }
 }
 
-/* Accessibility: focus outlines */
-button:focus, input:focus { outline: 3px solid rgba(0,230,118,0.08); outline-offset:2px; }
-
-/* Decorative neon ticker for header (if used) */
-.neon-ticker {
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  background: linear-gradient(90deg, rgba(0,230,118,0.06), rgba(255,215,0,0.02));
-  color: var(--mint);
-  font-weight:700;
-  box-shadow: var(--glow-mint);
-}
-
-/* subtle animation for header icon */
-.logo-circle svg { filter: drop-shadow(0 6px 18px rgba(0,230,118,0.06)); transform-origin:center; transition: transform .22s ease; }
-.logo-circle:hover svg { transform: scale(1.06) rotate(-6deg); }
-
-/* fine-tune tailwind-generated colors fallback (in case classes reference them) */
-.bg-obsidian { background-color: var(--obsidian) !important; }
-.bg-obsidian-2 { background-color: var(--obsidian-2) !important; }
-.text-mint { color: var(--mint) !important; }
-.bg-mint { background-color: var(--mint) !important; color: var(--obsidian) !important; }
-
-/* End of style.css */
+/* ---------- End ---------- */
