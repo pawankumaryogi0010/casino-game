@@ -36,6 +36,67 @@ const GameLoader = {
     assetCache: new Map()
 };
 
+const GAME_SCRIPT_PATHS = [
+    'js/games/matrix.js',
+    'js/games/_engine.js',
+    'js/games/aviator.js',
+    'js/games/7up-7down.js',
+    'js/games/andar-bahar.js',
+    'js/games/baccarat.js',
+    'js/games/blackjack.js',
+    'js/games/car-roulette.js',
+    'js/games/classic-slots.js',
+    'js/games/dragon-tiger.js',
+    'js/games/hi-low.js',
+    'js/games/jhandi-munda.js',
+    'js/games/keno-jackpot.js',
+    'js/games/ludo-betting.js',
+    'js/games/mines.js',
+    'js/games/plinko.js',
+    'js/games/red-dog.js',
+    'js/games/roulette.js',
+    'js/games/sic-bo.js',
+    'js/games/teen-patti.js',
+    'js/games/video-poker.js',
+    'js/games/wheel-fortune.js'
+];
+
+let gameScriptsLoaded = false;
+let gameScriptsLoading = null;
+
+function loadGameScript(src) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load ' + src));
+        document.body.appendChild(script);
+    });
+}
+
+function loadAllGameScripts() {
+    if (gameScriptsLoaded) return Promise.resolve();
+    if (gameScriptsLoading) return gameScriptsLoading;
+    gameScriptsLoading = Promise.all(GAME_SCRIPT_PATHS.map(loadGameScript))
+        .then(() => {
+            gameScriptsLoaded = true;
+            if (window.GameMatrix && typeof window.GameMatrix.detectLoadedGames === 'function') {
+                window.GameMatrix.detectLoadedGames();
+            }
+        })
+        .catch((error) => {
+            console.error('Error loading game scripts:', error);
+        });
+    return gameScriptsLoading;
+}
+
+// Preload all game files in the background so launch is ready faster
+loadAllGameScripts();
+
 // ============================================
 // GAME CARD LISTENERS
 // ============================================
@@ -70,6 +131,7 @@ function initializeGameCardListeners() {
 
 async function launchGame(gameId) {
     try {
+        await loadAllGameScripts();
         if (GameLoader.isGameRunning) { console.warn('⚠️ Game already running'); return; }
         
         const gameConfig = GAME_REGISTRY[gameId];
@@ -154,7 +216,13 @@ async function launchGame(gameId) {
         
         // Initialize game
         try {
-            const GameClass = window[gameConfig.class];
+            let GameClass = null;
+            if (window.GameMatrix && typeof window.GameMatrix.getGameClass === 'function') {
+                GameClass = window.GameMatrix.getGameClass(gameId);
+            }
+            if (!GameClass) {
+                GameClass = window[gameConfig.class];
+            }
             if (GameClass) {
                 GameLoader.currentGameInstance = new GameClass(canvas, ctx);
                 console.log('✅ Game class found:', gameConfig.class);
