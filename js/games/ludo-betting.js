@@ -35,6 +35,7 @@ class LudoBettingFullGame {
         this.cellSize = 0;
         this.boardStartX = 0;
         this.boardStartY = 0;
+        this.pathCoords = [];
         
         // Win cascade
         this.winCascade = null;
@@ -48,6 +49,8 @@ class LudoBettingFullGame {
         
         // Dice particles
         this.diceParticles = [];
+        this.waitingForPlayer = false;
+        this.controlsEl = null;
     }
     
     // ============================================
@@ -59,6 +62,57 @@ class LudoBettingFullGame {
         this.calculateBoardDimensions();
         this.resetGame();
         this.drawFullBoard();
+        this.createControls();
+    }
+
+    createControls() {
+        // create simple overlay controls if not present
+        if (this.controlsEl) return;
+        const container = document.createElement('div');
+        container.id = 'ludo-controls';
+        container.style.position = 'fixed';
+        container.style.left = '50%';
+        container.style.transform = 'translateX(-50%)';
+        container.style.bottom = '18px';
+        container.style.zIndex = '1000';
+        container.style.display = 'flex';
+        container.style.gap = '10px';
+        container.style.alignItems = 'center';
+
+        const rollBtn = document.createElement('button');
+        rollBtn.id = 'ludo-roll-btn';
+        rollBtn.textContent = 'ROLL';
+        rollBtn.className = 'btn btn-gold';
+        rollBtn.style.padding = '12px 26px';
+        rollBtn.style.fontSize = '14px';
+        rollBtn.style.display = 'none';
+        rollBtn.addEventListener('click', () => { this.playerRoll(); });
+
+        const exitBtn = document.createElement('button');
+        exitBtn.id = 'ludo-exit-btn';
+        exitBtn.textContent = '← Lobby';
+        exitBtn.className = 'btn btn-ghost';
+        exitBtn.style.padding = '10px 18px';
+        exitBtn.addEventListener('click', () => {
+            this.showResult = false;
+            this.isPlaying = false;
+            this.resetGame();
+            this.destroy();
+        });
+
+        container.appendChild(rollBtn);
+        container.appendChild(exitBtn);
+        document.body.appendChild(container);
+        this.controlsEl = container;
+        this.updateControlsVisibility();
+    }
+
+    updateControlsVisibility() {
+        if (!this.controlsEl) return;
+        const rollBtn = this.controlsEl.querySelector('#ludo-roll-btn');
+        if (!rollBtn) return;
+        if (this.isPlaying && this.waitingForPlayer) rollBtn.style.display = 'inline-flex';
+        else rollBtn.style.display = 'none';
     }
     
     generateSparkles() {
@@ -76,9 +130,28 @@ class LudoBettingFullGame {
     }
     
     calculateBoardDimensions() {
-        this.cellSize = Math.min(this.w - 60, this.h - 230) / 14;
-        this.boardStartX = (this.w - this.cellSize * 14) / 2;
-        this.boardStartY = 70;
+        // use a square board area (11x11 grid visual) and compute circle-based path
+        const maxSize = Math.min(this.w - 60, this.h - 240);
+        this.cellSize = maxSize / 11;
+        const boardSize = this.cellSize * 11;
+        this.boardStartX = (this.w - boardSize) / 2;
+        this.boardStartY = 60;
+        this.boardCenterX = this.boardStartX + boardSize / 2;
+        this.boardCenterY = this.boardStartY + boardSize / 2;
+        this.boardSize = boardSize;
+        this.buildPathCoords();
+    }
+
+    buildPathCoords() {
+        this.pathCoords = [];
+        const steps = this.boardCells || 20;
+        const radius = this.boardSize * 0.38;
+        for (let i = 0; i < steps; i++) {
+            const a = (i / steps) * Math.PI * 2 - Math.PI / 2; // start at top
+            const x = this.boardCenterX + Math.cos(a) * radius;
+            const y = this.boardCenterY + Math.sin(a) * radius;
+            this.pathCoords.push({ x, y });
+        }
     }
     
     resetGame() {
@@ -95,6 +168,10 @@ class LudoBettingFullGame {
         this.turns = 0; // combined turns counter
         this.currentTurn = 0; // 0 => player turn, 1 => ai turn
         this.diceParticles = [];
+        // restore page scrolling
+        try { document.body.style.overflow = ''; } catch (e) {}
+        // remove controls visibility
+        if (this.controlsEl) this.updateControlsVisibility();
     }
     
     // ============================================
@@ -116,6 +193,8 @@ class LudoBettingFullGame {
         this.turns = 0;
         this.currentTurn = 0; // player starts
         this.consumeBet();
+        // disable page scroll for fullscreen mobile feel
+        try { document.body.style.overflow = 'hidden'; } catch (e) {}
         // begin round loop
         this.stepLoop();
     }
@@ -150,42 +229,44 @@ class LudoBettingFullGame {
             this.resolveGame();
             return;
         }
+        // If it's player's turn, wait for user action
+        if (this.currentTurn === 0) {
+            this.waitingForPlayer = true;
+            this.updateControlsVisibility();
+            // draw to show waiting state
+            this.drawFullBoard();
+            return;
+        }
 
-        const actor = this.players[this.currentTurn === 0 ? 0 : 1];
+        // AI turn: perform roll and continue
+        const ai = this.players[1];
+        this.doRoll(ai);
+        this.turns++;
+        this.currentTurn = 0; // back to player
+        this.drawFullBoard();
+        setTimeout(() => this.stepLoop(), 480);
+    }
+
+    // perform a roll for an actor (player or ai)
+    doRoll(actor) {
         const roll = this.provablyFairRoll();
         actor.dice = roll;
         actor.position += roll;
-        actor.score += roll; // 1 point per step
-        // capture: if actor lands on opponent, send opponent back to 0 and award +20
+        actor.score += roll;
         const opponent = this.players.find(p => p !== actor);
         if (actor.position < this.boardCells && actor.position === opponent.position) {
             opponent.position = 0;
             actor.score += 20;
         }
-        // reaching home
         if (actor.position >= this.boardCells) {
             actor.position = this.boardCells;
             actor.home = 1;
             actor.score += 50;
             if (this.winner === null) this.winner = this.players.indexOf(actor);
         }
-
-        // particles
-        const px = this.boardStartX + (actor.position % Math.max(1, Math.floor(this.boardCells / 2))) * this.cellSize;
-        const py = this.boardStartY + (actor.id === 'player' ? this.cellSize * 0.2 : this.cellSize * 1.2);
-        for (let i = 0; i < 4; i++) {
-            this.diceParticles.push({ x: px + Math.random() * this.cellSize, y: py + Math.random() * this.cellSize, size: 1 + Math.random() * 2, opacity: 0.9, life: 0, maxLife: 12 + Math.random() * 10 });
-        }
-
-        // play sound quick
+        const px = this.pathCoords[Math.max(0, Math.min(this.pathCoords.length - 1, Math.floor(actor.position) % this.pathCoords.length))] || { x: this.boardCenterX, y: this.boardCenterY };
+        for (let i = 0; i < 4; i++) this.diceParticles.push({ x: px.x + Math.random() * this.cellSize, y: px.y + Math.random() * this.cellSize, size: 1 + Math.random() * 2, opacity: 0.9, life: 0, maxLife: 12 + Math.random() * 10 });
         if (typeof window.playMoveSound === 'function') window.playMoveSound();
-
-        this.turns++;
-        this.currentTurn = 1 - this.currentTurn;
-        this.drawFullBoard();
-
-        // schedule next
-        setTimeout(() => this.stepLoop(), 420);
     }
     
     determineWinner() {
@@ -205,7 +286,7 @@ class LudoBettingFullGame {
         if (playerWon) {
             const payout = Math.floor(this.bet * 1.95); // 1.95x payout
             // credit wallet
-            try { if (window.currentUser && typeof window.currentUser.balance === 'number') window.currentUser.balance += payout; } catch (e) {}
+            try { if (window.currentUser && typeof window.currentUser.balance === 'number') { window.currentUser.balance += payout; if (typeof updateUI === 'function') updateUI(); const wb = document.getElementById('wallet-balance'); if (wb) wb.innerText = '₹' + window.currentUser.balance; } } catch (e) {}
             if (resultDisplay) resultDisplay.innerHTML = `<div style="animation: casinoSlideUp 0.5s ease-out; color:#00e676;">🎉 You Win +${payout}</div>`;
             if (this.winCascade) this.winCascade.spawn(this.w/2, this.h/2, 80);
             if (typeof window.playWinSound === 'function') window.playWinSound();
@@ -213,7 +294,7 @@ class LudoBettingFullGame {
             if (resultDisplay) resultDisplay.innerHTML = `<div style="animation: casinoSlideUp 0.5s ease-out; color:#ff4444;">😞 You Lose -${this.bet}</div>`;
             if (typeof window.playLossSound === 'function') window.playLossSound();
         }
-        setTimeout(() => { this.showResult = false; this.resetGame(); }, 2800);
+        setTimeout(() => { this.showResult = false; this.resetGame(); if (this.controlsEl) this.controlsEl.style.display = 'none'; }, 2800);
     }
     
     // ============================================
@@ -233,6 +314,35 @@ class LudoBettingFullGame {
         if (this.winCascade && this.winCascade.isAlive()) {
             this.winCascade.update();
         }
+        // ensure audio helpers
+        this.ensureAudio();
+    }
+
+    ensureAudio() {
+        if (this._audioReady) return;
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ac = new AudioCtx();
+            this._ac = ac;
+            window.playMoveSound = () => {
+                const o = ac.createOscillator();
+                const g = ac.createGain();
+                o.type = 'sine'; o.frequency.value = 700;
+                g.gain.value = 0.0015;
+                o.connect(g); g.connect(ac.destination);
+                o.start(); o.frequency.linearRampToValueAtTime(520, ac.currentTime + 0.12);
+                g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.18);
+                setTimeout(() => { try { o.stop(); } catch (e) {} }, 200);
+            };
+            window.playWinSound = () => {
+                const o = ac.createOscillator(); const g = ac.createGain(); o.type = 'triangle'; o.frequency.value = 880; g.gain.value = 0.002; o.connect(g); g.connect(ac.destination); o.start(); o.frequency.exponentialRampToValueAtTime(1320, ac.currentTime + 0.3); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.5); setTimeout(()=>{try{o.stop()}catch(e){}},520);
+            };
+            window.playLossSound = () => {
+                const o = ac.createOscillator(); const g = ac.createGain(); o.type = 'sawtooth'; o.frequency.value = 260; g.gain.value = 0.003; o.connect(g); g.connect(ac.destination); o.start(); o.frequency.exponentialRampToValueAtTime(120, ac.currentTime + 0.35); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.5); setTimeout(()=>{try{o.stop()}catch(e){}},520);
+            };
+            this._audioReady = true;
+        } catch (e) {}
     }
     
     // ============================================
@@ -308,68 +418,28 @@ class LudoBettingFullGame {
         const cs = this.cellSize;
         const sx = this.boardStartX;
         const sy = this.boardStartY;
-        const rows = 4;
-        const cols = 14;
-        
-        // Board background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 1.5;
-        CardRenderer.roundRect(ctx, sx - 5, sy - 5, cs * cols + 10, cs * rows + 10, 10);
-        ctx.fill();
-        ctx.stroke();
-        
-        // Cells
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const cx = sx + col * cs;
-                const cy = sy + row * cs;
-                const cellNum = row * cols + col;
-                
-                let cellColor = 'rgba(255, 255, 255, 0.03)';
-                
-                // Home stretch colors
-                if (col >= 11) {
-                    if (row === 0) cellColor = 'rgba(255, 68, 68, 0.15)';
-                    else if (row === 1) cellColor = 'rgba(0, 176, 255, 0.15)';
-                    else if (row === 2) cellColor = 'rgba(0, 230, 118, 0.15)';
-                    else if (row === 3) cellColor = 'rgba(255, 215, 0, 0.15)';
-                }
-                
-                // Start cells
-                if (cellNum === 0) cellColor = 'rgba(255, 68, 68, 0.3)';
-                if (cellNum === 13) cellColor = 'rgba(0, 176, 255, 0.3)';
-                if (cellNum === 26) cellColor = 'rgba(0, 230, 118, 0.3)';
-                if (cellNum === 39) cellColor = 'rgba(255, 215, 0, 0.3)';
-                
-                ctx.fillStyle = cellColor;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-                ctx.lineWidth = 0.5;
-                CardRenderer.roundRect(ctx, cx + 1, cy + 1, cs - 2, cs - 2, 3);
-                ctx.fill();
-                ctx.stroke();
-                
-                // Cell number
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.font = '6px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(cellNum + 1, cx + cs / 2, cy + cs / 2);
-            }
-        }
-        
-        // Finish zone
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
-        ctx.strokeStyle = '#FFD700';
+
+        // Outer board
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.strokeStyle = 'rgba(255,215,0,0.08)';
         ctx.lineWidth = 2;
-        CardRenderer.roundRect(ctx, sx + 11 * cs, sy, cs * 3 + 5, cs * rows + 5, 8);
+        CardRenderer.roundRect(ctx, sx, sy, this.boardSize, this.boardSize, 12);
         ctx.fill();
         ctx.stroke();
-        
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 9px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('🏁', sx + 12.5 * cs, sy + rows * cs / 2);
+
+        // center emblem
+        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        CardRenderer.roundRect(ctx, this.boardCenterX - cs * 1.5, this.boardCenterY - cs * 1.5, cs * 3, cs * 3, 6);
+        ctx.fill();
+
+        // path dots
+        ctx.fillStyle = 'rgba(255,215,0,0.06)';
+        for (let i = 0; i < this.pathCoords.length; i++) {
+            const p = this.pathCoords[i];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.max(6, cs * 0.28), 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
     
     drawPlayersOnBoard(ctx) {
@@ -403,6 +473,27 @@ class LudoBettingFullGame {
                 ctx.shadowBlur = 0;
             }
         });
+            const idx = Math.max(0, Math.min(this.pathCoords.length - 1, Math.floor(player.position) % this.pathCoords.length));
+            const p = this.pathCoords[idx] || { x: this.boardCenterX, y: this.boardCenterY };
+            // token
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, cs * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            // outline
+            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // icon
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(player.icon, p.x, p.y - 1);
+            // small dice near token
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = '10px Arial';
+            ctx.fillText(player.dice, p.x, p.y + cs * 0.7);
     }
     
     drawPlayerSelector(ctx, w, h) {
@@ -435,27 +526,49 @@ class LudoBettingFullGame {
     }
     
     drawDiceDisplay(ctx, w, h) {
-        const dy = h - 70;
-        
-        this.players.forEach((player, i) => {
-            const dx = w * 0.1 + i * w * 0.22;
-            
-            ctx.fillStyle = player.color;
-            ctx.font = 'bold 10px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(player.icon, dx, dy);
-            
-            // Dice value
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText(player.dice, dx, dy + 18);
-            
-            // Dice box
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.lineWidth = 1;
-            CardRenderer.roundRect(ctx, dx - 10, dy - 12, 20, 38, 6);
-            ctx.stroke();
-        });
+        // large die in center bottom for player focus
+        const cx = w / 2;
+        const dy = h - 86;
+        const size = 72;
+        const player = this.players[0];
+        this.drawLargeDie(ctx, cx - size / 2, dy - size / 2, size, player.dice, this.waitingForPlayer);
+        // small AI die
+        const ai = this.players[1];
+        ctx.fillStyle = ai.color;
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(ai.icon + ' ' + ai.dice, cx + size, dy + 6);
+    }
+
+    drawLargeDie(ctx, x, y, size, value, emphasize) {
+        // rounded box
+        ctx.fillStyle = emphasize ? 'linear-gradient(90deg,#28c76f,#06b6d4)' : '#fff';
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        CardRenderer.roundRect(ctx, x, y, size, size, 12);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        // pips
+        ctx.fillStyle = '#0b1220';
+        const pip = size * 0.12;
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const gap = size * 0.28;
+        const drawP = (px, py) => { ctx.beginPath(); ctx.arc(px, py, pip, 0, Math.PI * 2); ctx.fill(); };
+        // map value to pips positions
+        const map = {
+            1: [[cx, cy]],
+            2: [[cx - gap/1.4, cy - gap/1.4], [cx + gap/1.4, cy + gap/1.4]],
+            3: [[cx - gap/1.4, cy - gap/1.4], [cx, cy], [cx + gap/1.4, cy + gap/1.4]],
+            4: [[cx - gap/1.4, cy - gap/1.4], [cx + gap/1.4, cy - gap/1.4], [cx - gap/1.4, cy + gap/1.4], [cx + gap/1.4, cy + gap/1.4]],
+            5: [[cx - gap/1.4, cy - gap/1.4], [cx + gap/1.4, cy - gap/1.4], [cx, cy], [cx - gap/1.4, cy + gap/1.4], [cx + gap/1.4, cy + gap/1.4]],
+            6: [[cx - gap/1.4, cy - gap/1.4], [cx + gap/1.4, cy - gap/1.4], [cx - gap/1.4, cy], [cx + gap/1.4, cy], [cx - gap/1.4, cy + gap/1.4], [cx + gap/1.4, cy + gap/1.4]]
+        };
+        (map[value] || map[1]).forEach(p => drawP(p[0], p[1]));
     }
     
     drawLeaderboard(ctx, w, h) {
