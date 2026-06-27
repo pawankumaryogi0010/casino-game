@@ -14,7 +14,6 @@ const GameLoaderSystem = {
     bettingTimerInterval: null,
     bettingTimeLeft: 0,
 
-    // Game loading tips
     loadingTips: [
         '🃏 Shuffling the deck...',
         '🎰 Preparing your table...',
@@ -28,35 +27,27 @@ const GameLoaderSystem = {
         '🎪 Almost ready...'
     ],
 
-    // Launch a game with full loading experience
     async launchGame(gameId, gameConfig) {
         if (this.isLoading || this.isGameActive) return;
         
         this.isLoading = true;
         this.currentGameId = gameId;
         
-        // Step 1: Hide lobby elements
+        // Get balance from current user if available
+        if (window.currentUser && typeof window.currentUser.balance === 'number') {
+            this.balance = window.currentUser.balance;
+        }
+        
         this.hideLobby();
-        
-        // Step 2: Show loading screen
         await this.showLoadingScreen();
-        
-        // Step 3: Create game container
         this.createGameContainer(gameConfig);
-        
-        // Step 4: Initialize game
         await this.initializeGame(gameId, gameConfig);
-        
-        // Step 5: Remove loading, show game
         this.hideLoadingScreen();
         this.isLoading = false;
         this.isGameActive = true;
-        
-        // Step 6: Start betting timer
         this.startBettingTimer();
     },
 
-    // Hide lobby elements
     hideLobby() {
         const header = document.querySelector('header');
         const nav = document.querySelector('nav');
@@ -66,13 +57,11 @@ const GameLoaderSystem = {
         if (nav) nav.style.display = 'none';
         if (main) main.style.display = 'none';
         
-        // Hide all hash-views
         document.querySelectorAll('.hash-view, .page').forEach(v => {
             v.style.display = 'none';
         });
     },
 
-    // Show lobby elements
     showLobby() {
         const header = document.querySelector('header');
         const nav = document.querySelector('nav');
@@ -82,15 +71,13 @@ const GameLoaderSystem = {
         if (nav) nav.style.display = '';
         if (main) main.style.display = '';
         
-        // Show home view
-        const homeView = document.getElementById('page-home') || document.getElementById('home-view');
+        const homeView = document.getElementById('page-home');
         if (homeView) {
             homeView.style.display = '';
-            if (homeView.classList) homeView.classList.add('active');
+            homeView.classList.add('active');
         }
     },
 
-    // Show loading overlay
     showLoadingScreen() {
         return new Promise((resolve) => {
             const existingLoader = document.getElementById('game-loading-overlay');
@@ -109,7 +96,6 @@ const GameLoaderSystem = {
             `;
             document.body.appendChild(overlay);
             
-            // Rotate tips
             let tipIndex = 0;
             const tipEl = document.getElementById('loader-tip');
             const tipInterval = setInterval(() => {
@@ -123,7 +109,6 @@ const GameLoaderSystem = {
                 }
             }, 1200);
             
-            // Loading duration: 6-8 seconds
             const duration = 6000 + Math.random() * 2000;
             
             setTimeout(() => {
@@ -133,7 +118,6 @@ const GameLoaderSystem = {
         });
     },
 
-    // Hide loading overlay
     hideLoadingScreen() {
         const overlay = document.getElementById('game-loading-overlay');
         if (overlay) {
@@ -143,9 +127,7 @@ const GameLoaderSystem = {
         }
     },
 
-    // Create full-screen game container
     createGameContainer(gameConfig) {
-        // Remove existing container
         const existing = document.getElementById('game-fullscreen-container');
         if (existing) existing.remove();
         
@@ -179,26 +161,21 @@ const GameLoaderSystem = {
             
             <div id="game-footer">
                 <div class="chip-selector">
-                    <button class="chip-btn chip-10 selected" data-chip="10">10</button>
-                    <button class="chip-btn chip-50" data-chip="50">50</button>
+                    <button class="chip-btn chip-50 selected" data-chip="50">50</button>
                     <button class="chip-btn chip-100" data-chip="100">100</button>
                     <button class="chip-btn chip-500" data-chip="500">500</button>
                     <button class="chip-btn chip-1000" data-chip="1000">1000</button>
+                    <button class="chip-btn chip-5000" data-chip="5000">5000</button>
                 </div>
                 <button class="action-btn deal-btn" id="game-deal-btn">DEAL</button>
             </div>
         `;
         
         document.body.appendChild(container);
-        
-        // Setup canvas
         this.setupCanvas();
-        
-        // Bind events
         this.bindGameEvents(gameConfig);
     },
 
-    // Setup canvas dimensions
     setupCanvas() {
         const wrapper = document.getElementById('game-canvas-wrapper');
         const canvas = document.getElementById('game-main-canvas');
@@ -208,18 +185,14 @@ const GameLoaderSystem = {
         const wrapperHeight = wrapper.clientHeight;
         const dpr = window.devicePixelRatio || 1;
         
-        // Set display size
         const displayWidth = Math.min(wrapperWidth - 32, 500);
         const displayHeight = Math.min(wrapperHeight - 32, displayWidth * 1.2);
         
         canvas.style.width = displayWidth + 'px';
         canvas.style.height = displayHeight + 'px';
-        
-        // Set actual size (2x for retina)
         canvas.width = displayWidth * dpr;
         canvas.height = displayHeight * dpr;
         
-        // Scale context
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
         
@@ -227,30 +200,24 @@ const GameLoaderSystem = {
         this.canvasDisplayHeight = displayHeight;
     },
 
-    // Bind all game events
     bindGameEvents(gameConfig) {
-        // Exit button
         const exitBtn = document.getElementById('game-exit-btn');
         if (exitBtn) {
             exitBtn.addEventListener('click', () => this.exitGame());
         }
         
-        // Chip selection
         const chipBtns = document.querySelectorAll('#game-footer .chip-btn');
         chipBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 chipBtns.forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.betAmount = parseInt(btn.dataset.chip);
-                
-                // Update game instance bet
                 if (this.gameInstance && this.gameInstance.setBet) {
                     this.gameInstance.setBet(this.betAmount);
                 }
             });
         });
         
-        // Deal/Play button
         const dealBtn = document.getElementById('game-deal-btn');
         if (dealBtn) {
             dealBtn.addEventListener('click', () => {
@@ -260,15 +227,18 @@ const GameLoaderSystem = {
                     
                     this.gameInstance.play(this.betAmount);
                     
+                    // Reset betting timer
+                    this.stopBettingTimer();
+                    
                     setTimeout(() => {
                         dealBtn.disabled = false;
                         dealBtn.textContent = 'DEAL';
+                        this.startBettingTimer();
                     }, 3000);
                 }
             });
         }
         
-        // Window resize
         window.addEventListener('resize', () => {
             this.setupCanvas();
             if (this.gameInstance && this.gameInstance.resize) {
@@ -277,75 +247,110 @@ const GameLoaderSystem = {
         });
     },
 
-    // Initialize the actual game
     async initializeGame(gameId, gameConfig) {
         const canvas = document.getElementById('game-main-canvas');
         if (!canvas) return;
         
         const ctx = canvas.getContext('2d');
         
-        // Try to find game class
         let GameClass = null;
         
-        // Try window[className]
         if (gameConfig.class && window[gameConfig.class]) {
             GameClass = window[gameConfig.class];
         }
         
-        // Try GameMatrix
         if (!GameClass && window.GameMatrix && window.GameMatrix.getGameClass) {
             GameClass = window.GameMatrix.getGameClass(gameId);
         }
         
         if (GameClass) {
             this.gameInstance = new GameClass(canvas, ctx);
-            if (this.gameInstance.init) {
-                this.gameInstance.init();
-            }
-            if (this.gameInstance.setBet) {
-                this.gameInstance.setBet(this.betAmount);
-            }
+            if (this.gameInstance.init) this.gameInstance.init();
+            if (this.gameInstance.setBet) this.gameInstance.setBet(this.betAmount);
         } else {
-            // Fallback
             this.gameInstance = this.createFallbackGame(canvas, ctx, gameConfig);
             this.gameInstance.init();
         }
         
-        // Start render loop
         this.startGameLoop();
     },
 
-    // Fallback game if class not found
     createFallbackGame(canvas, ctx, config) {
+        const self = this;
         return {
             canvas, ctx, config,
-            bet: this.betAmount,
+            bet: self.betAmount,
             init() {
-                const w = this.canvas.style.width ? parseFloat(this.canvas.style.width) : 400;
-                const h = this.canvas.style.height ? parseFloat(this.canvas.style.height) : 500;
+                const w = self.canvasDisplayWidth || 400;
+                const h = self.canvasDisplayHeight || 500;
                 ctx.fillStyle = '#0a0806';
                 ctx.fillRect(0, 0, w, h);
+                
+                // Draw table
+                ctx.fillStyle = '#1a1410';
+                ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+                ctx.lineWidth = 3;
+                if (ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(20, 20, w-40, h-40, 16);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                
+                ctx.fillStyle = '#0d3320';
+                if (ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(28, 28, w-56, h-56, 12);
+                    ctx.fill();
+                }
+                
                 ctx.fillStyle = '#c9a84c';
-                ctx.font = 'bold 24px Georgia';
+                ctx.font = 'bold 28px Georgia';
                 ctx.textAlign = 'center';
-                ctx.fillText(config.thumbnail || '🎮', w/2, h/2 - 20);
-                ctx.fillText(config.name || 'Game', w/2, h/2 + 20);
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillText(config.thumbnail || '🎮', w/2, h/2 - 25);
+                
+                ctx.fillStyle = '#f0e8d8';
+                ctx.font = 'bold 18px Georgia';
+                ctx.fillText(config.name || 'Game', w/2, h/2 + 15);
+                
+                ctx.fillStyle = 'rgba(240,232,216,0.5)';
                 ctx.font = '14px Georgia';
-                ctx.fillText('Press DEAL to start', w/2, h/2 + 50);
+                ctx.fillText('Select chip & press DEAL', w/2, h/2 + 45);
             },
             setBet(b) { this.bet = b; },
             play(b) {
-                const rd = document.getElementById('game-info-overlay');
-                if (rd) {
-                    rd.innerHTML = '<div class="info-badge" style="color:#c9a84c;">🎲 Rolling...</div>';
-                    setTimeout(() => {
-                        const win = Math.random() > 0.5;
-                        rd.innerHTML = win 
-                            ? '<div class="info-badge" style="color:#00e676;">🎉 YOU WIN! +₹' + (b*2) + '</div>'
-                            : '<div class="info-badge" style="color:#ff4444;">😞 You lost ₹' + b + '</div>';
-                    }, 1500);
+                const infoOverlay = document.getElementById('game-info-overlay');
+                if (infoOverlay) {
+                    infoOverlay.innerHTML = '<div class="info-badge" style="color:#c9a84c;">🎲 Playing...</div>';
                 }
+                
+                // Deduct bet
+                self.balance -= b;
+                self.updateBalance(self.balance);
+                
+                setTimeout(() => {
+                    const win = Math.random() > 0.5;
+                    if (win) {
+                        const winAmount = b * 2;
+                        self.balance += winAmount;
+                        self.updateBalance(self.balance);
+                        if (infoOverlay) {
+                            infoOverlay.innerHTML = `<div class="info-badge" style="color:#00e676;">🎉 Won +₹${winAmount}</div>`;
+                        }
+                        self.showWinOverlay(winAmount);
+                    } else {
+                        if (infoOverlay) {
+                            infoOverlay.innerHTML = `<div class="info-badge" style="color:#ff4444;">😞 Lost -₹${b}</div>`;
+                        }
+                        self.showLoseOverlay(b);
+                    }
+                    
+                    // Update global balance if exists
+                    if (window.currentUser) {
+                        window.currentUser.balance = self.balance;
+                        if (typeof window.updateUI === 'function') window.updateUI();
+                    }
+                }, 1500);
             },
             update() {},
             render() { this.init(); },
@@ -354,7 +359,6 @@ const GameLoaderSystem = {
         };
     },
 
-    // Start game render loop
     startGameLoop() {
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
         
@@ -368,7 +372,6 @@ const GameLoaderSystem = {
         this.animationFrameId = requestAnimationFrame(loop);
     },
 
-    // Stop game render loop
     stopGameLoop() {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
@@ -376,7 +379,6 @@ const GameLoaderSystem = {
         }
     },
 
-    // Start betting timer
     startBettingTimer() {
         this.stopBettingTimer();
         this.bettingTimeLeft = 30;
@@ -385,6 +387,7 @@ const GameLoaderSystem = {
         const secondsEl = document.getElementById('timer-seconds');
         
         if (timerEl) timerEl.style.display = 'flex';
+        if (secondsEl) secondsEl.textContent = this.bettingTimeLeft;
         
         this.bettingTimerInterval = setInterval(() => {
             this.bettingTimeLeft--;
@@ -396,14 +399,12 @@ const GameLoaderSystem = {
             
             if (this.bettingTimeLeft <= 0) {
                 this.stopBettingTimer();
-                // Auto-deal
                 const dealBtn = document.getElementById('game-deal-btn');
-                if (dealBtn) dealBtn.click();
+                if (dealBtn && !dealBtn.disabled) dealBtn.click();
             }
         }, 1000);
     },
 
-    // Stop betting timer
     stopBettingTimer() {
         if (this.bettingTimerInterval) {
             clearInterval(this.bettingTimerInterval);
@@ -416,13 +417,14 @@ const GameLoaderSystem = {
         }
     },
 
-    // Show win overlay
     showWinOverlay(amount) {
         const wrapper = document.getElementById('game-canvas-wrapper');
         if (!wrapper) return;
         
         const existing = document.getElementById('win-overlay');
         if (existing) existing.remove();
+        const existingLose = document.getElementById('lose-overlay');
+        if (existingLose) existingLose.remove();
         
         const overlay = document.createElement('div');
         overlay.id = 'win-overlay';
@@ -437,13 +439,14 @@ const GameLoaderSystem = {
         setTimeout(() => overlay.remove(), 2500);
     },
 
-    // Show lose overlay
     showLoseOverlay(amount) {
         const wrapper = document.getElementById('game-canvas-wrapper');
         if (!wrapper) return;
         
         const existing = document.getElementById('lose-overlay');
         if (existing) existing.remove();
+        const existingWin = document.getElementById('win-overlay');
+        if (existingWin) existingWin.remove();
         
         const overlay = document.createElement('div');
         overlay.id = 'lose-overlay';
@@ -458,7 +461,29 @@ const GameLoaderSystem = {
         setTimeout(() => overlay.remove(), 2500);
     },
 
-    // Exit game and return to lobby
+    updateBalance(newBalance) {
+        this.balance = newBalance;
+        const balanceEl = document.getElementById('game-header-balance');
+        if (balanceEl) {
+            const startBalance = parseFloat(balanceEl.textContent.replace(/[^0-9.]/g, '')) || this.balance;
+            const duration = 500;
+            const startTime = performance.now();
+            
+            const animate = (ts) => {
+                const elapsed = ts - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = startBalance + (newBalance - startBalance) * eased;
+                balanceEl.textContent = '₹' + current.toFixed(2);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            };
+            requestAnimationFrame(animate);
+        }
+    },
+
     exitGame() {
         this.stopGameLoop();
         this.stopBettingTimer();
@@ -476,49 +501,18 @@ const GameLoaderSystem = {
             setTimeout(() => container.remove(), 300);
         }
         
+        const loadingOverlay = document.getElementById('game-loading-overlay');
+        if (loadingOverlay) loadingOverlay.remove();
+        
         this.showLobby();
-    },
-
-    // Update balance display
-    updateBalance(newBalance) {
-        this.balance = newBalance;
-        const balanceEl = document.getElementById('game-header-balance');
-        if (balanceEl) {
-            // Animate number change
-            const startBalance = parseFloat(balanceEl.textContent.replace(/[^0-9.]/g, '')) || this.balance;
-            const duration = 500;
-            const startTime = performance.now();
-            
-            const animate = (ts) => {
-                const elapsed = ts - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const eased = 1 - Math.pow(1 - progress, 3); // ease-out
-                const current = startBalance + (newBalance - startBalance) * eased;
-                balanceEl.textContent = '₹' + current.toFixed(2);
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                }
-            };
-            requestAnimationFrame(animate);
+        
+        // Update global UI
+        if (window.currentUser) {
+            window.currentUser.balance = this.balance;
+            if (typeof window.updateUI === 'function') window.updateUI();
         }
     }
 };
 
-// Export globally
 window.GameLoaderSystem = GameLoaderSystem;
-
-// Override emeraldGames if exists
-if (window.emeraldGames) {
-    window.emeraldGames.launch = (gameId) => {
-        const config = window.emeraldGames.getGameConfig ? 
-            window.emeraldGames.getGameConfig(gameId) : 
-            window.GAME_REGISTRY?.[gameId];
-        
-        if (config) {
-            GameLoaderSystem.launchGame(gameId, config);
-        }
-    };
-}
-
 console.log('✅ Game Loader System Ready');
