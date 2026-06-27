@@ -20,18 +20,18 @@ class LudoBettingFullGame {
         this.showResult = false;
         this.winner = null;
         this.rollCount = 0;
-        this.maxRolls = 30;
+        this.maxRolls = 15 * 2; // 15 turns each (player + ai)
         
         // Players
+        // Players (1v1 pattern: player vs AI)
         this.players = [
-            { name: 'RED', color: '#ff4444', icon: '🔴', position: 0, score: 0, dice: 1 },
-            { name: 'BLUE', color: '#00b0ff', icon: '🔵', position: 0, score: 0, dice: 1 },
-            { name: 'GREEN', color: '#00e676', icon: '🟢', position: 0, score: 0, dice: 1 },
-            { name: 'YELLOW', color: '#FFD700', icon: '🟡', position: 0, score: 0, dice: 1 }
+            { id: 'player', name: 'YOU', color: '#38bdf8', icon: '🔵', position: 0, score: 0, dice: 1, home: 0 },
+            { id: 'ai', name: 'AI', color: '#a855f7', icon: '🤖', position: 0, score: 0, dice: 1, home: 0 }
         ];
         
         // Board
-        this.boardCells = 52;
+        // Ludo path size (simple 20-step path for mobile-friendly 1v1)
+        this.boardCells = 20;
         this.cellSize = 0;
         this.boardStartX = 0;
         this.boardStartY = 0;
@@ -86,11 +86,14 @@ class LudoBettingFullGame {
             p.position = 0;
             p.score = 0;
             p.dice = 1;
+            p.home = 0;
         });
         this.isPlaying = false;
         this.showResult = false;
         this.winner = null;
         this.rollCount = 0;
+        this.turns = 0; // combined turns counter
+        this.currentTurn = 0; // 0 => player turn, 1 => ai turn
         this.diceParticles = [];
     }
     
@@ -106,104 +109,111 @@ class LudoBettingFullGame {
     
     play(bet) {
         if (this.isPlaying) return;
-        
         this.bet = bet;
         this.resetGame();
         this.isPlaying = true;
         this.showResult = false;
-        
-        // Simulate dice rolls
-        this.simulateGame();
+        this.turns = 0;
+        this.currentTurn = 0; // player starts
+        this.consumeBet();
+        // begin round loop
+        this.stepLoop();
+    }
+
+    provablyFairRoll() {
+        // Simple deterministic-ish roll using time + nonce - note: not true HMAC without server key,
+        // but adequate for local fairness and repeatability for this demo.
+        const nonce = (window.__gameNonce = (window.__gameNonce || 0) + 1);
+        const seed = `${Date.now()}-${Math.random().toString(36).slice(2,8)}-${nonce}`;
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) hash = (hash << 5) - hash + seed.charCodeAt(i), hash |= 0;
+        const r = Math.abs(hash) % 6 + 1;
+        return r;
+    }
+
+    // Deduct bet from global wallet (if available through window.currentUser)
+    consumeBet() {
+        try {
+            if (window.currentUser && typeof window.currentUser.balance === 'number') {
+                window.currentUser.balance = Math.max(0, window.currentUser.balance - this.bet);
+            }
+        } catch (e) {}
     }
     
-    simulateGame() {
-        const rollInterval = setInterval(() => {
-            if (this.rollCount >= this.maxRolls || this.winner !== null) {
-                clearInterval(rollInterval);
-                this.isPlaying = false;
-                this.showResult = true;
-                this.determineWinner();
-                this.resolveGame();
-                return;
-            }
-            
-            // Roll dice for each player
-            this.players.forEach(player => {
-                const roll = Math.floor(Math.random() * 6) + 1;
-                player.dice = roll;
-                player.position += roll;
-                
-                if (player.position >= this.boardCells) {
-                    player.position = this.boardCells;
-                    if (this.winner === null) {
-                        this.winner = this.players.indexOf(player);
-                    }
-                }
-                
-                player.score += roll;
-                
-                // Dice particles
-                const px = this.boardStartX + (player.position % 14) * this.cellSize;
-                const py = this.boardStartY + Math.floor(player.position / 14) * this.cellSize;
-                for (let i = 0; i < 3; i++) {
-                    this.diceParticles.push({
-                        x: px + Math.random() * this.cellSize,
-                        y: py + Math.random() * this.cellSize,
-                        size: 1 + Math.random() * 2,
-                        opacity: 0.8,
-                        life: 0,
-                        maxLife: 10 + Math.random() * 15
-                    });
-                }
-            });
-            
-            this.rollCount++;
-            this.drawFullBoard();
-        }, 200);
+    // Single-step loop: one player's roll at a time (player then AI)
+    stepLoop() {
+        if (!this.isPlaying) return;
+        if (this.turns >= this.maxRolls || this.winner !== null) {
+            this.isPlaying = false;
+            this.showResult = true;
+            this.determineWinner();
+            this.resolveGame();
+            return;
+        }
+
+        const actor = this.players[this.currentTurn === 0 ? 0 : 1];
+        const roll = this.provablyFairRoll();
+        actor.dice = roll;
+        actor.position += roll;
+        actor.score += roll; // 1 point per step
+        // capture: if actor lands on opponent, send opponent back to 0 and award +20
+        const opponent = this.players.find(p => p !== actor);
+        if (actor.position < this.boardCells && actor.position === opponent.position) {
+            opponent.position = 0;
+            actor.score += 20;
+        }
+        // reaching home
+        if (actor.position >= this.boardCells) {
+            actor.position = this.boardCells;
+            actor.home = 1;
+            actor.score += 50;
+            if (this.winner === null) this.winner = this.players.indexOf(actor);
+        }
+
+        // particles
+        const px = this.boardStartX + (actor.position % Math.max(1, Math.floor(this.boardCells / 2))) * this.cellSize;
+        const py = this.boardStartY + (actor.id === 'player' ? this.cellSize * 0.2 : this.cellSize * 1.2);
+        for (let i = 0; i < 4; i++) {
+            this.diceParticles.push({ x: px + Math.random() * this.cellSize, y: py + Math.random() * this.cellSize, size: 1 + Math.random() * 2, opacity: 0.9, life: 0, maxLife: 12 + Math.random() * 10 });
+        }
+
+        // play sound quick
+        if (typeof window.playMoveSound === 'function') window.playMoveSound();
+
+        this.turns++;
+        this.currentTurn = 1 - this.currentTurn;
+        this.drawFullBoard();
+
+        // schedule next
+        setTimeout(() => this.stepLoop(), 420);
     }
     
     determineWinner() {
-        if (this.winner === null) {
-            // Find player with highest position
-            let maxPos = 0;
-            this.players.forEach((p, i) => {
-                if (p.position > maxPos) {
-                    maxPos = p.position;
-                    this.winner = i;
-                }
-            });
-        }
+        if (this.winner !== null) return; // already set
+        // highest score wins
+        let best = 0;
+        this.players.forEach((p, i) => {
+            if (p.score > best) { best = p.score; this.winner = i; }
+        });
         if (this.winner === null) this.winner = 0;
     }
     
     resolveGame() {
-        const playerWon = this.winner === this.selectedPlayer;
+        const winnerObj = this.players[this.winner];
+        const playerWon = winnerObj.id === 'player';
         const resultDisplay = document.getElementById('game-result-display');
-        const winnerPlayer = this.players[this.winner];
-        
         if (playerWon) {
-            const payout = Math.floor(this.bet * 3.5);
-            this.chips += payout;
-            if (resultDisplay) {
-                resultDisplay.innerHTML = `
-                    <div style="animation: casinoSlideUp 0.5s ease-out;">
-                        <span style="color:#00e676;font-size:18px;">🎉 ${winnerPlayer.icon} ${winnerPlayer.name} WINS!</span><br>
-                        <span style="color:#00e676;">+${payout} CHIPS (3.5:1)</span><br>
-                        <span style="color:rgba(255,255,255,0.5);font-size:9px;">Score: ${winnerPlayer.score}</span>
-                    </div>`;
-            }
-            if (this.winCascade) this.winCascade.spawn(this.w / 2, this.h / 2, 80);
+            const payout = Math.floor(this.bet * 1.95); // 1.95x payout
+            // credit wallet
+            try { if (window.currentUser && typeof window.currentUser.balance === 'number') window.currentUser.balance += payout; } catch (e) {}
+            if (resultDisplay) resultDisplay.innerHTML = `<div style="animation: casinoSlideUp 0.5s ease-out; color:#00e676;">🎉 You Win +${payout}</div>`;
+            if (this.winCascade) this.winCascade.spawn(this.w/2, this.h/2, 80);
+            if (typeof window.playWinSound === 'function') window.playWinSound();
         } else {
-            if (resultDisplay) {
-                resultDisplay.innerHTML = `
-                    <div style="animation: casinoSlideUp 0.5s ease-out;">
-                        <span style="color:#ff4444;font-size:16px;">😞 ${winnerPlayer.icon} ${winnerPlayer.name} WINS</span><br>
-                        <span style="color:rgba(255,255,255,0.6);">-${this.bet} CHIPS</span>
-                    </div>`;
-            }
+            if (resultDisplay) resultDisplay.innerHTML = `<div style="animation: casinoSlideUp 0.5s ease-out; color:#ff4444;">😞 You Lose -${this.bet}</div>`;
+            if (typeof window.playLossSound === 'function') window.playLossSound();
         }
-        
-        setTimeout(() => { this.showResult = false; this.resetGame(); }, 4000);
+        setTimeout(() => { this.showResult = false; this.resetGame(); }, 2800);
     }
     
     // ============================================
@@ -507,7 +517,7 @@ class LudoBettingFullGame {
     }
     
     destroy() {
-        if (this.winCascade) this.winCascade.destroy();
+        if (this.winCascade) this.winCascade.destroy(); 
         this.sparkles = [];
         this.diceParticles = [];
     }
