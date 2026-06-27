@@ -7,6 +7,10 @@
   <title>Real King Casino</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Game Loader Styles -->
+  <link rel="stylesheet" href="css/game-loader.css">
+  
   <style>
   :root { --bg: #690000; --card: #1a1020; --accent: #FFD700; --text: #ffffff; --muted: rgba(255,255,255,0.5); --radius: 14px; --maxw: 450px; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
@@ -104,11 +108,11 @@
     </div>
 
     <div class="cats">
-      <div class="cat"><span style="font-size:16px">🔥</span>Hot</div>
-      <div class="cat"><span style="font-size:16px">🎰</span>Slots</div>
-      <div class="cat"><span style="font-size:16px">🃏</span>Cards</div>
-      <div class="cat"><span style="font-size:16px">🎯</span>Arcade</div>
-      <div class="cat"><span style="font-size:16px">🎲</span>Dice</div>
+      <div class="cat" onclick="filterGames('all')"><span style="font-size:16px">🔥</span>Hot</div>
+      <div class="cat" onclick="filterGames('Slot')"><span style="font-size:16px">🎰</span>Slots</div>
+      <div class="cat" onclick="filterGames('Card')"><span style="font-size:16px">🃏</span>Cards</div>
+      <div class="cat" onclick="filterGames('Arcade')"><span style="font-size:16px">🎯</span>Arcade</div>
+      <div class="cat" onclick="filterGames('Dice')"><span style="font-size:16px">🎲</span>Dice</div>
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0">
@@ -158,7 +162,10 @@
   </div>
 </nav>
 
+<!-- Load game loader system -->
+<script src="js/game-loader.js"></script>
 <script src="js/app.js"></script>
+
 <script>
 (function() {
   "use strict";
@@ -185,13 +192,14 @@
     { id: 'dragon-tiger', name: 'Dragon Tiger', icon: '🐉', category: 'Card', hot: false },
     { id: 'red-dog', name: 'Red Dog', icon: '🐕', category: 'Card', hot: false },
     { id: 'hi-low', name: 'Hi-Low', icon: '📊', category: 'Card', hot: false },
-    { id: 'ludo-betting', name: 'Ludo', icon: '🎲', category: 'Multiplayer', hot: false },
+    { id: 'ludo-betting', name: 'Ludo Betting', icon: '🎲', category: 'Multiplayer', hot: false },
     { id: 'car-roulette', name: 'Car Roulette', icon: '🏎️', category: 'Race', hot: false },
-    { id: 'book-of-dead', name: 'Book of Dead', icon: '📖', category: 'Slot', hot: false }
+    { id: '7up-7down', name: '7 Up 7 Down', icon: '🎲', category: 'Dice', hot: false }
   ];
 
   let currentUser = null;
   let showingAll = false;
+  let currentFilter = 'all';
 
   function showPage(name) {
     $$('.page').forEach(p => p.classList.remove('active'));
@@ -204,12 +212,65 @@
 
   $$('.nav-btn').forEach(b => b.addEventListener('click', () => showPage(b.dataset.target)));
 
+  // Filter games by category
+  function filterGames(category) {
+    currentFilter = category;
+    renderGames();
+  }
+  window.filterGames = filterGames;
+
+  // Launch game using GameLoaderSystem
+  function launchGameById(gameId) {
+    if (!currentUser) {
+      alert('Please login first to play games');
+      openAuth();
+      return;
+    }
+    
+    const gameConfig = gamesList.find(g => g.id === gameId);
+    if (!gameConfig) { console.error('Game not found:', gameId); return; }
+    
+    // Use new GameLoaderSystem if available
+    if (window.GameLoaderSystem) {
+      GameLoaderSystem.launchGame(gameId, {
+        name: gameConfig.name,
+        thumbnail: gameConfig.icon,
+        class: null,
+        rtp: '95%'
+      });
+      return;
+    }
+    
+    // Fallback
+    if (window.emeraldGames?.launch) {
+      window.emeraldGames.launch(gameId);
+      return;
+    }
+    
+    alert('Launching: ' + gameConfig.name);
+  }
+  window.launchGameById = launchGameById;
+
   function renderGames(limit) {
     limit = limit || 8;
     const grid = document.getElementById('game-grid');
     if (!grid) return;
     grid.innerHTML = '';
-    const list = showingAll ? gamesList : gamesList.slice(0, limit);
+    
+    let filteredList = gamesList;
+    if (currentFilter !== 'all') {
+      filteredList = gamesList.filter(g => g.category === currentFilter);
+    }
+    
+    const list = showingAll ? filteredList : filteredList.slice(0, limit);
+    
+    if (list.length === 0) {
+      grid.innerHTML = '<div class="center muted" style="grid-column:1/-1;padding:30px">No games in this category</div>';
+      const container = document.getElementById('expand-container');
+      if (container) container.classList.remove('show');
+      return;
+    }
+    
     list.forEach((g, i) => {
       const card = document.createElement('div');
       card.className = 'game-card';
@@ -218,23 +279,18 @@
         (g.hot ? '<div class="hot">HOT</div>' : '') +
         '<div class="game-thumb"><img src="assets/images/' + g.id + '.png" alt="' + g.name + '" onerror="this.style.display=\'none\';this.parentElement.innerHTML=\'<span style=font-size:42px>' + g.icon + '</span>\'" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"><span style="font-size:42px;position:relative;z-index:1">' + g.icon + '</span></div>' +
         '<div class="game-meta"><span class="name">' + g.name + '</span><span style="font-size:9px;color:#FFD700">RTP 95%</span></div>';
+      
       card.addEventListener('click', function() {
-        if (!currentUser) { alert('Please login first'); return; }
-        if (window.emeraldGames?.launch) {
-          window.emeraldGames.launch(g.id);
-          return;
-        }
-        if (window.launchGame) {
-          window.launchGame(g.id);
-          return;
-        }
-        alert('Launching: ' + g.name);
+        launchGameById(g.id);
       });
+      
       grid.appendChild(card);
-      if (!showingAll && i === list.length - 1) card.setAttribute('id', 'last-visible-card');
+      if (!showingAll && i === list.length - 1 && filteredList.length > 8) {
+        card.setAttribute('id', 'last-visible-card');
+      }
     });
 
-    if (!showingAll && gamesList.length > 8) {
+    if (!showingAll && filteredList.length > 8) {
       setTimeout(function() {
         const lastCard = document.getElementById('last-visible-card');
         if (lastCard) {
@@ -254,9 +310,11 @@
   }
 
   renderGames(8);
+  
   document.getElementById('expand-games').addEventListener('click', function() {
     showingAll = !showingAll;
     renderGames();
+    this.textContent = showingAll ? '🔼 Show Less' : '🎮 View All Games';
   });
 
   // BANNER SLIDER
@@ -293,6 +351,7 @@
       alert('✅ Check email to confirm, then login!');
     };
   }
+  window.openAuth = openAuth;
 
   function showWelcomePopups() {
     const msgs = [
@@ -330,6 +389,7 @@
       if (walletCap) walletCap.style.display = 'none';
     }
   }
+  window.updateUI = updateUI;
 
   // HEADER AUTH BUTTON
   document.getElementById('btn-auth').addEventListener('click', function() {
@@ -358,6 +418,13 @@
   const quitBtn = document.getElementById('quit-btn');
   if (quitBtn) quitBtn.addEventListener('click', function() {
     if (confirm('Logout?')) { supabase.auth.signOut(); currentUser = null; updateUI(); renderGames(); showPage('home'); }
+  });
+
+  // Keyboard shortcut: Escape to exit game
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && window.GameLoaderSystem && GameLoaderSystem.isGameActive) {
+      GameLoaderSystem.exitGame();
+    }
   });
 
   updateUI();
