@@ -1,0 +1,426 @@
+/* ============================================
+   EMERALD KING - GAME LOADER & CONTAINER
+   Full-Screen Casino Game Experience
+   ============================================ */
+
+/* ---------- GAME LOADING OVERLAY ---------- */
+#game-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: linear-gradient(180deg, #0a0806 0%, #1a1410 50%, #0a0806 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+#game-loading-overlay .loader-logo {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #c9a84c, #e8d5a3, #a07c2e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    box-shadow: 0 0 60px rgba(201, 168, 76, 0.4), 0 0 120px rgba(201, 168, 76, 0.2);
+    animation: loaderPulse 1.5s ease-in-out infinite;
+}
+
+#game-loading-overlay .loader-title {
+    color: #c9a84c;
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-shadow: 0 0 30px rgba(201, 168, 76, 0.5);
+    text-transform: uppercase;
+}
+
+#game-loading-overlay .loader-subtitle {
+    color: rgba(240, 232, 216, 0.6);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+#game-loading-overlay .loader-progress-container {
+    width: 280px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#game-loading-overlay .loader-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #c9a84c, #e8d5a3, #c9a84c, transparent);
+    background-size: 200% 100%;
+    border-radius: 10px;
+    animation: loaderShimmer 1.5s ease-in-out infinite;
+    width: 100%;
+}
+
+#game-loading-overlay .loader-tips {
+    color: rgba(240, 232, 216, 0.4);
+    font-size: 11px;
+    text-align: center;
+    max-width: 300px;
+    min-height: 32px;
+    transition: opacity 0.5s ease;
+}
+
+@keyframes loaderPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(201, 168, 76, 0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 0 90px rgba(201, 168, 76, 0.7); }
+}
+
+@keyframes loaderShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* ---------- GAME CONTAINER (FULL SCREEN) ---------- */
+#game-fullscreen-container {
+    position: fixed;
+    inset: 0;
+    z-index: 99990;
+    background: #0a0806;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    animation: gameContainerSlideIn 0.4s ease-out;
+}
+
+@keyframes gameContainerSlideIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- GAME HEADER BAR ---------- */
+#game-header {
+    background: linear-gradient(180deg, rgba(26, 20, 16, 0.98) 0%, rgba(26, 20, 16, 0.95) 100%);
+    border-bottom: 2px solid rgba(201, 168, 76, 0.3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    z-index: 10;
+}
+
+#game-header .game-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#game-header .game-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.2), rgba(201, 168, 76, 0.05));
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+#game-header .game-name {
+    color: #f0e8d8;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+#game-header .game-provider {
+    color: rgba(240, 232, 216, 0.4);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#game-header .header-balance-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    border-radius: 30px;
+    padding: 6px 14px;
+}
+
+#game-header .header-balance-display .balance-icon {
+    font-size: 16px;
+}
+
+#game-header .header-balance-display .balance-value {
+    color: #c9a84c;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+#game-header .exit-btn {
+    background: rgba(255, 68, 68, 0.15);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    color: #ff6666;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+#game-header .exit-btn:hover {
+    background: rgba(255, 68, 68, 0.25);
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.2);
+}
+
+/* ---------- GAME CANVAS AREA ---------- */
+#game-canvas-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #1a1410 0%, #0a0806 70%);
+}
+
+#game-canvas-wrapper canvas {
+    border-radius: 16px;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), 0 0 120px rgba(201, 168, 76, 0.05);
+}
+
+/* ---------- GAME FOOTER CONTROLS ---------- */
+#game-footer {
+    background: linear-gradient(0deg, rgba(10, 8, 6, 0.98) 0%, rgba(26, 20, 16, 0.95) 100%);
+    border-top: 2px solid rgba(201, 168, 76, 0.3);
+    padding: 10px 16px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 70px;
+    z-index: 10;
+}
+
+/* Chip selector */
+#game-footer .chip-selector {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+#game-footer .chip-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    color: #fff;
+    transition: all 0.3s ease;
+    position: relative;
+    background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.3), transparent 60%);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+#game-footer .chip-btn.selected {
+    border-color: #c9a84c;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(201,168,76,0.4), 0 4px 12px rgba(0,0,0,0.5);
+}
+
+#game-footer .chip-btn.chip-10 { background: #2255cc; }
+#game-footer .chip-btn.chip-50 { background: #cc4400; }
+#game-footer .chip-btn.chip-100 { background: #228833; }
+#game-footer .chip-btn.chip-500 { background: #7722aa; }
+#game-footer .chip-btn.chip-1000 { background: #cc8800; }
+
+/* Action button */
+#game-footer .action-btn {
+    padding: 14px 28px;
+    border-radius: 30px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+#game-footer .action-btn.deal-btn {
+    background: linear-gradient(135deg, #c9a84c, #e8d5a3);
+    color: #0a0806;
+    box-shadow: 0 6px 20px rgba(201, 168, 76, 0.3);
+}
+
+#game-footer .action-btn.deal-btn:active {
+    transform: scale(0.95);
+}
+
+#game-footer .action-btn.deal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---------- GAME INFO OVERLAY ---------- */
+#game-info-overlay {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#game-info-overlay .info-badge {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ---------- BETTING TIMER ---------- */
+#betting-timer {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(201, 168, 76, 0.4);
+    border-radius: 30px;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #c9a84c;
+    font-weight: bold;
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+#betting-timer .timer-ring {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid rgba(201, 168, 76, 0.2);
+    border-top-color: #c9a84c;
+    animation: timerSpin 1s linear infinite;
+}
+
+#betting-timer.urgent {
+    border-color: rgba(255, 68, 68, 0.6);
+    color: #ff4444;
+    animation: timerUrgent 0.5s ease-in-out infinite;
+}
+
+#betting-timer.urgent .timer-ring {
+    border-color: rgba(255, 68, 68, 0.2);
+    border-top-color: #ff4444;
+}
+
+@keyframes timerSpin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes timerUrgent {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+/* ---------- WIN OVERLAY ---------- */
+#win-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    animation: winOverlayFade 2s ease-out forwards;
+}
+
+#win-overlay .win-banner {
+    background: linear-gradient(135deg, rgba(0, 230, 118, 0.15), rgba(0, 230, 118, 0.05));
+    border: 2px solid rgba(0, 230, 118, 0.4);
+    border-radius: 20px;
+    padding: 20px 40px;
+    text-align: center;
+    animation: winBannerPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#win-overlay .win-banner .win-amount {
+    color: #00e676;
+    font-size: 32px;
+    font-weight: bold;
+    text-shadow: 0 0 30px rgba(0, 230, 118, 0.6);
+}
+
+#win-overlay .win-banner .win-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#lose-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    animation: winOverlayFade 2s ease-out forwards;
+}
+
+#lose-overlay .lose-banner {
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.15), rgba(255, 68, 68, 0.05));
+    border: 2px solid rgba(255, 68, 68, 0.4);
+    border-radius: 20px;
+    padding: 20px 40px;
+    text-align: center;
+    animation: winBannerPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#lose-overlay .lose-banner .lose-amount {
+    color: #ff4444;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+@keyframes winOverlayFade {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes winBannerPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 480px) {
+    #game-header .game-name { font-size: 13px; }
+    #game-footer .chip-btn { width: 36px; height: 36px; font-size: 10px; }
+    #game-footer .action-btn { padding: 12px 20px; font-size: 12px; }
+}
