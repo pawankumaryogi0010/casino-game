@@ -3,7 +3,6 @@
    Full-Screen Casino Game Experience
    ============================================ */
 
-/* ---------- GAME LOADING OVERLAY ---------- */
 #game-loading-overlay {
     position: fixed;
     inset: 0;
@@ -82,7 +81,6 @@
     100% { background-position: 200% 0; }
 }
 
-/* ---------- GAME CONTAINER (FULL SCREEN) ---------- */
 #game-fullscreen-container {
     position: fixed;
     inset: 0;
@@ -99,7 +97,6 @@
     to { opacity: 1; transform: scale(1); }
 }
 
-/* ---------- GAME HEADER BAR ---------- */
 #game-header {
     background: linear-gradient(180deg, rgba(26, 20, 16, 0.98) 0%, rgba(26, 20, 16, 0.95) 100%);
     border-bottom: 2px solid rgba(201, 168, 76, 0.3);
@@ -181,7 +178,6 @@
     box-shadow: 0 0 20px rgba(255, 68, 68, 0.2);
 }
 
-/* ---------- GAME CANVAS AREA ---------- */
 #game-canvas-wrapper {
     flex: 1;
     display: flex;
@@ -197,7 +193,6 @@
     box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), 0 0 120px rgba(201, 168, 76, 0.05);
 }
 
-/* ---------- GAME FOOTER CONTROLS ---------- */
 #game-footer {
     background: linear-gradient(0deg, rgba(10, 8, 6, 0.98) 0%, rgba(26, 20, 16, 0.95) 100%);
     border-top: 2px solid rgba(201, 168, 76, 0.3);
@@ -210,7 +205,6 @@
     z-index: 10;
 }
 
-/* Chip selector */
 #game-footer .chip-selector {
     display: flex;
     gap: 6px;
@@ -245,7 +239,6 @@
 #game-footer .chip-btn.chip-500 { background: #7722aa; }
 #game-footer .chip-btn.chip-1000 { background: #cc8800; }
 
-/* Action button */
 #game-footer .action-btn {
     padding: 14px 28px;
     border-radius: 30px;
@@ -274,7 +267,6 @@
     cursor: not-allowed;
 }
 
-/* ---------- GAME INFO OVERLAY ---------- */
 #game-info-overlay {
     position: absolute;
     top: 16px;
@@ -297,7 +289,6 @@
     gap: 6px;
 }
 
-/* ---------- BETTING TIMER ---------- */
 #betting-timer {
     position: absolute;
     top: 16px;
@@ -346,7 +337,6 @@
     50% { transform: translateX(-50%) scale(1.05); }
 }
 
-/* ---------- WIN OVERLAY ---------- */
 #win-overlay {
     position: absolute;
     inset: 0;
@@ -418,7 +408,6 @@
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* ---------- RESPONSIVE ---------- */
 @media (max-width: 480px) {
     #game-header .game-name { font-size: 13px; }
     #game-footer .chip-btn { width: 36px; height: 36px; font-size: 10px; }
