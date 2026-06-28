@@ -1,7 +1,7 @@
 // ============================================
-// EMERALD KING CASINO - GAME 5: BLACKJACK
-// Full Real Casino Visual Design
-// Double-Deck, Split, Double Down, Hit, Stand
+// EMERALD KING CASINO - BLACKJACK
+// Real Casino UI - Evolution/Pragmatic Style
+// Full Redesign v3.0.0
 // File: js/games/blackjack.js
 // ============================================
 
@@ -9,8 +9,10 @@ class BlackjackFullGame {
     constructor(canvas, ctx) {
         this.canvas = canvas;
         this.ctx = ctx;
-        this.w = canvas.width / 2;
-        this.h = canvas.height / 2;
+        
+        // Canvas dimensions
+        this.w = 500;
+        this.h = 600;
         
         // Game state
         this.bet = 50;
@@ -19,7 +21,7 @@ class BlackjackFullGame {
         this.dealerCards = [];
         this.playerScore = 0;
         this.dealerScore = 0;
-        this.playerScore2 = 0; // For split hand
+        this.playerScore2 = 0;
         this.splitCards = [];
         this.isPlaying = false;
         this.gameOver = false;
@@ -31,15 +33,17 @@ class BlackjackFullGame {
         this.canDouble = false;
         this.hasSplit = false;
         this.hasDoubled = false;
-        this.activeHand = 0; // 0 = main, 1 = split
-        this.result = null; // 'win', 'lose', 'push', 'blackjack'
-        this.result2 = null; // For split hand
+        this.activeHand = 0;
+        this.result = null;
+        this.result2 = null;
+        this.winnings = 0;
         
         // Animation
-        this.dealAnimProgress = 0;
-        this.dealAnimTarget = 0;
-        this.isDealing = false;
-        this.cardFlipAnim = 0;
+        this.dealProgress = 0;
+        this.dealPhase = 'idle';
+        this.cardSlideAnim = 0;
+        this.confettiParticles = [];
+        this.winGlowAlpha = 0;
         
         // Win cascade
         this.winCascade = null;
@@ -47,43 +51,74 @@ class BlackjackFullGame {
             this.winCascade = new WinParticleCascade(ctx);
         }
         
-        // Sparkles
+        // Table sparks
         this.sparkles = [];
         this.glowPulse = 0;
-        this.chipStackAnim = 0;
         
         // Colors
-        this.colors = {
-            felt: '#0d3320',
-            feltDark: '#072218',
-            gold: '#FFD700',
-            red: '#ff4444',
-            blue: '#00b0ff',
-            green: '#00e676',
+        this.palette = {
+            felt: '#0d5e2e',
+            feltDark: '#0a4a24',
+            feltLight: '#0f6b35',
+            woodLight: '#c48b5c',
+            woodDark: '#8b5a3c',
+            woodBorder: '#6b3a1f',
+            gold: '#d4a843',
+            goldLight: '#f0d078',
+            playerZone: '#00e676',
+            dealerZone: '#ff4444',
+            splitZone: '#4488ff',
+            cardBg: '#f5f5f0',
+            cardBorder: '#cccccc',
+            textPrimary: '#f0e8d8',
+            textDim: 'rgba(240,232,216,0.4)',
             white: '#ffffff',
-            cardBg: '#1a1a2e'
+            black: '#1a1a1a',
+            red: '#cc0000',
+            chipRed: '#cc0000',
+            chipBlue: '#0044cc',
+            chipGreen: '#00aa44',
+            chipBlack: '#1a1a1a',
+            chipGold: '#d4a843'
         };
+        
+        this.cardWidth = 52;
+        this.cardHeight = 74;
     }
     
     // ============================================
-    // INITIALIZATION
+    // INIT
     // ============================================
     
     init() {
+        if (this.canvas) {
+            const sw = parseFloat(this.canvas.style.width);
+            const sh = parseFloat(this.canvas.style.height);
+            if (sw && sh) { this.w = sw; this.h = sh; }
+        }
         this.generateSparkles();
         this.resetGame();
         this.drawFullTable();
     }
     
+    resize() {
+        if (this.canvas) {
+            const sw = parseFloat(this.canvas.style.width);
+            const sh = parseFloat(this.canvas.style.height);
+            if (sw && sh) { this.w = sw; this.h = sh; }
+        }
+        this.drawFullTable();
+    }
+    
     generateSparkles() {
         this.sparkles = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             this.sparkles.push({
                 x: Math.random() * this.w,
                 y: Math.random() * this.h,
-                size: Math.random() * 1.5 + 0.5,
-                speed: Math.random() * 0.02 + 0.005,
-                opacity: Math.random() * 0.3 + 0.1,
+                size: Math.random() * 1.2 + 0.3,
+                speed: Math.random() * 0.015 + 0.003,
+                opacity: Math.random() * 0.3 + 0.05,
                 phase: Math.random() * Math.PI * 2
             });
         }
@@ -109,20 +144,23 @@ class BlackjackFullGame {
         this.activeHand = 0;
         this.result = null;
         this.result2 = null;
-        this.dealAnimProgress = 0;
-        this.isDealing = false;
+        this.winnings = 0;
+        this.dealProgress = 0;
+        this.dealPhase = 'idle';
+        this.cardSlideAnim = 0;
+        this.winGlowAlpha = 0;
+        this.confettiParticles = [];
     }
     
     // ============================================
-    // DECK OPERATIONS (Double Deck)
+    // DECK
     // ============================================
     
     createDeck() {
         const deck = [];
-        const suits = ['♠', '♥', '♦', '♣'];
+        const suits = ['S', 'H', 'D', 'C'];
         const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        // Double deck
-        for (let d = 0; d < 2; d++) {
+        for (let d = 0; d < 6; d++) {
             for (const suit of suits) {
                 for (const rank of ranks) {
                     deck.push({ suit, rank });
@@ -141,7 +179,7 @@ class BlackjackFullGame {
     
     getCardValue(rank) {
         if (rank === 'A') return 11;
-        if (['K', 'Q', 'J'].includes(rank)) return 10;
+        if (['K', 'Q', 'J'].indexOf(rank) >= 0) return 10;
         return parseInt(rank);
     }
     
@@ -150,7 +188,7 @@ class BlackjackFullGame {
         let aces = 0;
         for (const card of cards) {
             if (card.rank === 'A') { aces++; score += 11; }
-            else if (['K', 'Q', 'J'].includes(card.rank)) score += 10;
+            else if (['K', 'Q', 'J'].indexOf(card.rank) >= 0) score += 10;
             else score += parseInt(card.rank);
         }
         while (score > 21 && aces > 0) { score -= 10; aces--; }
@@ -166,32 +204,28 @@ class BlackjackFullGame {
     // ============================================
     
     play(bet) {
-        if (this.isPlaying || this.isDealing) return;
+        if (this.isPlaying) return;
         
+        this.bet = bet || this.bet;
         this.resetGame();
-        this.bet = bet;
-        this.isDealing = true;
+        this.isPlaying = true;
+        this.gameOver = false;
         
         const deck = this.createDeck();
         this.shuffleDeck(deck);
         
-        // Deal initial cards
         this.playerCards = [deck.pop(), deck.pop()];
         this.dealerCards = [deck.pop(), deck.pop()];
         
         this.playerScore = this.calculateScore(this.playerCards);
-        this.dealerScore = this.calculateScore([this.dealerCards[0]]); // Only show one
+        this.dealerScore = this.calculateScore([this.dealerCards[0]]);
         
         this.playerBlackjack = this.isBlackjack(this.playerCards);
         this.dealerBlackjack = this.isBlackjack(this.dealerCards);
         
         this.canSplit = this.playerCards[0].rank === this.playerCards[1].rank;
         this.canDouble = true;
-        this.isPlaying = true;
-        this.isDealing = false;
-        this.gameOver = false;
         
-        // Check for natural blackjack
         if (this.playerBlackjack || this.dealerBlackjack) {
             this.gameOver = true;
             this.isPlaying = false;
@@ -211,7 +245,6 @@ class BlackjackFullGame {
         if (this.activeHand === 0) {
             this.playerCards.push(deck.pop());
             this.playerScore = this.calculateScore(this.playerCards);
-            
             if (this.playerScore > 21) {
                 this.playerBust = true;
                 this.stand();
@@ -219,7 +252,6 @@ class BlackjackFullGame {
         } else {
             this.splitCards.push(deck.pop());
             this.playerScore2 = this.calculateScore(this.splitCards);
-            
             if (this.playerScore2 > 21) {
                 this.activeHand = 0;
                 this.stand();
@@ -242,7 +274,6 @@ class BlackjackFullGame {
         this.gameOver = true;
         this.isPlaying = false;
         
-        // Dealer plays
         this.dealerScore = this.calculateScore(this.dealerCards);
         const deck = this.createDeck();
         this.shuffleDeck(deck);
@@ -282,7 +313,7 @@ class BlackjackFullGame {
         this.splitCards = [this.playerCards.pop()];
         this.playerScore = this.calculateScore(this.playerCards);
         this.playerScore2 = this.calculateScore(this.splitCards);
-        this.activeHand = 1; // Start with split hand
+        this.activeHand = 1;
         
         const deck = this.createDeck();
         this.shuffleDeck(deck);
@@ -297,15 +328,15 @@ class BlackjackFullGame {
     resolveGame() {
         const ps = this.playerScore;
         const ds = this.dealerScore;
-        const resultDisplay = document.getElementById('game-result-display');
+        this.winnings = 0;
         
-        // Main hand result
         if (this.playerBust) {
             this.result = 'lose';
         } else if (this.dealerBust) {
             this.result = 'win';
         } else if (this.playerBlackjack && !this.dealerBlackjack) {
             this.result = 'blackjack';
+            this.winnings = Math.floor(this.bet * 2.5);
         } else if (ps > ds) {
             this.result = 'win';
         } else if (ps === ds) {
@@ -314,43 +345,88 @@ class BlackjackFullGame {
             this.result = 'lose';
         }
         
-        // Display result
-        if (resultDisplay) {
-            let html = '';
-            switch (this.result) {
-                case 'blackjack':
-                    const bjpayout = Math.floor(this.bet * 2.5);
-                    this.chips += bjpayout;
-                    html = `<span style="color:#FFD700;font-size:18px;">🃏 BLACKJACK!</span><br><span style="color:#00e676;">+${bjpayout} CHIPS</span>`;
-                    if (this.winCascade) this.winCascade.spawn(this.w / 2, this.h / 2, 100);
-                    break;
-                case 'win':
-                    const payout = Math.floor(this.bet * 2);
-                    this.chips += payout;
-                    html = `<span style="color:#00e676;font-size:18px;">🎉 YOU WIN!</span><br><span style="color:#00e676;">+${payout} CHIPS</span>`;
-                    if (this.winCascade) this.winCascade.spawn(this.w / 2, this.h / 2, 60);
-                    break;
-                case 'push':
-                    this.chips += this.bet;
-                    html = `<span style="color:#FFD700;font-size:16px;">🤝 PUSH</span><br><span style="color:rgba(255,255,255,0.6);">Bet returned</span>`;
-                    break;
-                case 'lose':
-                    html = `<span style="color:#ff4444;font-size:16px;">😞 DEALER WINS</span><br><span style="color:rgba(255,255,255,0.6);">-${this.bet} CHIPS</span>`;
-                    break;
+        if (this.result === 'win') this.winnings = Math.floor(this.bet * 2);
+        if (this.result === 'push') this.winnings = this.bet;
+        
+        this.chips += this.winnings;
+        const resultDisplay = document.getElementById('game-info-overlay');
+        
+        if (this.winnings > this.bet || this.result === 'blackjack') {
+            this.generateConfetti();
+            this.winGlowAlpha = 1.0;
+            if (window.GameLoaderSystem) {
+                GameLoaderSystem.showWinOverlay(this.winnings);
+                GameLoaderSystem.updateBalance(this.chips);
             }
-            resultDisplay.innerHTML = `<div style="animation: casinoSlideUp 0.5s ease-out;">${html}</div>`;
+            if (this.winCascade) this.winCascade.spawn(this.w / 2, this.h * 0.6, 80);
+        } else if (this.result === 'lose') {
+            if (window.GameLoaderSystem) {
+                GameLoaderSystem.showLoseOverlay(this.bet);
+                GameLoaderSystem.updateBalance(this.chips);
+            }
         }
         
-        setTimeout(() => { this.resetGame(); }, 3500);
+        if (resultDisplay) {
+            if (this.result === 'blackjack') {
+                resultDisplay.innerHTML = '<div class="info-badge" style="color:#FFD700;font-size:14px;">BLACKJACK! +RS ' + this.winnings + '</div>';
+            } else if (this.result === 'win') {
+                resultDisplay.innerHTML = '<div class="info-badge" style="color:#00e676;font-size:14px;">WIN! +RS ' + this.winnings + '</div>';
+            } else if (this.result === 'push') {
+                resultDisplay.innerHTML = '<div class="info-badge" style="color:#FFD700;font-size:14px;">PUSH - Bet returned</div>';
+            } else {
+                resultDisplay.innerHTML = '<div class="info-badge" style="color:#ff6666;font-size:14px;">DEALER WINS - Lost RS ' + this.bet + '</div>';
+            }
+        }
+        
+        this.drawFullTable();
+        
+        setTimeout(() => {
+            this.winGlowAlpha = 0;
+            this.confettiParticles = [];
+            if (resultDisplay) resultDisplay.innerHTML = '';
+            this.resetGame();
+            this.drawFullTable();
+        }, 5000);
+    }
+    
+    generateConfetti() {
+        this.confettiParticles = [];
+        const colors = ['#ff4444', '#00e676', '#FFD700', '#00b0ff', '#ff8800', '#c084fc', '#ffffff'];
+        for (let i = 0; i < 60; i++) {
+            this.confettiParticles.push({
+                x: this.w * 0.1 + Math.random() * this.w * 0.8,
+                y: -20 - Math.random() * 100,
+                w: 4 + Math.random() * 8,
+                h: 3 + Math.random() * 6,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vy: 1 + Math.random() * 3,
+                vx: (Math.random() - 0.5) * 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.2,
+                opacity: 1
+            });
+        }
     }
     
     // ============================================
-    // UPDATE LOOP
+    // UPDATE
     // ============================================
     
     update(timestamp) {
         this.glowPulse += 0.02;
-        this.chipStackAnim += 0.03;
+        
+        this.confettiParticles.forEach(function(p) {
+            p.y += p.vy;
+            p.x += p.vx;
+            p.vy += 0.03;
+            p.rotation += p.rotationSpeed;
+            if (p.y > this.h + 50) p.opacity -= 0.02;
+        });
+        this.confettiParticles = this.confettiParticles.filter(function(p) { return p.opacity > 0; });
+        
+        if (this.winGlowAlpha > 0 && !this.gameOver) {
+            this.winGlowAlpha -= 0.01;
+        }
         
         if (this.winCascade && this.winCascade.isAlive()) {
             this.winCascade.update();
@@ -358,7 +434,7 @@ class BlackjackFullGame {
     }
     
     // ============================================
-    // RENDERING - FULL TABLE
+    // RENDERING
     // ============================================
     
     drawFullTable() {
@@ -368,334 +444,361 @@ class BlackjackFullGame {
         
         ctx.clearRect(0, 0, w, h);
         
-        // Background
         this.drawBackground(ctx, w, h);
-        
-        // Table border
         this.drawTableBorder(ctx, w, h);
-        
-        // Table felt
         this.drawTableFelt(ctx, w, h);
-        
-        // Title
-        this.drawTitle(ctx, w, h);
-        
-        // Dealer area
         this.drawDealerArea(ctx, w, h);
-        
-        // Player area
         this.drawPlayerArea(ctx, w, h);
-        
-        // Split hand area (if active)
-        if (this.hasSplit) {
-            this.drawSplitArea(ctx, w, h);
-        }
-        
-        // Score displays
         this.drawScores(ctx, w, h);
-        
-        // Action buttons
-        if (this.isPlaying && !this.gameOver) {
-            this.drawActionButtons(ctx, w, h);
-        }
-        
-        // Chip stack
-        this.drawChipStack(ctx, w, h);
-        
-        // Sparkles
+        this.drawActionButtons(ctx, w, h);
+        this.drawChipStacks(ctx, w, h);
+        this.drawConfetti(ctx);
         this.drawSparkles(ctx);
         
-        // Win particles
+        if (this.winGlowAlpha > 0) {
+            this.drawWinGlow(ctx, w, h);
+        }
+        
         if (this.winCascade && this.winCascade.isAlive()) {
             this.winCascade.render();
         }
     }
     
     drawBackground(ctx, w, h) {
-        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w);
-        bgGrad.addColorStop(0, '#033826');
-        bgGrad.addColorStop(0.5, '#02231c');
-        bgGrad.addColorStop(1, '#011713');
+        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w * 0.9);
+        bgGrad.addColorStop(0, '#1a1410');
+        bgGrad.addColorStop(0.5, '#0f0b08');
+        bgGrad.addColorStop(1, '#050302');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, w, h);
     }
     
     drawTableBorder(ctx, w, h) {
-        ctx.fillStyle = '#1a0a00';
-        ctx.strokeStyle = '#8B4513';
-        ctx.lineWidth = 8;
-        CardRenderer.roundRect(ctx, 8, 8, w - 16, h - 16, 18);
+        const m = 12;
+        const tw = w - m * 2;
+        const th = h - m * 2;
+        
+        ctx.fillStyle = this.palette.woodDark;
+        ctx.strokeStyle = this.palette.woodBorder;
+        ctx.lineWidth = 4;
+        this.roundRect(ctx, m - 4, m - 4, tw + 8, th + 8, 20);
         ctx.fill();
         ctx.stroke();
         
-        ctx.strokeStyle = '#FFD700';
+        ctx.fillStyle = this.palette.woodLight;
+        this.roundRect(ctx, m, m, tw, th, 18);
+        ctx.fill();
+        
+        ctx.strokeStyle = this.palette.gold;
         ctx.lineWidth = 2;
-        CardRenderer.roundRect(ctx, 16, 16, w - 32, h - 32, 14);
+        this.roundRect(ctx, m + 8, m + 8, tw - 16, th - 16, 14);
         ctx.stroke();
     }
     
     drawTableFelt(ctx, w, h) {
-        const feltGrad = ctx.createLinearGradient(0, 0, w, h);
-        feltGrad.addColorStop(0, '#0d3320');
-        feltGrad.addColorStop(0.5, '#0a2a1a');
-        feltGrad.addColorStop(1, '#072218');
+        const fx = 24, fy = 24, fw = w - 48, fh = h - 48;
+        const feltGrad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, Math.max(w, h));
+        feltGrad.addColorStop(0, this.palette.feltLight);
+        feltGrad.addColorStop(0.4, this.palette.felt);
+        feltGrad.addColorStop(1, this.palette.feltDark);
         ctx.fillStyle = feltGrad;
-        CardRenderer.roundRect(ctx, 20, 20, w - 40, h - 40, 12);
+        this.roundRect(ctx, fx, fy, fw, fh, 12);
         ctx.fill();
         
-        // Felt texture
-        ctx.fillStyle = 'rgba(0, 40, 25, 0.2)';
-        for (let x = 28; x < w - 28; x += 4) {
-            for (let y = 28; y < h - 28; y += 4) {
-                if ((x + y) % 8 === 0) ctx.fillRect(x, y, 2, 2);
-            }
-        }
-    }
-    
-    drawTitle(ctx, w, h) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        CardRenderer.roundRect(ctx, w * 0.2, 25, w * 0.6, 32, 15);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
-        ctx.lineWidth = 1;
-        CardRenderer.roundRect(ctx, w * 0.2, 25, w * 0.6, 32, 15);
+        // Betting circle
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(w / 2, h * 0.72, 50, 0, Math.PI * 2);
         ctx.stroke();
-        
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🃏 BLACKJACK', w / 2, 41);
-        
-        // RTP badge
-        ctx.fillStyle = 'rgba(0, 230, 118, 0.15)';
-        CardRenderer.roundRect(ctx, w - 75, 27, 50, 18, 10);
-        ctx.fill();
-        ctx.fillStyle = '#00e676';
-        ctx.font = 'bold 8px Arial';
-        ctx.fillText('RTP 99.5%', w - 50, 36);
     }
     
     drawDealerArea(ctx, w, h) {
-        const areaY = 68;
-        const areaW = w * 0.6;
-        const areaX = (w - areaW) / 2;
+        const ax = w / 2 - 110;
+        const ay = h * 0.06;
+        const aw = 220;
+        const ah = h * 0.22;
         
-        // Dealer zone
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.strokeStyle = 'rgba(255, 68, 68, 0.3)';
+        ctx.fillStyle = 'rgba(255,68,68,0.04)';
+        ctx.strokeStyle = 'rgba(255,68,68,0.3)';
         ctx.lineWidth = 1;
-        CardRenderer.roundRect(ctx, areaX, areaY, areaW, 95, 10);
+        this.roundRect(ctx, ax, ay, aw, ah, 12);
         ctx.fill();
         ctx.stroke();
         
-        // Dealer label
-        ctx.fillStyle = '#ff4444';
-        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = this.palette.dealerZone;
+        ctx.font = 'bold 12px Georgia';
         ctx.textAlign = 'center';
-        ctx.fillText('🏠 DEALER', w / 2, areaY - 5);
+        ctx.fillText('DEALER', w / 2, ay + 18);
         
         // Dealer cards
-        const cardW = 46;
-        const cardH = 64;
-        const startX = w / 2 - (this.dealerCards.length * 28) / 2;
+        const cw = this.cardWidth, ch = this.cardHeight;
+        const totalW = this.dealerCards.length * (cw + 6) - 6;
+        const sx = w / 2 - totalW / 2;
+        const cy = ay + 28;
         
         for (let i = 0; i < this.dealerCards.length; i++) {
-            const cx = startX + i * 28;
-            const cy = areaY + 18;
-            const showCard = (i === 0 && !this.gameOver) ? false : true;
-            
-            if (showCard) {
-                CardRenderer.drawCard(ctx, cx, cy, cardW, cardH, this.dealerCards[i].suit, this.dealerCards[i].rank, true);
-            } else {
-                // Hidden card
-                ctx.fillStyle = '#1a2744';
-                ctx.strokeStyle = '#2a4a7a';
-                ctx.lineWidth = 1.5;
-                CardRenderer.roundRect(ctx, cx, cy, cardW, cardH, 6);
-                ctx.fill();
-                ctx.stroke();
-                
-                // Card back pattern
-                ctx.fillStyle = '#2a4a7a';
-                for (let r = 0; r < 3; r++) {
-                    for (let c = 0; c < 2; c++) {
-                        ctx.beginPath();
-                        ctx.arc(cx + 14 + c * 18, cy + 16 + r * 20, 3, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-            }
+            const cx = sx + i * (cw + 6);
+            const showCard = this.gameOver || i > 0;
+            this.drawSingleCard(ctx, cx, cy, cw, ch, this.dealerCards[i], showCard);
         }
     }
     
     drawPlayerArea(ctx, w, h) {
-        const areaY = h - 200;
-        const areaW = w * 0.6;
-        const areaX = (w - areaW) / 2;
+        const ax = w / 2 - 110;
+        const ay = h * 0.52;
+        const aw = 220;
+        const ah = h * 0.22;
         
-        // Player zone
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.strokeStyle = this.activeHand === 0 ? 'rgba(0, 230, 118, 0.5)' : 'rgba(0, 230, 118, 0.2)';
+        ctx.fillStyle = 'rgba(0,230,118,0.04)';
+        ctx.strokeStyle = this.activeHand === 0 ? 'rgba(0,230,118,0.5)' : 'rgba(0,230,118,0.2)';
         ctx.lineWidth = this.activeHand === 0 ? 2 : 1;
-        CardRenderer.roundRect(ctx, areaX, areaY, areaW, 95, 10);
+        this.roundRect(ctx, ax, ay, aw, ah, 12);
         ctx.fill();
         ctx.stroke();
         
-        // Player label
-        ctx.fillStyle = '#00e676';
-        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = this.palette.playerZone;
+        ctx.font = 'bold 12px Georgia';
         ctx.textAlign = 'center';
-        ctx.fillText('👤 YOUR HAND', w / 2, areaY - 5);
+        ctx.fillText('YOUR HAND', w / 2, ay + 18);
         
-        // Player cards
-        const cardW = 46;
-        const cardH = 64;
-        const startX = w / 2 - (this.playerCards.length * 28) / 2;
+        const cw = this.cardWidth, ch = this.cardHeight;
+        const totalW = this.playerCards.length * (cw + 6) - 6;
+        const sx = w / 2 - totalW / 2;
+        const cy = ay + 28;
         
         for (let i = 0; i < this.playerCards.length; i++) {
-            const cx = startX + i * 28;
-            const cy = areaY + 18;
-            CardRenderer.drawCard(ctx, cx, cy, cardW, cardH, this.playerCards[i].suit, this.playerCards[i].rank, true);
+            const cx = sx + i * (cw + 6);
+            this.drawSingleCard(ctx, cx, cy, cw, ch, this.playerCards[i], true);
         }
-    }
-    
-    drawSplitArea(ctx, w, h) {
-        const areaY = h - 310;
-        const areaW = w * 0.45;
-        const areaX = w * 0.05;
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.strokeStyle = this.activeHand === 1 ? 'rgba(0, 176, 255, 0.5)' : 'rgba(0, 176, 255, 0.2)';
-        ctx.lineWidth = this.activeHand === 1 ? 2 : 1;
-        CardRenderer.roundRect(ctx, areaX, areaY, areaW, 75, 8);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.fillStyle = '#00b0ff';
-        ctx.font = 'bold 9px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('SPLIT HAND', areaX + areaW / 2, areaY - 5);
-        
-        const cardW = 38;
-        const cardH = 52;
-        const startX = areaX + 8;
-        
-        for (let i = 0; i < this.splitCards.length; i++) {
-            const cx = startX + i * 22;
-            const cy = areaY + 14;
-            CardRenderer.drawCard(ctx, cx, cy, cardW, cardH, this.splitCards[i].suit, this.splitCards[i].rank, true);
+        // Split hand
+        if (this.hasSplit) {
+            const sax = ax - 100;
+            const say = ay + ah + 8;
+            const saw = 120;
+            const sah = 60;
+            
+            ctx.fillStyle = 'rgba(68,136,255,0.04)';
+            ctx.strokeStyle = this.activeHand === 1 ? 'rgba(68,136,255,0.5)' : 'rgba(68,136,255,0.2)';
+            ctx.lineWidth = this.activeHand === 1 ? 2 : 1;
+            this.roundRect(ctx, sax, say, saw, sah, 8);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = this.palette.splitZone;
+            ctx.font = 'bold 8px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('SPLIT', sax + saw / 2, say + 12);
+            
+            for (let i = 0; i < this.splitCards.length; i++) {
+                const scx = sax + 6 + i * (38 + 3);
+                const scy = say + 18;
+                this.drawSingleCard(ctx, scx, scy, 38, 54, this.splitCards[i], true);
+            }
         }
     }
     
     drawScores(ctx, w, h) {
         // Dealer score
-        const dealerY = 168;
+        const dsY = h * 0.29;
         ctx.fillStyle = this.dealerBust ? '#ff4444' : '#ffffff';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 16px Georgia';
         ctx.textAlign = 'center';
-        const dScore = this.gameOver ? this.dealerScore : (this.dealerCards.length > 0 ? this.getCardValue(this.dealerCards[1]?.rank || '0') : 0);
-        ctx.fillText(this.gameOver ? this.dealerScore : '?', w / 2, dealerY);
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '9px Arial';
-        ctx.fillText('DEALER', w / 2, dealerY - 15);
+        ctx.fillText(this.gameOver ? this.dealerScore : '?', w / 2, dsY);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '9px Georgia';
+        ctx.fillText('DEALER', w / 2, dsY - 16);
         
         // Player score
-        const playerY = h - 85;
+        const psY = h * 0.49;
         ctx.fillStyle = this.playerBust ? '#ff4444' : '#00e676';
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText(this.playerScore, w / 2, playerY);
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '9px Arial';
-        ctx.fillText('YOU', w / 2, playerY - 15);
+        ctx.font = 'bold 16px Georgia';
+        ctx.fillText(this.playerScore, w / 2, psY);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '9px Georgia';
+        ctx.fillText('YOU', w / 2, psY - 16);
         
         // Split score
         if (this.hasSplit) {
-            ctx.fillStyle = '#00b0ff';
-            ctx.font = 'bold 11px Arial';
-            ctx.fillText(this.playerScore2, w * 0.27, h - 218);
+            ctx.fillStyle = '#4488ff';
+            ctx.font = 'bold 12px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.playerScore2, w * 0.2, h * 0.88);
         }
     }
     
     drawActionButtons(ctx, w, h) {
-        const btnY = h - 70;
-        const btnW = 55;
-        const btnH = 28;
+        if (!this.isPlaying || this.gameOver) return;
+        
+        const btnY = h * 0.82;
+        const btnW = 52;
+        const btnH = 36;
         const gap = 6;
-        const totalW = btnW * 4 + gap * 3;
+        const btns = [
+            { label: 'HIT', key: 'H', color: '#00e676', active: true, action: 'hit' },
+            { label: 'STAND', key: 'S', color: '#ff4444', active: true, action: 'stand' },
+            { label: 'DOUBLE', key: 'D', color: '#FFD700', active: this.canDouble, action: 'double' },
+            { label: 'SPLIT', key: 'P', color: '#4488ff', active: this.canSplit && !this.hasSplit, action: 'split' }
+        ];
+        
+        const totalW = btns.length * btnW + (btns.length - 1) * gap;
         const startX = (w - totalW) / 2;
         
-        const actions = [
-            { label: 'HIT', key: 'H', color: '#00e676', active: true },
-            { label: 'STAND', key: 'S', color: '#ff4444', active: true },
-            { label: 'DOUBLE', key: 'D', color: '#FFD700', active: this.canDouble },
-            { label: 'SPLIT', key: 'P', color: '#00b0ff', active: this.canSplit && !this.hasSplit }
-        ];
-        
-        actions.forEach((action, i) => {
+        btns.forEach(function(btn, i) {
             const bx = startX + i * (btnW + gap);
             
-            ctx.fillStyle = action.active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
-            ctx.strokeStyle = action.active ? action.color : 'rgba(255,255,255,0.15)';
-            ctx.lineWidth = action.active ? 1.5 : 1;
-            CardRenderer.roundRect(ctx, bx, btnY, btnW, btnH, 14);
+            ctx.fillStyle = btn.active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+            ctx.strokeStyle = btn.active ? btn.color : 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = btn.active ? 1.5 : 1;
+            this.roundRect(ctx, bx, btnY, btnW, btnH, 10);
             ctx.fill();
             ctx.stroke();
             
-            ctx.fillStyle = action.active ? action.color : 'rgba(255,255,255,0.3)';
-            ctx.font = 'bold 9px Arial';
+            ctx.fillStyle = btn.active ? btn.color : 'rgba(255,255,255,0.3)';
+            ctx.font = 'bold 10px Georgia';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(action.label, bx + btnW / 2, btnY + btnH / 2 - 4);
-            ctx.font = 'bold 6px Arial';
-            ctx.fillText(`[${action.key}]`, bx + btnW / 2, btnY + btnH / 2 + 8);
-        });
+            ctx.fillText(btn.label, bx + btnW / 2, btnY + btnH / 2 - 4);
+            ctx.font = 'bold 7px Georgia';
+            ctx.fillText('[' + btn.key + ']', bx + btnW / 2, btnY + btnH / 2 + 10);
+        }.bind(this));
     }
     
-    drawChipStack(ctx, w, h) {
-        const cx = w - 35;
-        const cy = h / 2;
+    drawChipStacks(ctx, w, h) {
+        const cx = w / 2;
+        const cy = h * 0.72;
         
-        // Chip stack
-        const chips = [
-            { color: '#cc0000', value: 100 },
-            { color: '#0044cc', value: 50 },
-            { color: '#00aa44', value: 25 },
-            { color: '#1a1a1a', value: 100 }
-        ];
+        if (this.bet > 0 && !this.isPlaying) {
+            // Single bet chip
+            const colors = [this.palette.chipRed, this.palette.chipBlue, this.palette.chipGreen, this.palette.chipBlack];
+            const color = colors[Math.floor(this.bet / 50) % colors.length];
+            
+            for (let i = 0; i < Math.min(Math.floor(this.bet / 50), 5); i++) {
+                ctx.fillStyle = color;
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy - i * 3, 14, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 9px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('RS ' + this.bet, cx, cy + 12);
+        }
+    }
+    
+    drawSingleCard(ctx, x, y, w, h, card, faceUp) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 3;
         
-        chips.forEach((chip, i) => {
-            const offset = Math.sin(this.chipStackAnim + i) * 1;
-            const chipY = cy + i * 8 + offset;
+        if (faceUp) {
+            const bodyGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+            bodyGrad.addColorStop(0, '#ffffff');
+            bodyGrad.addColorStop(0.5, '#f8f8f5');
+            bodyGrad.addColorStop(1, '#eeeeea');
+            ctx.fillStyle = bodyGrad;
+        } else {
+            ctx.fillStyle = '#1a2744';
+        }
+        
+        ctx.strokeStyle = this.palette.cardBorder;
+        ctx.lineWidth = 0.8;
+        this.roundRect(ctx, x, y, w, h, 6);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        if (faceUp && card) {
+            const suitSymbols = { 'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663' };
+            const suitChar = suitSymbols[card.suit] || card.suit;
+            const suitColor = (card.suit === 'H' || card.suit === 'D') ? this.palette.red : this.palette.black;
+            const fs = Math.floor(w * 0.26);
             
-            ctx.fillStyle = chip.color;
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.ellipse(cx, chipY, 12, 4, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            ctx.fillStyle = suitColor;
+            ctx.font = 'bold ' + fs + 'px Georgia';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(card.rank, x + 3, y + 2);
             
-            // Chip edge
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.fillRect(cx - 12, chipY - 2, 24, 4);
-        });
+            ctx.font = Math.floor(fs * 0.7) + 'px Georgia';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(suitChar, x + w / 2, y + h / 2);
+        } else if (!faceUp) {
+            ctx.fillStyle = '#2a4a7a';
+            for (let r = 0; r < 2; r++) {
+                for (let c = 0; c < 2; c++) {
+                    ctx.beginPath();
+                    ctx.arc(x + w * 0.3 + c * w * 0.4, y + h * 0.3 + r * h * 0.4, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+    }
+    
+    drawConfetti(ctx) {
+        for (let i = 0; i < this.confettiParticles.length; i++) {
+            const p = this.confettiParticles[i];
+            ctx.save();
+            ctx.globalAlpha = p.opacity;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        }
+    }
+    
+    drawWinGlow(ctx, w, h) {
+        const gc = this.palette.playerZone;
+        const glowGrad = ctx.createRadialGradient(w / 2, h * 0.6, 40, w / 2, h * 0.6, 180);
+        glowGrad.addColorStop(0, gc + '20');
+        glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(w / 2, h * 0.6, 180, 0, Math.PI * 2);
+        ctx.fill();
     }
     
     drawSparkles(ctx) {
-        this.sparkles.forEach(sparkle => {
-            sparkle.opacity += Math.sin(Date.now() * sparkle.speed + sparkle.phase) * 0.005;
-            sparkle.opacity = Math.max(0.05, Math.min(0.4, sparkle.opacity));
-            ctx.fillStyle = `rgba(255, 215, 0, ${sparkle.opacity})`;
+        for (let i = 0; i < this.sparkles.length; i++) {
+            const sp = this.sparkles[i];
+            sp.opacity += Math.sin(Date.now() * sp.speed + sp.phase) * 0.004;
+            sp.opacity = Math.max(0.03, Math.min(0.3, sp.opacity));
+            ctx.fillStyle = 'rgba(212, 168, 67, ' + sp.opacity + ')';
             ctx.beginPath();
-            ctx.arc(sparkle.x, sparkle.y, sparkle.size, 0, Math.PI * 2);
+            ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
             ctx.fill();
-        });
+        }
     }
     
     // ============================================
-    // KEYBOARD SHORTCUTS
+    // UTILS
     // ============================================
+    
+    roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.arcTo(x + w, y, x + w, y + r, r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+        ctx.lineTo(x + r, y + h);
+        ctx.arcTo(x, y + h, x, y + h - r, r);
+        ctx.lineTo(x, y + r);
+        ctx.arcTo(x, y, x + r, y, r);
+        ctx.closePath();
+    }
     
     handleKeyPress(key) {
         if (!this.isPlaying || this.gameOver) return;
@@ -709,23 +812,22 @@ class BlackjackFullGame {
     }
     
     // ============================================
-    // GAME LOOP
+    // LOOP
     // ============================================
     
-    render() {
-        this.drawFullTable();
-    }
-    
-    setBet(amount) {
-        this.bet = amount;
-    }
+    render() { this.drawFullTable(); }
+    setBet(amount) { this.bet = amount; }
     
     destroy() {
         if (this.winCascade) this.winCascade.destroy();
         this.sparkles = [];
+        this.confettiParticles = [];
+        this.playerCards = [];
+        this.dealerCards = [];
+        this.splitCards = [];
     }
 }
 
 // Export
 window.BlackjackFullGame = BlackjackFullGame;
-console.log('✅ Game 5: Blackjack - Full Casino Design Loaded');
+console.log('Blackjack v3.0.0 - Real Casino Design Loaded');
