@@ -1,7 +1,7 @@
 // ============================================
-// EMERALD KING CASINO - GAME 13: MINES
-// Full Real Casino Visual Design
-// 5x5 Grid Mine Detection Game
+// EMERALD KING CASINO - MINES
+// Real Casino UI - Grid Mine Detection Game
+// Full Redesign v3.0.0
 // File: js/games/mines.js
 // ============================================
 
@@ -9,31 +9,38 @@ class MinesFullGame {
     constructor(canvas, ctx) {
         this.canvas = canvas;
         this.ctx = ctx;
-        this.w = canvas.width / 2;
-        this.h = canvas.height / 2;
+        
+        // Canvas dimensions
+        this.w = 500;
+        this.h = 600;
         
         // Game state
         this.bet = 50;
         this.chips = 1000;
         this.mineCount = 3;
         this.gridSize = 5;
-        this.grid = []; // 2D array: 'hidden', 'revealed', 'mine'
+        this.grid = [];
         this.revealed = [];
         this.gameOver = false;
         this.gameWon = false;
         this.isPlaying = false;
         this.revealCount = 0;
         this.currentMultiplier = 1.0;
+        this.winnings = 0;
         
         // Grid dimensions
         this.cellSize = 0;
         this.gridStartX = 0;
         this.gridStartY = 0;
         
-        // Explosion particles
+        // Animation
+        this.revealAnimations = [];
         this.explosionParticles = [];
+        this.confettiParticles = [];
         this.isExploding = false;
         this.explosionCell = null;
+        this.winGlowAlpha = 0;
+        this.revealScaleAnim = 0;
         
         // Win cascade
         this.winCascade = null;
@@ -44,38 +51,69 @@ class MinesFullGame {
         // Sparkles
         this.sparkles = [];
         this.glowPulse = 0;
-        this.revealAnimations = [];
         
         // Multiplier table
         this.multiplierTable = {
-            1: 1.2, 2: 1.5, 3: 1.9, 4: 2.4, 5: 3.0,
-            6: 3.8, 7: 4.8, 8: 6.1, 9: 7.7, 10: 9.8,
-            11: 12.5, 12: 15.9, 13: 20.2, 14: 25.7, 15: 32.7,
-            16: 41.6, 17: 52.9, 18: 67.3, 19: 85.6, 20: 108.9,
-            21: 138.5, 22: 176.2
+            1: 1.20, 2: 1.45, 3: 1.75, 4: 2.10, 5: 2.55,
+            6: 3.10, 7: 3.80, 8: 4.65, 9: 5.70, 10: 7.00,
+            11: 8.60, 12: 10.6, 13: 13.1, 14: 16.2, 15: 20.0,
+            16: 24.8, 17: 30.7, 18: 38.0, 19: 47.1, 20: 58.4,
+            21: 72.4, 22: 89.8
         };
         
         // Colors
-        this.colors = {
-            boardBg: '#1a1a2e',
-            cellHidden: '#2a2a4a',
-            cellRevealed: '#0a3a2a',
-            cellHover: '#3a3a5a',
+        this.palette = {
+            bg: '#0a0806',
+            boardBg: '#111122',
+            cellHidden: '#1a1a3a',
+            cellHover: '#252550',
+            cellRevealed: '#0a2a1a',
+            cellRevealedBorder: 'rgba(0,230,118,0.4)',
             mine: '#ff4444',
-            safe: '#00e676',
-            gold: '#FFD700'
+            mineGlow: 'rgba(255,68,68,0.5)',
+            safeIcon: '#00e676',
+            gold: '#d4a843',
+            goldLight: '#f0d078',
+            textPrimary: '#f0e8d8',
+            textDim: 'rgba(240,232,216,0.4)',
+            multiplierGreen: '#00e676',
+            multiplierGold: '#FFD700',
+            woodLight: '#c48b5c',
+            woodDark: '#8b5a3c',
+            felt: '#0d5e2e'
         };
     }
     
     // ============================================
-    // INITIALIZATION
+    // INIT
     // ============================================
     
     init() {
-        this.generateSparkles();
+        if (this.canvas) {
+            const sw = parseFloat(this.canvas.style.width);
+            const sh = parseFloat(this.canvas.style.height);
+            if (sw && sh) { this.w = sw; this.h = sh; }
+        }
         this.calculateGridDimensions();
         this.resetGame();
+        this.generateSparkles();
         this.drawFullBoard();
+    }
+    
+    resize() {
+        if (this.canvas) {
+            const sw = parseFloat(this.canvas.style.width);
+            const sh = parseFloat(this.canvas.style.height);
+            if (sw && sh) { this.w = sw; this.h = sh; }
+        }
+        this.calculateGridDimensions();
+        this.drawFullBoard();
+    }
+    
+    calculateGridDimensions() {
+        this.cellSize = Math.min(this.w - 60, this.h - 280) / this.gridSize;
+        this.gridStartX = (this.w - this.cellSize * this.gridSize) / 2;
+        this.gridStartY = 75;
     }
     
     generateSparkles() {
@@ -84,18 +122,12 @@ class MinesFullGame {
             this.sparkles.push({
                 x: Math.random() * this.w,
                 y: Math.random() * this.h,
-                size: Math.random() * 1.5 + 0.5,
-                speed: Math.random() * 0.02 + 0.005,
-                opacity: Math.random() * 0.3 + 0.1,
+                size: Math.random() * 1.0 + 0.2,
+                speed: Math.random() * 0.012 + 0.003,
+                opacity: Math.random() * 0.25 + 0.05,
                 phase: Math.random() * Math.PI * 2
             });
         }
-    }
-    
-    calculateGridDimensions() {
-        this.cellSize = Math.min(this.w - 80, this.h - 230) / this.gridSize;
-        this.gridStartX = (this.w - this.cellSize * this.gridSize) / 2;
-        this.gridStartY = 80;
     }
     
     resetGame() {
@@ -106,16 +138,18 @@ class MinesFullGame {
         this.isPlaying = false;
         this.revealCount = 0;
         this.currentMultiplier = 1.0;
+        this.winnings = 0;
         this.explosionParticles = [];
+        this.confettiParticles = [];
         this.isExploding = false;
         this.explosionCell = null;
+        this.winGlowAlpha = 0;
         this.revealAnimations = [];
         
-        // Initialize grid
         for (let row = 0; row < this.gridSize; row++) {
             this.grid[row] = [];
             for (let col = 0; col < this.gridSize; col++) {
-                this.grid[row][col] = { status: 'hidden', isMine: false };
+                this.grid[row][col] = { status: 'hidden', isMine: false, hasGem: false };
             }
         }
     }
@@ -133,16 +167,17 @@ class MinesFullGame {
     play(bet) {
         if (this.isPlaying) return;
         
-        this.bet = bet;
+        this.bet = bet || this.bet;
         this.resetGame();
         this.isPlaying = true;
-        
-        // Place mines randomly
+        this.gameOver = false;
+        this.gameWon = false;
         this.placeMines();
+        this.placeGems();
         
-        const resultDisplay = document.getElementById('game-result-display');
+        const resultDisplay = document.getElementById('game-info-overlay');
         if (resultDisplay) {
-            resultDisplay.innerHTML = '<span style="color:#FFD700;">💣 Select cells to reveal...</span>';
+            resultDisplay.innerHTML = '<div class="info-badge" style="color:#d4a843;">Select cells to reveal...</div>';
         }
         
         this.drawFullBoard();
@@ -150,7 +185,6 @@ class MinesFullGame {
     
     placeMines() {
         const totalCells = this.gridSize * this.gridSize;
-        const safeCells = totalCells - this.mineCount;
         const minePositions = new Set();
         
         while (minePositions.size < this.mineCount) {
@@ -158,11 +192,21 @@ class MinesFullGame {
             minePositions.add(pos);
         }
         
-        minePositions.forEach(pos => {
+        minePositions.forEach(function(pos) {
             const row = Math.floor(pos / this.gridSize);
             const col = pos % this.gridSize;
             this.grid[row][col].isMine = true;
-        });
+        }.bind(this));
+    }
+    
+    placeGems() {
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                if (!this.grid[row][col].isMine) {
+                    this.grid[row][col].hasGem = Math.random() < 0.15;
+                }
+            }
+        }
     }
     
     revealCell(row, col) {
@@ -171,7 +215,7 @@ class MinesFullGame {
         if (this.grid[row][col].status !== 'hidden') return;
         
         if (this.grid[row][col].isMine) {
-            // BOOM! Game over
+            // BOOM!
             this.grid[row][col].status = 'exploded';
             this.gameOver = true;
             this.gameWon = false;
@@ -188,7 +232,6 @@ class MinesFullGame {
                 }
             }
             
-            // Explosion particles
             this.spawnExplosion(row, col);
             this.resolveGame();
         } else {
@@ -197,7 +240,6 @@ class MinesFullGame {
             this.revealed.push({ row, col });
             this.revealCount++;
             
-            // Add reveal animation
             this.revealAnimations.push({
                 row, col,
                 progress: 0,
@@ -205,9 +247,14 @@ class MinesFullGame {
             });
             
             // Update multiplier
-            this.currentMultiplier = this.multiplierTable[this.revealCount] || this.currentMultiplier * 1.3;
+            this.currentMultiplier = this.multiplierTable[this.revealCount] || this.currentMultiplier * 1.35;
             
-            // Check win (all safe cells revealed)
+            // Gem bonus
+            if (this.grid[row][col].hasGem) {
+                this.currentMultiplier *= 1.5;
+            }
+            
+            // Check win
             const totalSafe = (this.gridSize * this.gridSize) - this.mineCount;
             if (this.revealCount >= totalSafe) {
                 this.gameOver = true;
@@ -221,7 +268,7 @@ class MinesFullGame {
     }
     
     cashOut() {
-        if (!this.isPlaying || this.revealCount === 0) return;
+        if (!this.isPlaying || this.revealCount === 0 || this.gameOver) return;
         
         this.gameOver = true;
         this.gameWon = true;
@@ -236,6 +283,8 @@ class MinesFullGame {
             }
         }
         
+        this.winnings = Math.floor(this.bet * this.currentMultiplier);
+        this.chips += this.winnings;
         this.resolveGame(true);
     }
     
@@ -243,7 +292,8 @@ class MinesFullGame {
         const cx = this.gridStartX + col * this.cellSize + this.cellSize / 2;
         const cy = this.gridStartY + row * this.cellSize + this.cellSize / 2;
         
-        for (let i = 0; i < 40; i++) {
+        const colors = ['#ff4400', '#ff8800', '#ffaa00', '#FFD700', '#ffffff'];
+        for (let i = 0; i < 50; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = 1 + Math.random() * 5;
             this.explosionParticles.push({
@@ -252,65 +302,115 @@ class MinesFullGame {
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 size: 1 + Math.random() * 4,
-                color: ['#ff4400', '#ff8800', '#ffaa00', '#FFD700', '#ffffff'][Math.floor(Math.random() * 5)],
+                color: colors[Math.floor(Math.random() * colors.length)],
                 life: 1,
                 decay: 0.01 + Math.random() * 0.03
             });
         }
     }
     
-    resolveGame(cashedOut = false) {
-        const resultDisplay = document.getElementById('game-result-display');
+    resolveGame(cashedOut) {
+        if (cashedOut === undefined) cashedOut = false;
         
         if (this.gameWon) {
-            const payout = Math.floor(this.bet * this.currentMultiplier);
-            this.chips += payout;
-            const winType = cashedOut ? 'CASHED OUT!' : 'ALL CLEAR!';
-            if (resultDisplay) {
-                resultDisplay.innerHTML = `
-                    <div style="animation: casinoSlideUp 0.5s ease-out;">
-                        <span style="color:#FFD700;font-size:18px;">🎉 ${winType}</span><br>
-                        <span style="color:#00e676;">+${payout} CHIPS</span><br>
-                        <span style="color:rgba(255,255,255,0.5);font-size:9px;">${this.currentMultiplier.toFixed(1)}x | ${this.revealCount} safe cells</span>
-                    </div>`;
+            this.winnings = Math.floor(this.bet * this.currentMultiplier);
+            this.chips += this.winnings;
+            
+            if (this.winnings > this.bet) {
+                this.generateConfetti();
+                this.winGlowAlpha = 1.0;
+                if (window.GameLoaderSystem) {
+                    GameLoaderSystem.showWinOverlay(this.winnings);
+                    GameLoaderSystem.updateBalance(this.chips);
+                }
+                if (this.winCascade) this.winCascade.spawn(this.w / 2, this.gridStartY + this.cellSize * 2.5, 80);
             }
-            if (this.winCascade) this.winCascade.spawn(this.w / 2, this.h / 2, 80);
         } else {
-            if (resultDisplay) {
-                resultDisplay.innerHTML = `
-                    <div style="animation: shake 0.5s ease-out;">
-                        <span style="color:#ff4444;font-size:18px;">💥 BOOM! MINE HIT!</span><br>
-                        <span style="color:rgba(255,255,255,0.6);">-${this.bet} CHIPS</span><br>
-                        <span style="color:rgba(255,255,255,0.4);font-size:9px;">${this.revealCount} safe cells found</span>
-                    </div>`;
+            if (window.GameLoaderSystem) {
+                GameLoaderSystem.showLoseOverlay(this.bet);
+                GameLoaderSystem.updateBalance(this.chips);
             }
         }
         
-        setTimeout(() => { this.resetGame(); }, 4000);
+        const resultDisplay = document.getElementById('game-info-overlay');
+        if (this.gameWon) {
+            const winType = cashedOut ? 'CASHED OUT!' : 'ALL CLEAR!';
+            if (resultDisplay) {
+                resultDisplay.innerHTML = '<div class="info-badge" style="color:#00e676;font-size:14px;">' + winType + ' ' + this.currentMultiplier.toFixed(1) + 'x +RS ' + this.winnings + '</div>';
+            }
+        } else {
+            if (resultDisplay) {
+                resultDisplay.innerHTML = '<div class="info-badge" style="color:#ff6666;font-size:14px;">BOOM! Mine hit -RS ' + this.bet + '</div>';
+            }
+        }
+        
+        this.drawFullBoard();
+        
+        setTimeout(() => {
+            this.winGlowAlpha = 0;
+            this.explosionParticles = [];
+            this.confettiParticles = [];
+            if (resultDisplay) resultDisplay.innerHTML = '';
+            this.resetGame();
+            this.drawFullBoard();
+        }, 4000);
+    }
+    
+    generateConfetti() {
+        this.confettiParticles = [];
+        const colors = ['#ff4444', '#00e676', '#FFD700', '#00b0ff', '#ff8800', '#c084fc', '#ffffff'];
+        for (let i = 0; i < 60; i++) {
+            this.confettiParticles.push({
+                x: this.w * 0.1 + Math.random() * this.w * 0.8,
+                y: -20 - Math.random() * 100,
+                w: 4 + Math.random() * 8,
+                h: 3 + Math.random() * 6,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vy: 1 + Math.random() * 3,
+                vx: (Math.random() - 0.5) * 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.2,
+                opacity: 1
+            });
+        }
     }
     
     // ============================================
-    // UPDATE LOOP
+    // UPDATE
     // ============================================
     
     update(timestamp) {
         this.glowPulse += 0.02;
         
-        // Update reveal animations
-        this.revealAnimations.forEach(anim => {
+        // Reveal animations
+        this.revealAnimations.forEach(function(anim) {
             const elapsed = timestamp - anim.startTime;
-            anim.progress = Math.min(1, elapsed / 300);
+            anim.progress = Math.min(1, elapsed / 250);
         });
-        this.revealAnimations = this.revealAnimations.filter(a => a.progress < 1);
+        this.revealAnimations = this.revealAnimations.filter(function(a) { return a.progress < 1; });
         
-        // Update explosion particles
-        this.explosionParticles.forEach(p => {
+        // Explosion particles
+        this.explosionParticles.forEach(function(p) {
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.1;
             p.life -= p.decay;
         });
-        this.explosionParticles = this.explosionParticles.filter(p => p.life > 0);
+        this.explosionParticles = this.explosionParticles.filter(function(p) { return p.life > 0; });
+        
+        // Confetti
+        this.confettiParticles.forEach(function(p) {
+            p.y += p.vy;
+            p.x += p.vx;
+            p.vy += 0.03;
+            p.rotation += p.rotationSpeed;
+            if (p.y > this.h + 50) p.opacity -= 0.02;
+        });
+        this.confettiParticles = this.confettiParticles.filter(function(p) { return p.opacity > 0; });
+        
+        if (this.winGlowAlpha > 0 && !this.gameOver) {
+            this.winGlowAlpha -= 0.01;
+        }
         
         if (this.winCascade && this.winCascade.isAlive()) {
             this.winCascade.update();
@@ -318,7 +418,7 @@ class MinesFullGame {
     }
     
     // ============================================
-    // RENDERING - FULL BOARD
+    // RENDERING
     // ============================================
     
     drawFullBoard() {
@@ -328,79 +428,67 @@ class MinesFullGame {
         
         ctx.clearRect(0, 0, w, h);
         
-        // Background
         this.drawBackground(ctx, w, h);
-        
-        // Title
         this.drawTitle(ctx, w, h);
-        
-        // Grid
         this.drawGrid(ctx);
-        
-        // Explosion particles
         this.drawExplosionParticles(ctx);
-        
-        // Mine count selector
         this.drawMineSelector(ctx, w, h);
-        
-        // Multiplier display
         this.drawMultiplierDisplay(ctx, w, h);
-        
-        // Cash out button
-        if (this.isPlaying && this.revealCount > 0) {
-            this.drawCashOutButton(ctx, w, h);
-        }
-        
-        // Sparkles
+        this.drawMultiplierLadder(ctx, w, h);
+        this.drawCashOutButton(ctx, w, h);
+        this.drawConfetti(ctx);
         this.drawSparkles(ctx);
         
-        // Win particles
+        if (this.winGlowAlpha > 0) {
+            this.drawWinGlow(ctx, w, h);
+        }
+        
         if (this.winCascade && this.winCascade.isAlive()) {
             this.winCascade.render();
         }
     }
     
     drawBackground(ctx, w, h) {
-        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w);
-        bgGrad.addColorStop(0, '#033826');
-        bgGrad.addColorStop(0.5, '#02231c');
-        bgGrad.addColorStop(1, '#011713');
+        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w * 0.9);
+        bgGrad.addColorStop(0, '#1a1410');
+        bgGrad.addColorStop(0.5, '#0f0b08');
+        bgGrad.addColorStop(1, '#050302');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, w, h);
     }
     
     drawTitle(ctx, w, h) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        CardRenderer.roundRect(ctx, w * 0.2, 24, w * 0.6, 34, 15);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.strokeStyle = 'rgba(212,168,67,0.3)';
         ctx.lineWidth = 1;
-        CardRenderer.roundRect(ctx, w * 0.2, 24, w * 0.6, 34, 15);
+        this.roundRect(ctx, w * 0.3, 24, w * 0.4, 34, 15);
+        ctx.fill();
         ctx.stroke();
         
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = this.palette.gold;
+        ctx.font = 'bold 14px Georgia';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('💣 MINES', w / 2, 41);
+        ctx.fillText('MINES', w / 2, 41);
     }
     
     drawGrid(ctx) {
         const cs = this.cellSize;
         const sx = this.gridStartX;
         const sy = this.gridStartY;
+        const gs = this.gridSize;
         
         // Grid background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
         ctx.lineWidth = 2;
-        CardRenderer.roundRect(ctx, sx - 8, sy - 8, cs * this.gridSize + 16, cs * this.gridSize + 16, 12);
+        this.roundRect(ctx, sx - 8, sy - 8, cs * gs + 16, cs * gs + 16, 10);
         ctx.fill();
         ctx.stroke();
         
         // Cells
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
+        for (let row = 0; row < gs; row++) {
+            for (let col = 0; col < gs; col++) {
                 const cx = sx + col * cs;
                 const cy = sy + row * cs;
                 const cell = this.grid[row][col];
@@ -411,31 +499,40 @@ class MinesFullGame {
     }
     
     drawSingleCell(ctx, x, y, size, cell, row, col) {
-        const padding = 4;
+        const padding = 3;
         
-        // Check for reveal animation
+        // Animation progress
         let animProgress = 1;
-        const anim = this.revealAnimations.find(a => a.row === row && a.col === col);
+        const anim = this.revealAnimations.find(function(a) { return a.row === row && a.col === col; });
         if (anim) animProgress = anim.progress;
         
-        // Cell background
-        let fillColor = this.colors.cellHidden;
-        let borderColor = 'rgba(255, 255, 255, 0.15)';
+        let fillColor = this.palette.cellHidden;
+        let borderColor = 'rgba(255,255,255,0.1)';
         let glowColor = null;
+        let icon = '';
+        let iconColor = '';
         
         if (cell.status === 'revealed') {
-            fillColor = this.colors.cellRevealed;
-            borderColor = 'rgba(0, 230, 118, 0.3)';
+            fillColor = this.palette.cellRevealed;
+            borderColor = this.palette.cellRevealedBorder;
+            icon = cell.hasGem ? 'G' : 'S';
+            iconColor = cell.hasGem ? '#FFD700' : this.palette.safeIcon;
         } else if (cell.status === 'mine') {
-            fillColor = 'rgba(255, 68, 68, 0.15)';
-            borderColor = 'rgba(255, 68, 68, 0.3)';
+            fillColor = 'rgba(255,68,68,0.15)';
+            borderColor = 'rgba(255,68,68,0.4)';
+            icon = 'M';
+            iconColor = this.palette.mine;
         } else if (cell.status === 'exploded') {
-            fillColor = 'rgba(255, 68, 68, 0.4)';
+            fillColor = 'rgba(255,68,68,0.35)';
             borderColor = '#ff4444';
-            glowColor = '#ff4444';
+            glowColor = this.palette.mineGlow;
+            icon = 'M';
+            iconColor = '#ffffff';
+        } else {
+            icon = '?';
+            iconColor = 'rgba(255,255,255,0.3)';
         }
         
-        // Draw cell with scale animation
         ctx.save();
         const centerX = x + size / 2;
         const centerY = y + size / 2;
@@ -445,149 +542,233 @@ class MinesFullGame {
         
         if (glowColor) {
             ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 12;
         }
         
         ctx.fillStyle = fillColor;
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1.5;
-        CardRenderer.roundRect(ctx, x + padding, y + padding, size - padding * 2, size - padding * 2, 8);
+        this.roundRect(ctx, x + padding, y + padding, size - padding * 2, size - padding * 2, 7);
         ctx.fill();
         ctx.stroke();
         ctx.shadowBlur = 0;
         
-        // Cell icon
-        if (cell.status === 'revealed') {
-            ctx.fillStyle = '#00e676';
-            ctx.font = `${size * 0.35}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('✅', centerX, centerY);
-        } else if (cell.status === 'mine' || cell.status === 'exploded') {
-            ctx.fillStyle = '#ff4444';
-            ctx.font = `${size * 0.4}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('💣', centerX, centerY);
-        } else if (cell.status === 'hidden' && this.isPlaying) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.font = `${size * 0.3}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('?', centerX, centerY);
-        }
+        ctx.fillStyle = iconColor;
+        ctx.font = 'bold ' + Math.floor(size * 0.35) + 'px Georgia';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(icon, centerX, centerY);
         
         ctx.restore();
     }
     
     drawExplosionParticles(ctx) {
-        this.explosionParticles.forEach(p => {
-            ctx.fillStyle = `rgba(${this.hexToRgb(p.color)}, ${p.life})`;
+        for (const p of this.explosionParticles) {
+            const alpha = p.life;
+            ctx.fillStyle = 'rgba(255,' + Math.floor(100 + alpha * 100) + ',0,' + alpha + ')';
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
             ctx.fill();
-        });
+        }
     }
     
     drawMineSelector(ctx, w, h) {
-        const sy = h - 90;
-        const btnW = 40;
-        const gap = 5;
-        const totalW = btnW * 5 + gap * 4;
-        const startX = (w - totalW) / 2;
+        const sy = this.gridStartY + this.cellSize * this.gridSize + 15;
         
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.font = 'bold 9px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = 'bold 8px Georgia';
         ctx.textAlign = 'center';
         ctx.fillText('MINES', w / 2, sy - 5);
         
-        for (let i = 0; i < 5; i++) {
-            const count = i + 2;
+        const counts = [1, 2, 3, 5, 7];
+        const btnW = 44;
+        const gap = 6;
+        const totalW = counts.length * btnW + (counts.length - 1) * gap;
+        const startX = (w - totalW) / 2;
+        
+        for (let i = 0; i < counts.length; i++) {
+            const count = counts[i];
             const mx = startX + i * (btnW + gap);
             const isSelected = this.mineCount === count && !this.isPlaying;
             
-            ctx.fillStyle = isSelected ? 'rgba(255, 68, 68, 0.2)' : 'rgba(255,255,255,0.04)';
-            ctx.strokeStyle = isSelected ? '#ff4444' : 'rgba(255,255,255,0.15)';
+            ctx.fillStyle = isSelected ? 'rgba(255,68,68,0.2)' : 'rgba(255,255,255,0.04)';
+            ctx.strokeStyle = isSelected ? '#ff4444' : 'rgba(255,255,255,0.12)';
             ctx.lineWidth = isSelected ? 2 : 1;
-            CardRenderer.roundRect(ctx, mx, sy, btnW, 30, 15);
+            this.roundRect(ctx, mx, sy, btnW, 28, 14);
             ctx.fill();
             ctx.stroke();
             
-            ctx.fillStyle = isSelected ? '#ff4444' : 'rgba(255,255,255,0.6)';
-            ctx.font = 'bold 11px Arial';
+            ctx.fillStyle = isSelected ? '#ff4444' : 'rgba(255,255,255,0.5)';
+            ctx.font = 'bold 10px Georgia';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(count, mx + btnW / 2, sy + 15);
+            ctx.fillText(count, mx + btnW / 2, sy + 14);
         }
     }
     
     drawMultiplierDisplay(ctx, w, h) {
-        const my = h - 125;
+        const my = this.gridStartY + this.cellSize * this.gridSize + 60;
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.strokeStyle = this.isPlaying ? '#00e676' : 'rgba(255,215,0,0.4)';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.strokeStyle = this.isPlaying ? '#00e676' : 'rgba(212,168,67,0.3)';
         ctx.lineWidth = 2;
-        CardRenderer.roundRect(ctx, w / 2 - 55, my, 110, 30, 15);
+        this.roundRect(ctx, w / 2 - 60, my, 120, 35, 15);
         ctx.fill();
         ctx.stroke();
         
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.font = 'bold 9px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = 'bold 8px Georgia';
         ctx.textAlign = 'center';
-        ctx.fillText('MULTIPLIER', w / 2, my + 10);
+        ctx.fillText('MULTIPLIER', w / 2, my + 12);
         
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 13px Arial';
-        ctx.fillText(this.currentMultiplier.toFixed(1) + 'x', w / 2, my + 24);
+        ctx.font = 'bold 15px Georgia';
+        ctx.fillText(this.currentMultiplier.toFixed(1) + 'x', w / 2, my + 28);
+    }
+    
+    drawMultiplierLadder(ctx, w, h) {
+        if (!this.isPlaying) return;
+        
+        const lx = w - 55;
+        const ly = this.gridStartY;
+        const lw = 42;
+        const lh = this.cellSize * this.gridSize;
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        this.roundRect(ctx, lx, ly, lw, lh, 6);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Show next 4 multipliers
+        for (let i = 0; i < 4; i++) {
+            const nextCount = this.revealCount + i + 1;
+            const mult = this.multiplierTable[nextCount] || (this.currentMultiplier * Math.pow(1.35, i + 1));
+            const iy = ly + 10 + i * 28;
+            
+            ctx.fillStyle = i === 0 ? '#FFD700' : 'rgba(255,255,255,0.4)';
+            ctx.font = 'bold 8px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText(nextCount + ':' + mult.toFixed(1) + 'x', lx + lw / 2, iy);
+        }
     }
     
     drawCashOutButton(ctx, w, h) {
-        const cy = h - 50;
-        const cw = 100;
+        if (!this.isPlaying || this.revealCount === 0 || this.gameOver) return;
         
-        const cashOut = Math.floor(this.bet * this.currentMultiplier);
+        const btnX = w / 2 - 55;
+        const btnY = this.gridStartY + this.cellSize * this.gridSize + 105;
+        const btnW = 110;
+        const btnH = 36;
+        const cashOutAmt = Math.floor(this.bet * this.currentMultiplier);
         
-        ctx.fillStyle = 'rgba(0, 230, 118, 0.2)';
+        ctx.fillStyle = 'rgba(0,230,118,0.2)';
         ctx.strokeStyle = '#00e676';
         ctx.lineWidth = 2;
-        CardRenderer.roundRect(ctx, w / 2 - cw / 2, cy, cw, 32, 16);
+        ctx.shadowColor = 'rgba(0,230,118,0.3)';
+        ctx.shadowBlur = 8;
+        this.roundRect(ctx, btnX, btnY, btnW, btnH, 18);
         ctx.fill();
         ctx.stroke();
+        ctx.shadowBlur = 0;
         
         ctx.fillStyle = '#00e676';
-        ctx.font = 'bold 11px Arial';
+        ctx.font = 'bold 12px Georgia';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`💰 CASH OUT ₹${cashOut}`, w / 2, cy + 16);
+        ctx.fillText('CASH OUT', btnX + btnW / 2, btnY + btnH / 2 - 6);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 8px Georgia';
+        ctx.fillText('RS ' + cashOutAmt, btnX + btnW / 2, btnY + btnH / 2 + 10);
+    }
+    
+    drawConfetti(ctx) {
+        for (let i = 0; i < this.confettiParticles.length; i++) {
+            const p = this.confettiParticles[i];
+            ctx.save();
+            ctx.globalAlpha = p.opacity;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        }
+    }
+    
+    drawWinGlow(ctx, w, h) {
+        const glowGrad = ctx.createRadialGradient(w / 2, this.gridStartY + this.cellSize * 2.5, 50, w / 2, this.gridStartY + this.cellSize * 2.5, 200);
+        glowGrad.addColorStop(0, 'rgba(0,230,118,' + (this.winGlowAlpha * 0.2) + ')');
+        glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(w / 2, this.gridStartY + this.cellSize * 2.5, 200, 0, Math.PI * 2);
+        ctx.fill();
     }
     
     drawSparkles(ctx) {
-        this.sparkles.forEach(sparkle => {
-            sparkle.opacity += Math.sin(Date.now() * sparkle.speed + sparkle.phase) * 0.005;
-            sparkle.opacity = Math.max(0.05, Math.min(0.4, sparkle.opacity));
-            ctx.fillStyle = `rgba(255, 215, 0, ${sparkle.opacity})`;
+        for (let i = 0; i < this.sparkles.length; i++) {
+            const sp = this.sparkles[i];
+            sp.opacity += Math.sin(Date.now() * sp.speed + sp.phase) * 0.004;
+            sp.opacity = Math.max(0.03, Math.min(0.3, sp.opacity));
+            ctx.fillStyle = 'rgba(212, 168, 67, ' + sp.opacity + ')';
             ctx.beginPath();
-            ctx.arc(sparkle.x, sparkle.y, sparkle.size, 0, Math.PI * 2);
+            ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
             ctx.fill();
-        });
-    }
-    
-    // ============================================
-    // UTILITIES
-    // ============================================
-    
-    hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
         }
-        return '255, 255, 255';
     }
     
-    // Handle canvas click for cell selection
+    // ============================================
+    // UTILS
+    // ============================================
+    
+    roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.arcTo(x + w, y, x + w, y + r, r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+        ctx.lineTo(x + r, y + h);
+        ctx.arcTo(x, y + h, x, y + h - r, r);
+        ctx.lineTo(x, y + r);
+        ctx.arcTo(x, y, x + r, y, r);
+        ctx.closePath();
+    }
+    
+    // ============================================
+    // CLICK HANDLER
+    // ============================================
+    
     handleClick(clickX, clickY) {
-        if (!this.isPlaying || this.gameOver) return;
+        if (!this.isPlaying || this.gameOver) {
+            // Check mine selector
+            const sy = this.gridStartY + this.cellSize * this.gridSize + 15;
+            const counts = [1, 2, 3, 5, 7];
+            const btnW = 44;
+            const gap = 6;
+            const totalW = counts.length * btnW + (counts.length - 1) * gap;
+            const startX = (this.w - totalW) / 2;
+            
+            for (let i = 0; i < counts.length; i++) {
+                const mx = startX + i * (btnW + gap);
+                if (clickX >= mx && clickX <= mx + btnW && clickY >= sy && clickY <= sy + 28) {
+                    this.setMineCount(counts[i]);
+                    return;
+                }
+            }
+            return;
+        }
         
+        // Check cash out button
+        const btnX = this.w / 2 - 55;
+        const btnY = this.gridStartY + this.cellSize * this.gridSize + 105;
+        if (this.revealCount > 0 && clickX >= btnX && clickX <= btnX + 110 && clickY >= btnY && clickY <= btnY + 36) {
+            this.cashOut();
+            return;
+        }
+        
+        // Check grid cells
         const col = Math.floor((clickX - this.gridStartX) / this.cellSize);
         const row = Math.floor((clickY - this.gridStartY) / this.cellSize);
         
@@ -597,25 +778,22 @@ class MinesFullGame {
     }
     
     // ============================================
-    // GAME LOOP
+    // LOOP
     // ============================================
     
-    render() {
-        this.drawFullBoard();
-    }
-    
-    setBet(amount) {
-        this.bet = amount;
-    }
+    render() { this.drawFullBoard(); }
+    setBet(amount) { this.bet = amount; }
     
     destroy() {
         if (this.winCascade) this.winCascade.destroy();
         this.sparkles = [];
+        this.confettiParticles = [];
         this.explosionParticles = [];
         this.revealAnimations = [];
+        this.grid = [];
     }
 }
 
 // Export
 window.MinesFullGame = MinesFullGame;
-console.log('✅ Game 13: Mines - Full Casino Design Loaded');
+console.log('Mines v3.0.0 - Real Casino Design Loaded');
