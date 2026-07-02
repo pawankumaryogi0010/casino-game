@@ -1,7 +1,6 @@
 // ============================================
-// EMERALD KING CASINO - AVIATOR
-// Real Casino UI - Crash Game Style
-// Full Redesign v3.0.0
+// EMERALD KING CASINO - AVIATOR v3.1
+// Real Casino UI - Crash Game with Full Logic
 // File: js/games/aviator.js
 // ============================================
 
@@ -15,21 +14,29 @@ class AviatorFullGame {
         this.h = 600;
         
         // Game state
-        this.bet = 50;
-        this.chips = 1000;
+        this.bet1 = 0;
+        this.bet2 = 0;
+        this.chips = 3000;
         this.multiplier = 1.00;
         this.crashPoint = 0;
         this.isFlying = false;
         this.hasCrashed = false;
-        this.hasCashedOut = false;
+        this.isCashedOut = false;
         this.gamePhase = 'betting'; // betting, flying, crashed, cashedOut
-        this.potentialWin = 0;
-        this.winnings = 0;
-        this.betPlaced = false;
+        this.potentialWin1 = 0;
+        this.potentialWin2 = 0;
+        this.winnings1 = 0;
+        this.winnings2 = 0;
+        
+        // Bet state tracking
+        this.bet1Placed = false;
+        this.bet2Placed = false;
+        this.cashoutCount = 0;
         
         // Round history
         this.roundHistory = [];
         this.maxHistory = 8;
+        this.playersList = [];
         
         // Graph
         this.graphPoints = [];
@@ -37,13 +44,13 @@ class AviatorFullGame {
         this.flightTime = 0;
         this.maxGraphPoints = 300;
         
-        // Jet
+        // Jet animation
         this.jetX = 60;
         this.jetY = 0;
         this.jetAngle = 0;
         this.jetTrail = [];
         
-        // Animation
+        // Particle effects
         this.confettiParticles = [];
         this.explosionParticles = [];
         this.winGlowAlpha = 0;
@@ -60,22 +67,20 @@ class AviatorFullGame {
         this.sparkles = [];
         this.glowPulse = 0;
         
-        // Colors
+        // Colors - Dark gold theme matching image
         this.palette = {
-            bg: '#0a0a1a',
-            bgDark: '#060612',
-            graphBg: '#0d0d24',
-            gridLine: 'rgba(255,255,255,0.04)',
+            bg: '#0a0a0a',
+            bgDark: '#050505',
+            graphBg: '#1a1a2e',
+            gridLine: 'rgba(255, 215, 0, 0.1)',
             curveGreen: '#00e676',
-            curveGlow: 'rgba(0,230,118,0.4)',
+            curveGold: '#FFD700',
             curveRed: '#ff4444',
-            curveGlowRed: 'rgba(255,68,68,0.4)',
             jetColor: '#00b0ff',
-            jetGlow: 'rgba(0,176,255,0.5)',
             gold: '#FFD700',
             goldLight: '#f0d078',
-            textPrimary: '#f0e8d8',
-            textDim: 'rgba(240,232,216,0.4)',
+            textPrimary: '#ffffff',
+            textDim: 'rgba(255, 255, 255, 0.5)',
             red: '#ff4444',
             green: '#00e676',
             white: '#ffffff'
@@ -87,7 +92,6 @@ class AviatorFullGame {
         this.graphW = 0;
         this.graphH = 0;
         
-        // Generate background stars
         this.generateStars();
     }
     
@@ -102,7 +106,7 @@ class AviatorFullGame {
             if (sw && sh) { this.w = sw; this.h = sh; }
         }
         this.graphW = this.w - 120;
-        this.graphH = this.h - 200;
+        this.graphH = this.h - 220;
         this.calculateJetStart();
         this.loadHistory();
         this.generateSparkles();
@@ -116,7 +120,7 @@ class AviatorFullGame {
             if (sw && sh) { this.w = sw; this.h = sh; }
         }
         this.graphW = this.w - 120;
-        this.graphH = this.h - 200;
+        this.graphH = this.h - 220;
         this.calculateJetStart();
         this.drawFullScreen();
     }
@@ -128,7 +132,7 @@ class AviatorFullGame {
     
     generateStars() {
         this.bgStars = [];
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 50; i++) {
             this.bgStars.push({
                 x: Math.random() * this.w,
                 y: Math.random() * this.h,
@@ -141,7 +145,7 @@ class AviatorFullGame {
     
     generateSparkles() {
         this.sparkles = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 15; i++) {
             this.sparkles.push({
                 x: Math.random() * this.w,
                 y: Math.random() * this.h,
@@ -167,10 +171,16 @@ class AviatorFullGame {
                 { multiplier: 1.52, crashed: true },
                 { multiplier: 3.81, crashed: true },
                 { multiplier: 1.03, crashed: true },
-                { multiplier: 2.15, crashed: true },
-                { multiplier: 1.00, crashed: true }
+                { multiplier: 2.15, crashed: true }
             ];
         }
+        
+        // Generate sample player list
+        this.playersList = [
+            { name: 'Player 1', payout: 2365.98, avatar: '👤' },
+            { name: 'Player 2', payout: 1855.50, avatar: '👤' },
+            { name: 'Player 3', payout: 1420.00, avatar: '👤' }
+        ];
     }
     
     saveHistory() {
@@ -195,27 +205,29 @@ class AviatorFullGame {
         return Math.pow(Math.E, seconds * 0.13);
     }
     
-    placeBet(amount) {
-        if (this.gamePhase === 'flying' || this.gamePhase === 'crashed') return;
-        
-        this.bet = amount || this.bet;
-        this.betPlaced = true;
-        this.gamePhase = 'betting';
-        this.drawFullScreen();
+    setBet(amount) {
+        this.bet1 = amount;
+        this.bet2 = amount;
+        this.bet1Placed = true;
+        this.bet2Placed = true;
     }
     
     play(bet) {
         if (this.isFlying) return;
         
-        if (bet) this.bet = bet;
-        if (!this.betPlaced) this.placeBet(this.bet);
+        if (bet) this.setBet(bet);
+        
+        if (!this.bet1Placed && !this.bet2Placed) return;
         
         this.isFlying = true;
         this.hasCrashed = false;
-        this.hasCashedOut = false;
+        this.isCashedOut = false;
         this.multiplier = 1.00;
-        this.potentialWin = 0;
-        this.winnings = 0;
+        this.potentialWin1 = 0;
+        this.potentialWin2 = 0;
+        this.winnings1 = 0;
+        this.winnings2 = 0;
+        this.cashoutCount = 0;
         this.graphPoints = [];
         this.jetTrail = [];
         this.confettiParticles = [];
@@ -229,28 +241,35 @@ class AviatorFullGame {
         this.flightTime = 0;
         this.jetAngle = -0.3;
         
-        // First graph point
         this.graphPoints.push({ x: this.graphX, y: this.graphY + this.graphH });
         this.jetTrail.push({ x: this.jetX, y: this.jetY });
         
         const resultDisplay = document.getElementById('game-info-overlay');
         if (resultDisplay) {
-            resultDisplay.innerHTML = '<div class="info-badge" style="color:#00b0ff;">FLYING...</div>';
+            resultDisplay.innerHTML = '<div class="info-badge" style="color:#FFD700;font-size:14px;">✈️ FLYING...</div>';
         }
         
         this.drawFullScreen();
     }
     
     cashOut() {
-        if (!this.isFlying || this.hasCrashed || this.hasCashedOut) return;
+        if (!this.isFlying || this.hasCrashed || this.isCashedOut) return;
         
-        this.hasCashedOut = true;
-        this.isFlying = false;
-        this.gamePhase = 'cashedOut';
-        this.winnings = Math.floor(this.bet * this.multiplier);
-        this.chips += this.winnings;
+        this.isCashedOut = true;
+        this.cashoutCount++;
         
-        // Add to history
+        if (this.bet1Placed && this.bet1 > 0) {
+            this.winnings1 = Math.floor(this.bet1 * this.multiplier);
+            this.chips += this.winnings1;
+        }
+        
+        if (this.bet2Placed && this.bet2 > 0) {
+            this.winnings2 = Math.floor(this.bet2 * this.multiplier);
+            this.chips += this.winnings2;
+        }
+        
+        const totalWin = this.winnings1 + this.winnings2;
+        
         this.roundHistory.push({ multiplier: this.multiplier, crashed: false });
         if (this.roundHistory.length > this.maxHistory) this.roundHistory.shift();
         this.saveHistory();
@@ -259,16 +278,18 @@ class AviatorFullGame {
         this.winGlowAlpha = 1.0;
         
         if (window.GameLoaderSystem) {
-            GameLoaderSystem.showWinOverlay(this.winnings);
+            GameLoaderSystem.showWinOverlay(totalWin);
             GameLoaderSystem.updateBalance(this.chips);
         }
         if (this.winCascade) this.winCascade.spawn(this.w / 2, this.h / 2, 100);
         
         const resultDisplay = document.getElementById('game-info-overlay');
         if (resultDisplay) {
-            resultDisplay.innerHTML = '<div class="info-badge" style="color:#00e676;font-size:16px;">CASHED OUT! ' + this.multiplier.toFixed(2) + 'x +RS ' + this.winnings + '</div>';
+            resultDisplay.innerHTML = `<div class="info-badge" style="color:#00e676;font-size:16px;">✅ CASHED OUT! ${this.multiplier.toFixed(2)}x +₹${totalWin}</div>`;
         }
         
+        this.isFlying = false;
+        this.gamePhase = 'cashedOut';
         this.drawFullScreen();
         
         setTimeout(() => {
@@ -284,25 +305,27 @@ class AviatorFullGame {
         this.gamePhase = 'crashed';
         this.crashShakeAmount = 15;
         
-        // Add to history
+        let lostAmount = 0;
+        if (this.bet1Placed && this.bet1 > 0 && !this.isCashedOut) lostAmount += this.bet1;
+        if (this.bet2Placed && this.bet2 > 0 && !this.isCashedOut) lostAmount += this.bet2;
+        
         this.roundHistory.push({ multiplier: this.multiplier, crashed: true });
         if (this.roundHistory.length > this.maxHistory) this.roundHistory.shift();
         this.saveHistory();
         
-        // Explosion particles
         const lastPoint = this.graphPoints[this.graphPoints.length - 1];
         if (lastPoint) {
             this.generateExplosion(lastPoint.x, lastPoint.y);
         }
         
-        if (window.GameLoaderSystem) {
-            GameLoaderSystem.showLoseOverlay(this.bet);
+        if (window.GameLoaderSystem && lostAmount > 0) {
+            GameLoaderSystem.showLoseOverlay(lostAmount);
             GameLoaderSystem.updateBalance(this.chips);
         }
         
         const resultDisplay = document.getElementById('game-info-overlay');
         if (resultDisplay) {
-            resultDisplay.innerHTML = '<div class="info-badge" style="color:#ff4444;font-size:16px;">CRASHED! ' + this.multiplier.toFixed(2) + 'x -RS ' + this.bet + '</div>';
+            resultDisplay.innerHTML = `<div class="info-badge" style="color:#ff4444;font-size:16px;">💥 CRASHED! ${this.multiplier.toFixed(2)}x ${lostAmount > 0 ? '-₹' + lostAmount : ''}</div>`;
         }
         
         this.drawFullScreen();
@@ -315,12 +338,17 @@ class AviatorFullGame {
     resetRound() {
         this.isFlying = false;
         this.hasCrashed = false;
-        this.hasCashedOut = false;
-        this.betPlaced = false;
+        this.isCashedOut = false;
+        this.bet1Placed = false;
+        this.bet2Placed = false;
+        this.bet1 = 0;
+        this.bet2 = 0;
         this.multiplier = 1.00;
         this.crashPoint = 0;
-        this.potentialWin = 0;
-        this.winnings = 0;
+        this.potentialWin1 = 0;
+        this.potentialWin2 = 0;
+        this.winnings1 = 0;
+        this.winnings2 = 0;
         this.graphPoints = [];
         this.jetTrail = [];
         this.confettiParticles = [];
@@ -385,11 +413,15 @@ class AviatorFullGame {
             const elapsed = timestamp - this.graphStartTime;
             this.flightTime = elapsed / 1000;
             
-            // Calculate multiplier
             this.multiplier = this.calculateMultiplier(this.flightTime);
-            this.potentialWin = Math.floor(this.bet * this.multiplier);
             
-            // Add graph point
+            if (this.bet1Placed && this.bet1 > 0) {
+                this.potentialWin1 = Math.floor(this.bet1 * this.multiplier);
+            }
+            if (this.bet2Placed && this.bet2 > 0) {
+                this.potentialWin2 = Math.floor(this.bet2 * this.multiplier);
+            }
+            
             const progress = Math.min(this.flightTime / 8, 1);
             const gx = this.graphX + progress * this.graphW;
             const logMult = Math.log(this.multiplier) / Math.log(100);
@@ -402,7 +434,6 @@ class AviatorFullGame {
                 }
             }
             
-            // Update jet position
             if (this.graphPoints.length > 0) {
                 const lastPoint = this.graphPoints[this.graphPoints.length - 1];
                 this.jetX = lastPoint.x;
@@ -414,39 +445,34 @@ class AviatorFullGame {
                 if (this.jetTrail.length > 40) this.jetTrail.shift();
             }
             
-            // Check crash
             if (this.multiplier >= this.crashPoint) {
                 this.multiplier = this.crashPoint;
                 this.crash();
             }
         }
         
-        // Crash shake decay
         if (this.crashShakeAmount > 0) {
             this.crashShakeAmount *= 0.9;
             if (this.crashShakeAmount < 0.5) this.crashShakeAmount = 0;
         }
         
-        // Update explosion particles
-        this.explosionParticles.forEach(function(p) {
+        this.explosionParticles.forEach(p => {
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.1;
             p.life -= p.decay;
         });
-        this.explosionParticles = this.explosionParticles.filter(function(p) { return p.life > 0; });
+        this.explosionParticles = this.explosionParticles.filter(p => p.life > 0);
         
-        // Update confetti
-        this.confettiParticles.forEach(function(p) {
+        this.confettiParticles.forEach(p => {
             p.y += p.vy;
             p.x += p.vx;
             p.vy += 0.03;
             p.rotation += p.rotationSpeed;
             if (p.y > this.h + 50) p.opacity -= 0.02;
-        }.bind(this));
-        this.confettiParticles = this.confettiParticles.filter(function(p) { return p.opacity > 0; });
+        });
+        this.confettiParticles = this.confettiParticles.filter(p => p.opacity > 0);
         
-        // Win glow fade
         if (this.winGlowAlpha > 0 && this.gamePhase !== 'cashedOut') {
             this.winGlowAlpha -= 0.01;
         }
@@ -472,9 +498,10 @@ class AviatorFullGame {
         this.drawJet(ctx);
         this.drawExplosionParticles(ctx);
         this.drawMultiplierDisplay(ctx, w, h);
+        this.drawBettingCards(ctx, w, h);
         this.drawHistoryPanel(ctx, w, h);
         this.drawCashOutButton(ctx, w, h);
-        this.drawBetInfo(ctx, w, h);
+        this.drawPlayersSection(ctx, w, h);
         this.drawConfetti(ctx);
         this.drawSparkles(ctx);
         
@@ -488,15 +515,13 @@ class AviatorFullGame {
     }
     
     drawBackground(ctx, w, h) {
-        // Dark space background
-        const bgGrad = ctx.createRadialGradient(w / 2, h * 0.4, 10, w / 2, h * 0.4, w);
-        bgGrad.addColorStop(0, '#0d0d24');
-        bgGrad.addColorStop(0.5, '#080818');
-        bgGrad.addColorStop(1, '#020208');
+        const bgGrad = ctx.createRadialGradient(w / 2, h * 0.3, 10, w / 2, h * 0.3, w);
+        bgGrad.addColorStop(0, '#1a0000');
+        bgGrad.addColorStop(0.5, '#0d0000');
+        bgGrad.addColorStop(1, '#000000');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, w, h);
         
-        // Stars
         for (const star of this.bgStars) {
             const twinkle = Math.sin(Date.now() * star.speed + star.twinkle) * 0.4 + 0.6;
             ctx.fillStyle = 'rgba(255,255,255,' + (twinkle * 0.6) + ')';
@@ -512,16 +537,14 @@ class AviatorFullGame {
         const gw = this.graphW;
         const gh = this.graphH;
         
-        // Graph background
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
         ctx.lineWidth = 1;
         this.roundRect(ctx, gx - 5, gy - 5, gw + 10, gh + 10, 8);
         ctx.fill();
         ctx.stroke();
         
-        // Grid lines
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.08)';
         ctx.lineWidth = 0.5;
         for (let i = 1; i < 5; i++) {
             const py = gy + (gh / 4) * i;
@@ -531,9 +554,8 @@ class AviatorFullGame {
             ctx.stroke();
         }
         
-        // Y-axis labels
-        ctx.fillStyle = 'rgba(255,255,255,0.25)';
-        ctx.font = '8px Georgia';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.font = '8px Inter';
         ctx.textAlign = 'right';
         for (let i = 0; i <= 4; i++) {
             const mult = 1 + i * 2;
@@ -541,10 +563,8 @@ class AviatorFullGame {
             ctx.fillText(mult.toFixed(1) + 'x', gx - 8, py + 3);
         }
         
-        // Draw graph curve
         if (this.graphPoints.length > 1) {
-            // Glow under curve
-            ctx.strokeStyle = this.hasCrashed ? 'rgba(255,68,68,0.3)' : 'rgba(0,230,118,0.3)';
+            ctx.strokeStyle = this.hasCrashed ? 'rgba(255,68,68,0.3)' : 'rgba(255, 215, 0, 0.3)';
             ctx.lineWidth = 6;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -555,8 +575,7 @@ class AviatorFullGame {
             }
             ctx.stroke();
             
-            // Main line
-            ctx.strokeStyle = this.hasCrashed ? '#ff4444' : '#00e676';
+            ctx.strokeStyle = this.hasCrashed ? '#ff4444' : '#FFD700';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(this.graphPoints[0].x, this.graphPoints[0].y);
@@ -565,15 +584,13 @@ class AviatorFullGame {
             }
             ctx.stroke();
             
-            // End point
             const last = this.graphPoints[this.graphPoints.length - 1];
-            ctx.fillStyle = this.hasCrashed ? '#ff4444' : '#00e676';
+            ctx.fillStyle = this.hasCrashed ? '#ff4444' : '#FFD700';
             ctx.beginPath();
             ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
             ctx.fill();
             
-            // End point glow
-            ctx.fillStyle = this.hasCrashed ? 'rgba(255,68,68,0.5)' : 'rgba(0,230,118,0.5)';
+            ctx.fillStyle = this.hasCrashed ? 'rgba(255,68,68,0.5)' : 'rgba(255, 215, 0, 0.5)';
             ctx.beginPath();
             ctx.arc(last.x, last.y, 8, 0, Math.PI * 2);
             ctx.fill();
@@ -584,7 +601,6 @@ class AviatorFullGame {
         if (!this.isFlying && !this.hasCrashed) return;
         if (this.jetTrail.length === 0) return;
         
-        // Jet trail
         for (let i = 0; i < this.jetTrail.length; i++) {
             const t = this.jetTrail[i];
             const alpha = (i / this.jetTrail.length) * 0.4;
@@ -594,13 +610,11 @@ class AviatorFullGame {
             ctx.fill();
         }
         
-        // Jet glow
         ctx.fillStyle = 'rgba(0,176,255,0.3)';
         ctx.beginPath();
         ctx.arc(this.jetX, this.jetY, 12, 0, Math.PI * 2);
         ctx.fill();
         
-        // Jet body
         ctx.save();
         ctx.translate(this.jetX, this.jetY);
         ctx.rotate(this.jetAngle);
@@ -614,7 +628,6 @@ class AviatorFullGame {
         ctx.closePath();
         ctx.fill();
         
-        // Jet highlight
         ctx.fillStyle = '#66d0ff';
         ctx.beginPath();
         ctx.moveTo(6, 0);
@@ -628,62 +641,85 @@ class AviatorFullGame {
     }
     
     drawMultiplierDisplay(ctx, w, h) {
-        const mx = w - 80;
-        const my = this.graphY + 5;
+        const mx = w - 100;
+        const my = this.graphY + 10;
         
-        // Box
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.strokeStyle = this.isFlying ? '#00e676' : (this.hasCrashed ? '#ff4444' : 'rgba(255,255,255,0.2)');
-        ctx.lineWidth = 1.5;
-        this.roundRect(ctx, mx - 10, my - 5, 75, 45, 8);
+        ctx.strokeStyle = this.isFlying ? '#FFD700' : (this.hasCrashed ? '#ff4444' : 'rgba(255,215,0,0.3)');
+        ctx.lineWidth = 2;
+        this.roundRect(ctx, mx - 15, my, 100, 60, 10);
         ctx.fill();
         ctx.stroke();
         
-        // Multiplier
-        ctx.fillStyle = this.isFlying ? '#00e676' : (this.hasCrashed ? '#ff4444' : '#ffffff');
-        ctx.font = 'bold 20px Georgia';
+        ctx.fillStyle = this.isFlying ? '#FFD700' : (this.hasCrashed ? '#ff4444' : '#ffffff');
+        ctx.font = 'bold 32px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText(this.multiplier.toFixed(2) + 'x', mx + 28, my + 14);
+        ctx.fillText(this.multiplier.toFixed(2) + 'x', mx + 35, my + 35);
+    }
+    
+    drawBettingCards(ctx, w, h) {
+        const cards = [
+            { label: 'Bet 1', value: this.bet1, potential: this.potentialWin1, x: 20, y: this.graphY + this.graphH + 20 },
+            { label: 'Bet 2', value: this.bet2, potential: this.potentialWin2, x: w / 2 + 10, y: this.graphY + this.graphH + 20 }
+        ];
         
-        // Potential win
-        if (this.isFlying) {
+        for (const card of cards) {
+            const cw = 180;
+            const ch = 80;
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.strokeStyle = 'rgba(255,215,0,0.2)';
+            ctx.lineWidth = 1;
+            this.roundRect(ctx, card.x, card.y, cw, ch, 8);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.font = 'bold 11px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText(card.label, card.x + 10, card.y + 16);
+            
             ctx.fillStyle = '#FFD700';
-            ctx.font = 'bold 9px Georgia';
-            ctx.fillText('RS ' + this.potentialWin, mx + 28, my + 32);
+            ctx.font = 'bold 16px Inter';
+            ctx.fillText('₹' + card.value.toFixed(2), card.x + 10, card.y + 35);
+            
+            if (this.isFlying) {
+                ctx.fillStyle = 'rgba(0,230,118,0.8)';
+                ctx.font = 'bold 11px Inter';
+                ctx.textAlign = 'right';
+                ctx.fillText('Potential: ₹' + card.potential, card.x + cw - 10, card.y + 55);
+            }
         }
     }
     
     drawHistoryPanel(ctx, w, h) {
         const hx = 10;
-        const hy = this.graphY;
-        const hw = 40;
-        const hh = this.graphH;
+        const hy = this.graphY + 10;
+        const hw = 35;
+        const hh = this.graphH - 10;
         
-        // Panel
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.strokeStyle = 'rgba(255,215,0,0.15)';
         ctx.lineWidth = 1;
         this.roundRect(ctx, hx, hy, hw, hh, 6);
         ctx.fill();
         ctx.stroke();
         
-        // Title
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.font = 'bold 6px Georgia';
+        ctx.fillStyle = 'rgba(255,215,0,0.5)';
+        ctx.font = 'bold 8px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText('HISTORY', hx + hw / 2, hy + 10);
+        ctx.fillText('HISTORY', hx + hw / 2, hy + 12);
         
-        // History items
         const recentHistory = this.roundHistory.slice(-6);
         for (let i = 0; i < recentHistory.length; i++) {
             const item = recentHistory[i];
-            const iy = hy + 20 + i * 18;
+            const iy = hy + 28 + i * 18;
             
-            let color = item.crashed ? '#ff4444' : '#00e676';
-            if (item.multiplier >= 5) color = '#FFD700';
+            let color = item.crashed ? '#ff4444' : '#FFD700';
+            if (item.multiplier >= 5) color = '#00e676';
             
             ctx.fillStyle = color;
-            ctx.font = 'bold 9px Georgia';
+            ctx.font = 'bold 10px Inter';
             ctx.textAlign = 'center';
             ctx.fillText(item.multiplier.toFixed(1) + 'x', hx + hw / 2, iy);
         }
@@ -692,12 +728,11 @@ class AviatorFullGame {
     drawCashOutButton(ctx, w, h) {
         if (!this.isFlying || this.hasCrashed) return;
         
-        const btnX = w / 2 - 60;
-        const btnY = this.graphY + this.graphH + 15;
-        const btnW = 120;
-        const btnH = 40;
+        const btnX = w / 2 - 70;
+        const btnY = this.graphY + this.graphH + 120;
+        const btnW = 140;
+        const btnH = 50;
         
-        // Pulsing effect
         const pulse = Math.sin(Date.now() * 0.005) * 3 + 12;
         
         ctx.fillStyle = 'rgba(0,230,118,0.2)';
@@ -705,34 +740,55 @@ class AviatorFullGame {
         ctx.lineWidth = 2;
         ctx.shadowColor = 'rgba(0,230,118,0.5)';
         ctx.shadowBlur = pulse;
-        this.roundRect(ctx, btnX, btnY, btnW, btnH, 20);
+        this.roundRect(ctx, btnX, btnY, btnW, btnH, 25);
         ctx.fill();
         ctx.stroke();
         ctx.shadowBlur = 0;
         
         ctx.fillStyle = '#00e676';
-        ctx.font = 'bold 14px Georgia';
+        ctx.font = 'bold 16px Inter';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('CASH OUT', btnX + btnW / 2, btnY + btnH / 2 - 5);
+        ctx.fillText('CASHOUT', btnX + btnW / 2, btnY + btnH / 2 - 6);
+        
+        const totalPotential = this.potentialWin1 + this.potentialWin2;
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 8px Georgia';
-        ctx.fillText('RS ' + this.potentialWin, btnX + btnW / 2, btnY + btnH / 2 + 12);
+        ctx.font = 'bold 10px Inter';
+        ctx.fillText(this.multiplier.toFixed(2) + 'x  ₹' + totalPotential, btnX + btnW / 2, btnY + btnH / 2 + 14);
     }
     
-    drawBetInfo(ctx, w, h) {
-        const biY = this.graphY + this.graphH + 70;
+    drawPlayersSection(ctx, w, h) {
+        const py = this.graphY + this.graphH + 220;
         
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.font = 'bold 9px Georgia';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(255,215,0,0.5)';
+        ctx.font = 'bold 10px Inter';
+        ctx.textAlign = 'left';
+        ctx.fillText('Bets  /  Payouts', 20, py - 5);
         
-        if (this.gamePhase === 'betting') {
-            ctx.fillText('Bet: RS ' + this.bet + ' | Press DEAL to fly', w / 2, biY);
-        } else if (this.gamePhase === 'cashedOut') {
-            ctx.fillText('Cashed Out: +RS ' + this.winnings, w / 2, biY);
-        } else if (this.gamePhase === 'crashed') {
-            ctx.fillText('Crashed at ' + this.multiplier.toFixed(2) + 'x', w / 2, biY);
+        const playerBoxes = [
+            { name: 'P1', payout: '₹2,365.98', x: 20 },
+            { name: 'P2', payout: '₹1,855.50', x: w / 3 + 5 },
+            { name: 'P3', payout: '₹1,420.00', x: 2 * w / 3 - 10 }
+        ];
+        
+        for (const p of playerBoxes) {
+            if (py < h - 10) {
+                ctx.fillStyle = 'rgba(255,215,0,0.08)';
+                ctx.strokeStyle = 'rgba(255,215,0,0.15)';
+                ctx.lineWidth = 1;
+                this.roundRect(ctx, p.x, py, 70, 55, 6);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.font = 'bold 11px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.name, p.x + 35, py + 15);
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 9px Inter';
+                ctx.fillText(p.payout, p.x + 35, py + 40);
+            }
         }
     }
     
@@ -740,10 +796,11 @@ class AviatorFullGame {
         for (const p of this.explosionParticles) {
             ctx.fillStyle = p.color.replace(')', ', ' + p.life + ')').replace('rgb', 'rgba');
             if (p.color.startsWith('#')) {
-                ctx.fillStyle = 'rgba(255,68,68,' + p.life + ')';
+                const rgb = p.color === '#ff4444' ? '255,68,68' : '255,215,0';
+                ctx.fillStyle = 'rgba(' + rgb + ',' + p.life + ')';
             }
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.arc(p.x + (Math.random() - 0.5) * this.crashShakeAmount, p.y + (Math.random() - 0.5) * this.crashShakeAmount, p.size * p.life, 0, Math.PI * 2);
             ctx.fill();
         }
     }
@@ -801,12 +858,7 @@ class AviatorFullGame {
         ctx.closePath();
     }
     
-    // ============================================
-    // LOOP
-    // ============================================
-    
     render() { this.drawFullScreen(); }
-    setBet(amount) { this.bet = amount; this.placeBet(amount); }
     
     destroy() {
         this.isFlying = false;
@@ -821,4 +873,4 @@ class AviatorFullGame {
 
 // Export
 window.AviatorFullGame = AviatorFullGame;
-console.log('Aviator v3.0.0 - Real Casino Crash Game Design Loaded');
+console.log('✅ Aviator v3.1 - Full Casino Crash Game Loaded');
