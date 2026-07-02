@@ -45,10 +45,10 @@
   .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
   .game-card { background: rgba(10,10,20,0.8); border-radius: 12px; overflow: hidden; height: 155px; position: relative; cursor: pointer; border: 1px solid rgba(255,215,0,0.08); display: flex; flex-direction: column; justify-content: flex-end; transition: all 0.25s ease; }
   .game-card:hover { transform: translateY(-3px); border-color: rgba(255,215,0,0.3); box-shadow: 0 8px 24px rgba(255,215,0,0.1); }
-  .game-thumb { height: 60%; display: flex; align-items: center; justify-content: center; font-size: 42px; background: linear-gradient(135deg, rgba(105,0,0,0.4), rgba(0,0,0,0.6)); position: relative; }
+  .game-thumb { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 42px; background: linear-gradient(135deg, rgba(105,0,0,0.4), rgba(0,0,0,0.6)); position: relative; }
   .game-thumb img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
-  .game-meta { padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; }
-  .game-meta .name { font-size: 10px; font-weight: 700; font-family: 'Playfair Display', serif; letter-spacing: 0.5px; }
+  .nav-btn img { width: 22px; height: 22px; display: block; }
+  .icon-circle img { width: 18px; height: 18px; }
   .hot { position: absolute; right: 8px; top: 8px; background: #FFD700; color: #1a0000; padding: 3px 7px; border-radius: 6px; font-size: 9px; font-weight: 800; box-shadow: 0 0 12px rgba(255,215,0,0.4); z-index: 2; }
   .provider { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.6); padding: 3px 7px; border-radius: 6px; font-size: 9px; z-index: 2; }
   #expand-container { display: none; }
@@ -100,9 +100,10 @@
   <section id="page-home" class="page active">
     <div class="banner-slider" id="banner-slider">
       <div class="banner-track" id="banner-track">
-        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner1.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"><span style="position:relative;z-index:1">🎰 WELCOME BONUS<br><small>200% Up To ₹10,000</small></span></div>
-        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner2.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"><span style="position:relative;z-index:1">💰 DAILY CASHBACK<br><small>10% Unlimited</small></span></div>
-        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner3.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"><span style="position:relative;z-index:1">👑 VIP REWARDS<br><small>Exclusive Perks</small></span></div>
+        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner1.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"></div>
+        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner2.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"></div>
+        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner3.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"></div>
+        <div class="banner-slide" style="position:relative;overflow:hidden"><img src="assets/images/banner4.png" onerror="this.style.display='none'" style="position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;"></div>
       </div>
       <div class="banner-dots" id="banner-dots"><span class="banner-dot active"></span><span class="banner-dot"></span><span class="banner-dot"></span></div>
     </div>
@@ -154,11 +155,11 @@
 
 <nav class="bottom">
   <div class="nav-inner">
-    <button class="nav-btn active" data-target="home">🏠<span style="font-size:9px">Home</span></button>
-    <button class="nav-btn" data-target="refer">🔗<span style="font-size:9px">Refer</span></button>
-    <button class="nav-btn raised" data-target="wallet"><div class="icon-circle">💰</div><span style="font-size:9px;margin-top:2px">Wallet</span></button>
-    <button class="nav-btn" data-target="support">🎧<span style="font-size:9px">Help</span></button>
-    <button class="nav-btn" data-target="profile">👤<span style="font-size:9px">Profile</span></button>
+    <button class="nav-btn active" data-target="home"><img src="assets/images/nav-home.png" alt="Home"></button>
+    <button class="nav-btn" data-target="refer"><img src="assets/images/nav-refer.png" alt="Refer"></button>
+    <button class="nav-btn raised" data-target="wallet"><div class="icon-circle"><img src="assets/images/nav-wallet.png" alt="Wallet"></div></button>
+    <button class="nav-btn" data-target="support"><img src="assets/images/nav-help.png" alt="Help"></button>
+    <button class="nav-btn" data-target="profile"><img src="assets/images/nav-profile.png" alt="Profile"></button>
   </div>
 </nav>
 
@@ -175,7 +176,7 @@
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
   const gamesList = [
-    { id: 'classic-slots', name: 'Royal Slots', icon: '🎰', category: 'Slot', hot: true },
+    { id: 'classic-slots', name: 'Royal Slots', icon: '🎰',},
     { id: 'aviator', name: 'Aviator', icon: '✈️', category: 'Arcade', hot: true },
     { id: 'roulette', name: 'Roulette', icon: '🎡', category: 'Table', hot: false },
     { id: 'blackjack', name: 'Blackjack', icon: '🃏', category: 'Card', hot: true },
@@ -275,10 +276,26 @@
       const card = document.createElement('div');
       card.className = 'game-card';
       card.setAttribute('data-game-id', g.id);
-      card.innerHTML = '<div class="provider">' + g.category + '</div>' +
-        (g.hot ? '<div class="hot">HOT</div>' : '') +
-        '<div class="game-thumb"><img src="assets/images/' + g.id + '.png" alt="' + g.name + '" onerror="this.style.display=\'none\';this.parentElement.innerHTML=\'<span style=font-size:42px>' + g.icon + '</span>\'" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"><span style="font-size:42px;position:relative;z-index:1">' + g.icon + '</span></div>' +
-        '<div class="game-meta"><span class="name">' + g.name + '</span><span style="font-size:9px;color:#FFD700">RTP 95%</span></div>';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'game-thumb';
+
+      const img = document.createElement('img');
+      img.src = './assets/images/' + g.id + '.png';
+      img.alt = g.name;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      img.style.position = 'absolute';
+      img.style.top = '0';
+      img.style.left = '0';
+      img.onerror = function() {
+        img.onerror = null;
+        img.style.display = 'none';
+        thumb.innerHTML = '<span style="font-size:42px;position:relative;z-index:1;">' + g.icon + '</span>';
+      };
+      thumb.appendChild(img);
+      card.appendChild(thumb);
       
       card.addEventListener('click', function() {
         launchGameById(g.id);
@@ -320,7 +337,7 @@
   // BANNER SLIDER
   let bannerIdx = 0;
   setInterval(function() {
-    bannerIdx = (bannerIdx + 1) % 3;
+    bannerIdx = (bannerIdx + 1) % 4;
     document.getElementById('banner-track').style.transform = 'translateX(-' + (bannerIdx * 100) + '%)';
     document.querySelectorAll('.banner-dot').forEach(function(d, i) { d.classList.toggle('active', i === bannerIdx); });
   }, 3500);
