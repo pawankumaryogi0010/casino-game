@@ -1,14 +1,14 @@
 {
-    "name": "Emerald King - Skill Gaming",
-    "short_name": "Emerald King",
-    "description": "Premium Skill-Based Gaming Platform with 20+ Strategy Games",
+    "name": "Real King Casino - Premium Gaming",
+    "short_name": "Real King",
+    "description": "Premium casino gaming platform with 20 exciting games. Play Aviator, Roulette, Blackjack, Teen Patti, and more with real money.",
     "start_url": "/index.html",
     "scope": "/",
     "display": "standalone",
     "display_override": ["standalone", "fullscreen", "minimal-ui"],
-    "orientation": "portrait",
-    "theme_color": "#02231c",
-    "background_color": "#011713",
+    "orientation": "portrait-primary",
+    "theme_color": "#FFD700",
+    "background_color": "#690000",
     "categories": ["games", "entertainment"],
     "lang": "en-IN",
     "dir": "ltr",
@@ -17,61 +17,25 @@
 
     "icons": [
         {
-            "src": "/icons/icon-72x72.png",
-            "sizes": "72x72",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-96x96.png",
-            "sizes": "96x96",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-128x128.png",
-            "sizes": "128x128",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-144x144.png",
-            "sizes": "144x144",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-152x152.png",
-            "sizes": "152x152",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-180x180.png",
-            "sizes": "180x180",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-192x192.png",
+            "src": "/assets/icons/icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
-            "src": "/icons/icon-384x384.png",
-            "sizes": "384x384",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-512x512.png",
+            "src": "/assets/icons/icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
-            "src": "/icons/maskable-icon-512x512.png",
+            "src": "/assets/icons/maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/assets/icons/maskable-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
@@ -80,58 +44,58 @@
 
     "screenshots": [
         {
-            "src": "/screenshots/home-450x900.png",
-            "sizes": "450x900",
+            "src": "/assets/images/screenshot-1.png",
+            "sizes": "540x720",
             "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Home Screen - Games Lobby"
+            "form_factor": "narrow"
         },
         {
-            "src": "/screenshots/deposit-450x900.png",
-            "sizes": "450x900",
+            "src": "/assets/images/screenshot-2.png",
+            "sizes": "1280x720",
             "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Performance Report Dashboard"
+            "form_factor": "wide"
+        },
+        {
+            "src": "/assets/images/game-preview.png",
+            "sizes": "540x720",
+            "type": "image/png"
         }
     ],
 
     "shortcuts": [
         {
-            "name": "Games Lobby",
-            "short_name": "Games",
-            "description": "Browse all strategy games",
-            "url": "/index.html#home-view",
+            "name": "Aviator",
+            "short_name": "Aviator",
+            "description": "Play the Aviator crash game",
+            "url": "/index.html?game=aviator",
             "icons": [
                 {
-                    "src": "/icons/shortcut-games-96x96.png",
-                    "sizes": "96x96",
-                    "type": "image/png"
+                    "src": "/assets/icons/aviator.png",
+                    "sizes": "96x96"
                 }
             ]
         },
         {
-            "name": "Deposit",
-            "short_name": "Deposit",
-            "description": "Add funds to your account",
-            "url": "/index.html#deposit-view",
+            "name": "Roulette",
+            "short_name": "Roulette",
+            "description": "Play classic Roulette",
+            "url": "/index.html?game=roulette",
             "icons": [
                 {
-                    "src": "/icons/shortcut-deposit-96x96.png",
-                    "sizes": "96x96",
-                    "type": "image/png"
+                    "src": "/assets/icons/roulette.png",
+                    "sizes": "96x96"
                 }
             ]
         },
         {
-            "name": "My Profile",
-            "short_name": "Profile",
-            "description": "View profile and VIP status",
-            "url": "/index.html#profile-view",
+            "name": "Blackjack",
+            "short_name": "Blackjack",
+            "description": "Play Blackjack card game",
+            "url": "/index.html?game=blackjack",
             "icons": [
                 {
-                    "src": "/icons/shortcut-profile-96x96.png",
-                    "sizes": "96x96",
-                    "type": "image/png"
+                    "src": "/assets/icons/blackjack.png",
+                    "sizes": "96x96"
                 }
             ]
         }
