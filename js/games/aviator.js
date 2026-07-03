@@ -3,7 +3,7 @@
 // Professional Casino Crash Game
 // ============================================
 
-class AviatorGame {
+class AviatorFullGame {
     constructor(canvas, ctx) {
         this.canvas = canvas;
         this.ctx = ctx;
@@ -695,5 +695,5 @@ class AviatorGame {
     }
 }
 
-window.AviatorGame = AviatorGame;
+window.AviatorFullGame = AviatorFullGame;
 console.log('✅ Aviator Game v4.0 - Complete Real Version Loaded');
