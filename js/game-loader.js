@@ -1,6 +1,7 @@
 // ============================================
 // EMERALD KING - GAME LOADER SYSTEM
 // Full-Screen Loading + Container Management
+// Version: 1.0.2 - Fixed Game Initialization
 // ============================================
 
 const GameLoaderSystem = {
@@ -247,31 +248,139 @@ const GameLoaderSystem = {
         });
     },
 
+    // ============================================
+    // FIXED: Multi-Priority Game Initialization
+    // ============================================
+    
     async initializeGame(gameId, gameConfig) {
+        // Step 1: Get canvas and context
         const canvas = document.getElementById('game-main-canvas');
-        if (!canvas) return;
-        
+        if (!canvas) {
+            console.error('❌ Canvas not found: #game-main-canvas');
+            return;
+        }
         const ctx = canvas.getContext('2d');
+        
+        console.log('🔍 Initializing game: ' + gameId);
         
         let GameClass = null;
         
+        // ==========================================
+        // PRIORITY 1: Check gameConfig.class on window
+        // ==========================================
         if (gameConfig.class && window[gameConfig.class]) {
             GameClass = window[gameConfig.class];
+            console.log('✅ Loaded from config: ' + gameConfig.class);
         }
         
-        if (!GameClass && window.GameMatrix && window.GameMatrix.getGameClass) {
+        // ==========================================
+        // PRIORITY 2: Check window.GameMatrix registry
+        // ==========================================
+        if (!GameClass && window.GameMatrix && typeof window.GameMatrix.getGameClass === 'function') {
             GameClass = window.GameMatrix.getGameClass(gameId);
+            if (GameClass) {
+                console.log('✅ Loaded from GameMatrix');
+            }
         }
         
+        // ==========================================
+        // PRIORITY 3: Direct window check (PascalCase)
+        // ==========================================
+        if (!GameClass) {
+            // Convert kebab-case to PascalCase
+            const toPascalCase = (str) => {
+                return str.split(/[-_]/).map(word => {
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                }).join('');
+            };
+            
+            const pascalName = toPascalCase(gameId);
+            const possibleNames = [
+                pascalName + 'FullGame',      // 'TeenPattiFullGame'
+                pascalName,                    // 'TeenPatti'
+                'Game' + pascalName           // 'GameTeenPatti'
+            ];
+            
+            for (const name of possibleNames) {
+                if (window[name]) {
+                    GameClass = window[name];
+                    console.log('✅ Found class: ' + name);
+                    break;
+                }
+            }
+        }
+        
+        // ==========================================
+        // PRIORITY 4: Fallback class map
+        // ==========================================
+        if (!GameClass) {
+            const classMap = {
+                'aviator': 'AviatorFullGame',
+                'roulette': 'RouletteFullGame',
+                'blackjack': 'BlackjackFullGame',
+                'baccarat': 'BaccaratFullGame',
+                'teen-patti': 'TeenPattiFullGame',
+                'andar-bahar': 'AndarBaharFullGame',
+                'dragon-tiger': 'DragonTigerFullGame',
+                'sic-bo': 'SicBoFullGame',
+                'hi-low': 'HiLowFullGame',
+                'red-dog': 'RedDogFullGame',
+                'video-poker': 'VideoPokerFullGame',
+                'jhandi-munda': 'JhandiMundaFullGame',
+                '7up-7down': 'SevenUpSevenDownFullGame',
+                'wheel-fortune': 'WheelOfFortuneFullGame',
+                'keno-jackpot': 'KenoJackpotFullGame',
+                'ludo-betting': 'LudoBettingFullGame',
+                'car-roulette': 'CarRouletteFullGame',
+                'plinko': 'PlinkoFullGame',
+                'mines': 'MinesFullGame',
+                'classic-slots': 'ClassicSlotsFullGame'
+            };
+            
+            const className = classMap[gameId];
+            if (className && window[className]) {
+                GameClass = window[className];
+                console.log('✅ Loaded from fallback map: ' + className);
+            }
+        }
+        
+        // ==========================================
+        // INITIALIZE GAME INSTANCE
+        // ==========================================
         if (GameClass) {
-            this.gameInstance = new GameClass(canvas, ctx);
-            if (this.gameInstance.init) this.gameInstance.init();
-            if (this.gameInstance.setBet) this.gameInstance.setBet(this.betAmount);
+            try {
+                // Create instance
+                this.gameInstance = new GameClass(canvas, ctx);
+                console.log('✅ Game instance created');
+                
+                // Call init if available
+                if (typeof this.gameInstance.init === 'function') {
+                    this.gameInstance.init();
+                    console.log('✅ Game init() called');
+                }
+                
+                // Set initial bet
+                if (typeof this.gameInstance.setBet === 'function') {
+                    this.gameInstance.setBet(this.betAmount);
+                    console.log('✅ Bet set: ' + this.betAmount);
+                }
+                
+                // Update balance
+                this.updateBalance(this.balance);
+                
+            } catch (error) {
+                console.error('❌ Error initializing game:', error);
+                console.warn('⚠️ Falling back to fallback game');
+                this.gameInstance = this.createFallbackGame(canvas, ctx, gameConfig);
+                this.gameInstance.init();
+            }
         } else {
+            console.warn('⚠️ No game class found, using fallback');
             this.gameInstance = this.createFallbackGame(canvas, ctx, gameConfig);
             this.gameInstance.init();
         }
         
+        // Start the game loop
         this.startGameLoop();
     },
 
@@ -324,7 +433,6 @@ const GameLoaderSystem = {
                     infoOverlay.innerHTML = '<div class="info-badge" style="color:#c9a84c;">🎲 Playing...</div>';
                 }
                 
-                // Deduct bet
                 self.balance -= b;
                 self.updateBalance(self.balance);
                 
@@ -345,7 +453,6 @@ const GameLoaderSystem = {
                         self.showLoseOverlay(b);
                     }
                     
-                    // Update global balance if exists
                     if (window.currentUser) {
                         window.currentUser.balance = self.balance;
                         if (typeof window.updateUI === 'function') window.updateUI();
