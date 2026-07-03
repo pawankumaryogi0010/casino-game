@@ -1,8 +1,8 @@
 // ============================================
 // EMERALD KING CASINO - GAME LOADER
-// Fixed: Game UI + Logout Working
+// Fixed: Game UI + Logout Working + Launch System
 // File: js/app.js
-// Version: 1.0.2
+// Version: 1.0.3
 // ============================================
 
 const GAME_REGISTRY = {
@@ -126,7 +126,7 @@ function initializeGameCardListeners() {
 }
 
 // ============================================
-// LAUNCH GAME
+// LAUNCH GAME (Original - kept for backward compat)
 // ============================================
 
 async function launchGame(gameId) {
@@ -327,7 +327,7 @@ function returnToLobby() {
 // ============================================
 
 function initGameLoader() {
-    console.log('🎮 Game Loader v1.0.2');
+    console.log('🎮 Game Loader v1.0.3');
     initializeGameCardListeners();
 }
 
