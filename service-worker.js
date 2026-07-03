@@ -1,54 +1,54 @@
 // ============================================
 // EMERALD KING CASINO - SERVICE WORKER
 // Cache-First Strategy for Zero Latency Launch
-// Version: 1.0.0
+// Version: 1.0.1 - Fixed Game Caching & PWA
 // ============================================
 
 // ============================================
 // CONFIGURATION
 // ============================================
 
-const CACHE_NAME = 'emerald-casino-v1.0.0';
-const CACHE_VERSION = '1.0.0';
+const CACHE_NAME = 'casino-game-v1';
+const CACHE_VERSION = '1.0.1';
 
 // Static assets to pre-cache on install
 const STATIC_ASSETS = [
     // Core HTML
     '/',
     '/index.html',
+    '/manifest.json',
 
     // Stylesheets
     '/style.css',
+    '/css/game-loader.css',
 
     // Core scripts
-    '/script.js',
-
-    // Game engine scripts (critical path)
-    '/js/games/matrix.js',
-    '/js/games/teen-patti.js',
-    '/js/games/andar-bahar.js',
-    '/js/games/aviator.js',
-    '/js/games/roulette.js',
-    '/js/games/blackjack.js',
-    '/js/games/baccarat.js',
-    '/js/games/jhandi-munda.js',
-    '/js/games/dragon-tiger.js',
-    '/js/games/7up-7down.js',
-    '/js/games/car-roulette.js',
-    '/js/games/ludo-betting.js',
-    '/js/games/plinko.js',
-    '/js/games/mines.js',
-    '/js/games/wheel-fortune.js',
-    '/js/games/classic-slots.js',
-    '/js/games/video-poker.js',
-    '/js/games/red-dog.js',
-    '/js/games/sic-bo.js',
-    '/js/games/hi-low.js',
-    '/js/games/keno-jackpot.js',
+    '/js/game-loader.js',
     '/js/app.js',
-    '/js/auth.js',
-    '/js/payment.js',
-    '/js/supabase-config.js',
+
+    // Game engine scripts (all 22 files)
+    '/js/games/matrix.js',
+    '/js/games/_engine.js',
+    '/js/games/aviator.js',
+    '/js/games/7up-7down.js',
+    '/js/games/andar-bahar.js',
+    '/js/games/baccarat.js',
+    '/js/games/blackjack.js',
+    '/js/games/car-roulette.js',
+    '/js/games/classic-slots.js',
+    '/js/games/dragon-tiger.js',
+    '/js/games/hi-low.js',
+    '/js/games/jhandi-munda.js',
+    '/js/games/keno-jackpot.js',
+    '/js/games/ludo-betting.js',
+    '/js/games/mines.js',
+    '/js/games/plinko.js',
+    '/js/games/red-dog.js',
+    '/js/games/roulette.js',
+    '/js/games/sic-bo.js',
+    '/js/games/teen-patti.js',
+    '/js/games/video-poker.js',
+    '/js/games/wheel-fortune.js',
 
     // Icons
     '/icons/icon-72x72.png',
@@ -69,13 +69,21 @@ const STATIC_ASSETS = [
 ];
 
 // Dynamic cache for runtime assets
-const RUNTIME_CACHE = 'emerald-casino-runtime-v1.0.0';
+const RUNTIME_CACHE = 'casino-game-runtime-v1';
 
-// Assets that should ALWAYS be fetched from network first
-const NETWORK_FIRST_ASSETS = [
+// Assets that should use NETWORK-FIRST strategy
+const NETWORK_FIRST_PATTERNS = [
     '/api/',
     '/auth/',
-    '/rest/'
+    '/rest/',
+    '.supabase.co'
+];
+
+// Game script patterns (for cache-first identification)
+const GAME_SCRIPT_PATTERNS = [
+    '/js/games/',
+    '/js/app.js',
+    '/js/game-loader.js'
 ];
 
 // Maximum cache age in seconds (7 days)
@@ -87,6 +95,8 @@ const MAX_CACHE_AGE = 7 * 24 * 60 * 60;
 
 self.addEventListener('install', (event) => {
     console.log('🔧 Service Worker: Installing...');
+    console.log('📦 Cache name:', CACHE_NAME);
+    console.log('📋 Total assets to cache:', STATIC_ASSETS.length);
 
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -94,7 +104,7 @@ self.addEventListener('install', (event) => {
                 console.log('📦 Pre-caching ' + STATIC_ASSETS.length + ' static assets...');
 
                 // Cache assets in batches to avoid overwhelming the browser
-                const batchSize = 10;
+                const batchSize = 8;
                 const batches = [];
 
                 for (let i = 0; i < STATIC_ASSETS.length; i += batchSize) {
@@ -135,12 +145,15 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
+                console.log('📋 Found caches:', cacheNames.join(', '));
                 return Promise.all(
                     cacheNames.map((cacheName) => {
                         // Delete old version caches
                         if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
                             console.log('🗑️ Deleting old cache:', cacheName);
                             return caches.delete(cacheName);
+                        } else {
+                            console.log('✅ Keeping cache:', cacheName);
                         }
                     })
                 );
@@ -154,35 +167,118 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================
-// FETCH EVENT - Cache-First Strategy
+// FETCH EVENT - Smart Strategy Selection
 // ============================================
 
 self.addEventListener('fetch', (event) => {
+    const request = event.request;
+    
     // Skip non-GET requests
-    if (event.request.method !== 'GET') {
+    if (request.method !== 'GET') {
         return;
     }
 
     // Skip Supabase real-time WebSocket connections
-    if (event.request.url.includes('supabase.co/realtime')) {
+    if (request.url.includes('supabase.co/realtime') || 
+        request.url.includes('supabase.co/realtime/v1/websocket')) {
         return;
     }
 
     // Skip chrome-extension and other non-http requests
-    if (!event.request.url.startsWith('http')) {
+    if (!request.url.startsWith('http')) {
         return;
     }
 
-    const url = new URL(event.request.url);
+    const url = new URL(request.url);
 
-    // Network-first for API calls
-    if (NETWORK_FIRST_ASSETS.some(path => url.pathname.startsWith(path))) {
-        event.respondWith(networkFirstStrategy(event.request));
+    // ==========================================
+    // NETWORK-FIRST: For Supabase API calls
+    // ==========================================
+    if (url.hostname.includes('supabase.co') && 
+        (url.pathname.includes('/rest/') || url.pathname.includes('/auth/'))) {
+        console.log('🌐 Network-first (Supabase API):', url.pathname);
+        event.respondWith(networkFirstStrategy(request));
         return;
     }
 
-    // Cache-first for static assets and navigation
-    event.respondWith(cacheFirstStrategy(event.request));
+    // ==========================================
+    // NETWORK-FIRST: For other API calls
+    // ==========================================
+    if (NETWORK_FIRST_PATTERNS.some(pattern => url.pathname.startsWith(pattern))) {
+        console.log('🌐 Network-first (API):', url.pathname);
+        event.respondWith(networkFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // NETWORK-FIRST: For index.html (always fresh)
+    // ==========================================
+    if (url.pathname === '/' || url.pathname.endsWith('/index.html')) {
+        console.log('🌐 Network-first (HTML):', url.pathname);
+        event.respondWith(networkFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // CACHE-FIRST: For game scripts
+    // ==========================================
+    if (GAME_SCRIPT_PATTERNS.some(pattern => url.pathname.includes(pattern))) {
+        console.log('⚡ Cache-first (Game Script):', url.pathname);
+        event.respondWith(cacheFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // CACHE-FIRST: For CSS files
+    // ==========================================
+    if (url.pathname.endsWith('.css')) {
+        console.log('⚡ Cache-first (CSS):', url.pathname);
+        event.respondWith(cacheFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // CACHE-FIRST: For fonts
+    // ==========================================
+    if (url.hostname.includes('fonts.googleapis.com') || 
+        url.hostname.includes('fonts.gstatic.com') ||
+        url.pathname.includes('/fonts/')) {
+        console.log('⚡ Cache-first (Font):', url.pathname);
+        event.respondWith(cacheFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // CACHE-FIRST: For assets and images
+    // ==========================================
+    if (url.pathname.includes('/assets/') || 
+        url.pathname.includes('/icons/') ||
+        url.pathname.includes('/images/') ||
+        url.pathname.endsWith('.png') || 
+        url.pathname.endsWith('.jpg') || 
+        url.pathname.endsWith('.webp') ||
+        url.pathname.endsWith('.svg')) {
+        console.log('⚡ Cache-first (Asset):', url.pathname);
+        event.respondWith(cacheFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // CACHE-FIRST: For CDN scripts
+    // ==========================================
+    if (url.hostname.includes('cdn.jsdelivr.net') || 
+        url.hostname.includes('cdnjs.cloudflare.com') ||
+        url.hostname.includes('cdn.tailwindcss.com')) {
+        console.log('⚡ Cache-first (CDN):', url.hostname);
+        event.respondWith(cacheFirstStrategy(request));
+        return;
+    }
+
+    // ==========================================
+    // DEFAULT: Cache-first for everything else
+    // ==========================================
+    console.log('⚡ Cache-first (Default):', url.pathname);
+    event.respondWith(cacheFirstStrategy(request));
 });
 
 // ============================================
@@ -201,13 +297,18 @@ async function cacheFirstStrategy(request) {
 
             if (cacheTime && (now - cacheTime) < MAX_CACHE_AGE * 1000) {
                 // Cache is fresh, return it
-                console.log('⚡ Cache hit:', request.url);
+                console.log('  ✅ Cache HIT:', request.url);
+                return cachedResponse;
+            } else if (cachedResponse) {
+                // Cache is stale but available - return it and refresh in background
+                console.log('  ⚠️ Cache STALE (refreshing):', request.url);
+                refreshCache(request);
                 return cachedResponse;
             }
         }
 
-        // Cache miss or expired - fetch from network
-        console.log('🌐 Network fetch:', request.url);
+        // Cache miss - fetch from network
+        console.log('  ❌ Cache MISS, fetching:', request.url);
 
         const networkResponse = await fetch(request, {
             mode: 'cors',
@@ -233,36 +334,71 @@ async function cacheFirstStrategy(request) {
             );
 
             await cache.put(request, cachedResponse);
-            console.log('💾 Cached:', request.url);
+            console.log('  💾 Cached:', request.url);
         }
 
         return networkResponse;
 
     } catch (error) {
-        console.error('❌ Fetch error:', error.message);
+        console.error('  ❌ Fetch error:', error.message);
 
-        // Return cached fallback if available
+        // Return cached fallback if available (even if stale)
         const fallbackResponse = await caches.match(request);
         if (fallbackResponse) {
-            console.log('🔄 Fallback cache used:', request.url);
+            console.log('  🔄 Fallback cache used:', request.url);
             return fallbackResponse;
         }
 
         // Return offline page for navigation requests
         if (request.mode === 'navigate') {
-            return caches.match('/index.html');
+            const offlinePage = await caches.match('/index.html');
+            if (offlinePage) return offlinePage;
         }
 
         // Return error response
-        return new Response('Network error', {
+        return new Response('Network error - You are offline', {
             status: 503,
             statusText: 'Service Unavailable'
         });
     }
 }
 
+/**
+ * Background cache refresh without blocking the response
+ */
+async function refreshCache(request) {
+    try {
+        const networkResponse = await fetch(request, {
+            mode: 'cors',
+            credentials: 'same-origin'
+        });
+
+        if (networkResponse && networkResponse.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            const responseToCache = networkResponse.clone();
+
+            const headers = new Headers(responseToCache.headers);
+            headers.append('sw-cached-at', Date.now().toString());
+
+            const cachedResponse = new Response(
+                await responseToCache.blob(),
+                {
+                    status: responseToCache.status,
+                    statusText: responseToCache.statusText,
+                    headers: headers
+                }
+            );
+
+            await cache.put(request, cachedResponse);
+            console.log('  🔄 Background cache refreshed:', request.url);
+        }
+    } catch (error) {
+        // Silent fail - background refresh failed but we already returned stale cache
+    }
+}
+
 // ============================================
-// NETWORK-FIRST STRATEGY (for APIs)
+// NETWORK-FIRST STRATEGY (for APIs & HTML)
 // ============================================
 
 async function networkFirstStrategy(request) {
@@ -276,16 +412,24 @@ async function networkFirstStrategy(request) {
         if (networkResponse && networkResponse.status === 200) {
             const cache = await caches.open(RUNTIME_CACHE);
             cache.put(request, networkResponse.clone());
+            console.log('  💾 Runtime cached:', request.url);
         }
 
         return networkResponse;
 
     } catch (error) {
-        console.warn('⚠️ Network unavailable, trying cache:', request.url);
+        console.warn('  ⚠️ Network unavailable, trying cache:', request.url);
 
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
+            console.log('  🔄 Fallback cache used:', request.url);
             return cachedResponse;
+        }
+
+        // For navigation requests, return offline page
+        if (request.mode === 'navigate') {
+            const offlinePage = await caches.match('/index.html');
+            if (offlinePage) return offlinePage;
         }
 
         return new Response(JSON.stringify({ error: 'Network unavailable' }), {
@@ -313,6 +457,7 @@ function getCacheTime(response) {
 // ============================================
 
 self.addEventListener('sync', (event) => {
+    console.log('🔄 Background sync triggered:', event.tag);
     if (event.tag === 'sync-deposits') {
         event.waitUntil(syncPendingDeposits());
     }
@@ -323,8 +468,8 @@ self.addEventListener('sync', (event) => {
 
 async function syncPendingDeposits() {
     try {
-        // Get pending deposits from IndexedDB
         const pendingDeposits = await getPendingData('pending-deposits');
+        console.log('📤 Syncing deposits:', pendingDeposits.length);
 
         for (const deposit of pendingDeposits) {
             try {
@@ -347,6 +492,7 @@ async function syncPendingDeposits() {
 async function syncPendingGameSessions() {
     try {
         const pendingSessions = await getPendingData('pending-sessions');
+        console.log('📤 Syncing game sessions:', pendingSessions.length);
 
         for (const session of pendingSessions) {
             try {
@@ -488,6 +634,20 @@ self.addEventListener('message', (event) => {
                 })
             );
             break;
+            
+        case 'GET_CACHE_STATS':
+            event.waitUntil(
+                caches.open(CACHE_NAME).then(async (cache) => {
+                    const keys = await cache.keys();
+                    const stats = {
+                        cacheName: CACHE_NAME,
+                        totalCached: keys.length,
+                        urls: keys.map(r => r.url)
+                    };
+                    event.source.postMessage({ type: 'CACHE_STATS', stats });
+                })
+            );
+            break;
 
         default:
             console.log('ℹ️ Unknown message type:', event.data.type);
@@ -500,4 +660,5 @@ self.addEventListener('message', (event) => {
 
 console.log('🛡️ Emerald King Casino - Service Worker Ready');
 console.log('📦 Cache:', CACHE_NAME);
-console.log('⚡ Strategy: Cache-First with Network Fallback');
+console.log('📋 Assets to cache:', STATIC_ASSETS.length);
+console.log('⚡ Strategy: Smart Cache/Network with Stale-While-Revalidate');
