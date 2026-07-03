@@ -175,27 +175,30 @@
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
+  // ============================================
+  // FIXED: All 20 games with 'class' property
+  // ============================================
   const gamesList = [
-    { id: 'classic-slots', name: 'Royal Slots', icon: '🎰',},
-    { id: 'aviator', name: 'Aviator', icon: '✈️', category: 'Arcade', hot: true },
-    { id: 'roulette', name: 'Roulette', icon: '🎡', category: 'Table', hot: false },
-    { id: 'blackjack', name: 'Blackjack', icon: '🃏', category: 'Card', hot: true },
-    { id: 'baccarat', name: 'Baccarat', icon: '🎲', category: 'Card', hot: false },
-    { id: 'mines', name: 'Mines', icon: '💣', category: 'Arcade', hot: false },
-    { id: 'plinko', name: 'Plinko', icon: '🎯', category: 'Arcade', hot: false },
-    { id: 'teen-patti', name: 'Teen Patti', icon: '♠️', category: 'Card', hot: true },
-    { id: 'andar-bahar', name: 'Andar Bahar', icon: '🂡', category: 'Card', hot: false },
-    { id: 'sic-bo', name: 'Sic Bo', icon: '🎲', category: 'Dice', hot: false },
-    { id: 'video-poker', name: 'Video Poker', icon: '🃏', category: 'Poker', hot: false },
-    { id: 'wheel-fortune', name: 'Wheel', icon: '🛞', category: 'Wheel', hot: false },
-    { id: 'keno-jackpot', name: 'Keno', icon: '🎯', category: 'Lottery', hot: false },
-    { id: 'jhandi-munda', name: 'Jhandi Munda', icon: '🏁', category: 'Traditional', hot: false },
-    { id: 'dragon-tiger', name: 'Dragon Tiger', icon: '🐉', category: 'Card', hot: false },
-    { id: 'red-dog', name: 'Red Dog', icon: '🐕', category: 'Card', hot: false },
-    { id: 'hi-low', name: 'Hi-Low', icon: '📊', category: 'Card', hot: false },
-    { id: 'ludo-betting', name: 'Ludo Betting', icon: '🎲', category: 'Multiplayer', hot: false },
-    { id: 'car-roulette', name: 'Car Roulette', icon: '🏎️', category: 'Race', hot: false },
-    { id: '7up-7down', name: '7 Up 7 Down', icon: '🎲', category: 'Dice', hot: false }
+    { id: 'classic-slots', name: 'Royal Slots', icon: '🎰', category: 'Slot', class: 'ClassicSlotsFullGame' },
+    { id: 'aviator', name: 'Aviator', icon: '✈️', category: 'Arcade', hot: true, class: 'AviatorFullGame' },
+    { id: 'roulette', name: 'Roulette', icon: '🎡', category: 'Table', class: 'RouletteFullGame' },
+    { id: 'blackjack', name: 'Blackjack', icon: '🃏', category: 'Card', hot: true, class: 'BlackjackFullGame' },
+    { id: 'baccarat', name: 'Baccarat', icon: '🎲', category: 'Card', class: 'BaccaratFullGame' },
+    { id: 'mines', name: 'Mines', icon: '💣', category: 'Arcade', class: 'MinesFullGame' },
+    { id: 'plinko', name: 'Plinko', icon: '🎯', category: 'Arcade', class: 'PlinkoFullGame' },
+    { id: 'teen-patti', name: 'Teen Patti', icon: '♠️', category: 'Card', hot: true, class: 'TeenPattiFullGame' },
+    { id: 'andar-bahar', name: 'Andar Bahar', icon: '🂡', category: 'Card', class: 'AndarBaharFullGame' },
+    { id: 'sic-bo', name: 'Sic Bo', icon: '🎲', category: 'Dice', class: 'SicBoFullGame' },
+    { id: 'video-poker', name: 'Video Poker', icon: '🃏', category: 'Poker', class: 'VideoPokerFullGame' },
+    { id: 'wheel-fortune', name: 'Wheel', icon: '🛞', category: 'Wheel', class: 'WheelOfFortuneFullGame' },
+    { id: 'keno-jackpot', name: 'Keno', icon: '🎯', category: 'Lottery', class: 'KenoJackpotFullGame' },
+    { id: 'jhandi-munda', name: 'Jhandi Munda', icon: '🏁', category: 'Traditional', class: 'JhandiMundaFullGame' },
+    { id: 'dragon-tiger', name: 'Dragon Tiger', icon: '🐉', category: 'Card', class: 'DragonTigerFullGame' },
+    { id: 'red-dog', name: 'Red Dog', icon: '🐕', category: 'Card', class: 'RedDogFullGame' },
+    { id: 'hi-low', name: 'Hi-Low', icon: '📊', category: 'Card', class: 'HiLowFullGame' },
+    { id: 'ludo-betting', name: 'Ludo Betting', icon: '🎲', category: 'Multiplayer', class: 'LudoBettingFullGame' },
+    { id: 'car-roulette', name: 'Car Roulette', icon: '🏎️', category: 'Race', class: 'CarRouletteFullGame' },
+    { id: '7up-7down', name: '7 Up 7 Down', icon: '🎲', category: 'Dice', class: 'SevenUpSevenDownFullGame' }
   ];
 
   let currentUser = null;
@@ -213,44 +216,49 @@
 
   $$('.nav-btn').forEach(b => b.addEventListener('click', () => showPage(b.dataset.target)));
 
-  // Filter games by category
   function filterGames(category) {
     currentFilter = category;
     renderGames();
   }
   window.filterGames = filterGames;
 
-  // Launch game using GameLoaderSystem
-  function launchGameById(gameId) {
-    if (!currentUser) {
-      alert('Please login first to play games');
-      openAuth();
+  // ============================================
+  // FIXED: Proper launchGame function
+  // ============================================
+  function launchGame(gameId) {
+    // Check if user is logged in
+    if (!currentUser || !currentUser.id) {
+      alert('Please login to play games');
+      const authBtn = document.getElementById('btn-auth');
+      if (authBtn) authBtn.click();
       return;
     }
     
-    const gameConfig = gamesList.find(g => g.id === gameId);
-    if (!gameConfig) { console.error('Game not found:', gameId); return; }
+    // Find game configuration
+    const gameConfig = gamesList.find(function(g) { return g.id === gameId; });
+    if (!gameConfig) {
+      console.error('❌ Game not found: ' + gameId);
+      alert('Game not found');
+      return;
+    }
     
-    // Use new GameLoaderSystem if available
+    console.log('🎮 Launching: ' + gameId);
+    
+    // Use GameLoaderSystem if available
     if (window.GameLoaderSystem) {
       GameLoaderSystem.launchGame(gameId, {
         name: gameConfig.name,
         thumbnail: gameConfig.icon,
-        class: null,
+        class: gameConfig.class,
         rtp: '95%'
       });
       return;
     }
     
-    // Fallback
-    if (window.emeraldGames?.launch) {
-      window.emeraldGames.launch(gameId);
-      return;
-    }
-    
-    alert('Launching: ' + gameConfig.name);
+    // Fallback message
+    alert('Game system not ready. Please refresh.');
   }
-  window.launchGameById = launchGameById;
+  window.launchGame = launchGame;
 
   function renderGames(limit) {
     limit = limit || 8;
@@ -276,6 +284,7 @@
       const card = document.createElement('div');
       card.className = 'game-card';
       card.setAttribute('data-game-id', g.id);
+      card.style.cursor = 'pointer';
 
       const thumb = document.createElement('div');
       thumb.className = 'game-thumb';
@@ -297,8 +306,9 @@
       thumb.appendChild(img);
       card.appendChild(thumb);
       
+      // Click handler using new launchGame
       card.addEventListener('click', function() {
-        launchGameById(g.id);
+        launchGame(g.id);
       });
       
       grid.appendChild(card);
@@ -442,6 +452,29 @@
     if (e.key === 'Escape' && window.GameLoaderSystem && GameLoaderSystem.isGameActive) {
       GameLoaderSystem.exitGame();
     }
+  });
+
+  // ============================================
+  // FIXED: Hook all game cards on DOM ready
+  // ============================================
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      const gameCards = document.querySelectorAll('.game-card');
+      gameCards.forEach(function(card) {
+        const gameId = card.getAttribute('data-game-id');
+        if (gameId) {
+          card.style.cursor = 'pointer';
+          // Card already has click handler from renderGames, but ensure it's set
+          if (!card._hooked) {
+            card._hooked = true;
+            card.addEventListener('click', function() {
+              launchGame(gameId);
+            });
+          }
+        }
+      });
+      console.log('✅ Game cards hooked: ' + gameCards.length);
+    }, 500);
   });
 
   updateUI();
