@@ -2,7 +2,7 @@
 // EMERALD KING CASINO - GAME MATRIX ENGINE
 // Core Library: CardRenderer, WinParticleCascade, Game Registry
 // File: js/games/matrix.js
-// Version: 2.0.0 - All 20 Games Registered
+// Version: 2.0.1 - Fixed Game Registry & Auto-Detection
 // ============================================
 
 // ============================================
@@ -325,9 +325,14 @@ const SLOT_SYMBOLS = ['⭐', '🔔', '7️⃣', '🍒', '💎', '🍀', '🎰', 
 const SLOT_PAYOUTS = { '⭐': 2, '🔔': 3, '7️⃣': 5, '🍒': 2, '💎': 4, '🍀': 3, '🎰': 10, '👑': 8 };
 
 // ============================================
-// SECTION 6: GAME CLASS REGISTRY
+// SECTION 6: GAME CLASS REGISTRY (FIXED)
 // ============================================
 
+/**
+ * GAME_CLASSES - Runtime cache for loaded game classes
+ * Initially all null, populated by detectLoadedGames() or registerGameClass()
+ * Once a game class is found on window object, it's cached here for fast access
+ */
 const GAME_CLASSES = {
     'teen-patti': null,
     'andar-bahar': null,
@@ -351,6 +356,10 @@ const GAME_CLASSES = {
     'keno-jackpot': null
 };
 
+/**
+ * GAME_CLASS_MAP - Maps game IDs to their expected window class names
+ * Used by getGameClass() and detectLoadedGames() to find classes on window object
+ */
 const GAME_CLASS_MAP = {
     'teen-patti': 'TeenPattiFullGame',
     'andar-bahar': 'AndarBaharFullGame',
@@ -375,49 +384,118 @@ const GAME_CLASS_MAP = {
 };
 
 // ============================================
-// SECTION 7: GAME FACTORY FUNCTIONS
+// SECTION 7: GAME FACTORY FUNCTIONS (FIXED)
 // ============================================
 
+/**
+ * Get a game class by gameId
+ * First checks the GAME_CLASSES cache, then looks up via GAME_CLASS_MAP on window
+ * 
+ * @param {string} gameId - The game identifier (e.g., 'teen-patti', 'blackjack')
+ * @returns {Function|null} The game class constructor, or null if not found
+ */
 function getGameClass(gameId) {
-    if (GAME_CLASSES[gameId]) return GAME_CLASSES[gameId];
+    // Step 1: Check cache first
+    if (GAME_CLASSES[gameId]) {
+        return GAME_CLASSES[gameId];
+    }
     
+    // Step 2: Get expected class name from map
     const className = GAME_CLASS_MAP[gameId];
-    if (className && window[className]) {
+    if (!className) {
+        console.warn('⚠️ Game class not found in GAME_CLASS_MAP for:', gameId);
+        return null;
+    }
+    
+    // Step 3: Check if class exists on window object
+    if (window[className]) {
+        // Cache it for future calls
         GAME_CLASSES[gameId] = window[className];
+        console.log('✅ Game class found & cached:', gameId, '→', className);
         return window[className];
     }
     
-    console.warn('⚠️ Game class not found for:', gameId);
+    // Step 4: Not found anywhere
+    console.warn('⚠️ Game class not found for:', gameId, '(expected: window.' + className + ')');
     return null;
 }
 
+/**
+ * Create a game instance from a gameId
+ * Uses getGameClass() to find the constructor, then instantiates it
+ * 
+ * @param {string} gameId - The game identifier
+ * @param {HTMLCanvasElement} canvas - The canvas element
+ * @param {CanvasRenderingContext2D} ctx - The 2D context
+ * @returns {Object|null} The game instance, or null if class not found
+ */
 function createGameInstance(gameId, canvas, ctx) {
     const GameClass = getGameClass(gameId);
     if (GameClass) {
-        return new GameClass(canvas, ctx);
+        try {
+            const instance = new GameClass(canvas, ctx);
+            console.log('🎮 Game instance created:', gameId);
+            return instance;
+        } catch (error) {
+            console.error('❌ Error creating game instance for:', gameId, error);
+            return null;
+        }
     }
-    console.error('❌ Cannot create game instance for:', gameId);
+    console.error('❌ Cannot create game instance for:', gameId, '(class not found)');
     return null;
 }
 
+/**
+ * Register a game class manually
+ * Useful when a game file wants to self-register on load
+ * 
+ * @param {string} gameId - The game identifier
+ * @param {Function} gameClass - The game class constructor
+ */
 function registerGameClass(gameId, gameClass) {
-    if (gameId && gameClass) {
-        GAME_CLASSES[gameId] = gameClass;
-        console.log('✅ Game registered:', gameId);
+    if (!gameId || !gameClass) {
+        console.warn('⚠️ registerGameClass: Invalid parameters', { gameId, gameClass });
+        return;
     }
+    
+    if (!GAME_CLASSES.hasOwnProperty(gameId)) {
+        console.warn('⚠️ registerGameClass: Unknown game ID:', gameId);
+    }
+    
+    GAME_CLASSES[gameId] = gameClass;
+    console.log('✅ Game registered:', gameId, '→', gameClass.name || 'Anonymous');
 }
 
 // ============================================
-// SECTION 8: AUTO-DETECT LOADED GAMES
+// SECTION 8: AUTO-DETECT LOADED GAMES (FIXED)
 // ============================================
 
+/**
+ * Auto-detect which game classes are loaded on the window object
+ * Loops through GAME_CLASS_MAP and checks if each class exists globally
+ * Updates GAME_CLASSES cache for any newly found games
+ * 
+ * @returns {number} The total number of games currently detected
+ */
 function detectLoadedGames() {
+    let detectedCount = 0;
+    
     for (const [gameId, className] of Object.entries(GAME_CLASS_MAP)) {
-        if (window[className] && !GAME_CLASSES[gameId]) {
+        // Skip if already registered
+        if (GAME_CLASSES[gameId]) {
+            detectedCount++;
+            continue;
+        }
+        
+        // Check if class exists on window
+        if (window[className]) {
             GAME_CLASSES[gameId] = window[className];
-            console.log('🔍 Auto-detected game:', gameId, '→', className);
+            detectedCount++;
+            console.log('✅ Auto-detected game:', gameId, '→', className);
         }
     }
+    
+    return detectedCount;
 }
 
 // ============================================
@@ -443,7 +521,7 @@ window.GameMatrix = {
     SLOT_SYMBOLS,
     SLOT_PAYOUTS,
     
-    // Game Registry
+    // Game Registry (read-only reference)
     GAME_CLASSES,
     GAME_CLASS_MAP,
     
@@ -455,22 +533,53 @@ window.GameMatrix = {
 };
 
 // ============================================
-// SECTION 10: AUTO-INITIALIZE
+// SECTION 10: AUTO-INITIALIZE (FIXED)
 // ============================================
 
+/**
+ * Primary initialization on DOMContentLoaded
+ * Waits 500ms for all scripts to finish loading, then scans for game classes
+ */
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        detectLoadedGames();
-        const loadedCount = Object.values(GAME_CLASSES).filter(c => c !== null).length;
-        console.log('🎮 Game Matrix Engine v2.0.0 Ready');
-        console.log('📋 Registered Games:', loadedCount, '/ 20');
+        const loadedCount = detectLoadedGames();
+        console.log('🎮 Game Matrix Engine v2.0.1 Ready');
+        console.log('📋 Registered Games: ' + loadedCount + ' / 20');
         console.log('🔧 Available via: window.GameMatrix');
+        
+        // List which games were found
+        const foundGames = Object.entries(GAME_CLASSES)
+            .filter(([id, cls]) => cls !== null)
+            .map(([id]) => id);
+        
+        if (foundGames.length > 0) {
+            console.log('✅ Loaded games:', foundGames.join(', '));
+        }
+        
+        // List which games are missing
+        const missingGames = Object.entries(GAME_CLASSES)
+            .filter(([id, cls]) => cls === null)
+            .map(([id]) => id);
+        
+        if (missingGames.length > 0) {
+            console.warn('⚠️ Missing games (' + missingGames.length + '):', missingGames.join(', '));
+        }
     }, 500);
 });
 
-// Also detect immediately in case scripts load later
+/**
+ * Fallback detection on window.load
+ * Waits 1000ms then scans again, in case scripts loaded after DOMContentLoaded
+ */
 window.addEventListener('load', () => {
-    setTimeout(detectLoadedGames, 1000);
+    setTimeout(() => {
+        const loadedCount = detectLoadedGames();
+        const totalRegistered = Object.values(GAME_CLASSES).filter(c => c !== null).length;
+        
+        if (loadedCount > 0) {
+            console.log('🔄 Fallback detection complete: ' + totalRegistered + ' / 20 games loaded');
+        }
+    }, 1000);
 });
 
-console.log('✅ Game Matrix Engine v2.0.0 Loaded');
+console.log('✅ Game Matrix Engine v2.0.1 Loaded');
