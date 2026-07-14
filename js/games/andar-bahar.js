@@ -1,855 +1,1224 @@
 // ============================================
-// EMERALD KING CASINO - ANDAR BAHAR
-// Real Casino UI - Evolution Gaming Style
-// Full Redesign v3.0.0
-// File: js/games/andar-bahar.js
+// ANDAR BAHAR PREMIUM CASINO CARD GAME v5.0
+// Professional IGaming Architecture
+// Pillars: Premium UI/UX | Card Physics | FSM State Machine | Controlled RTP | Secure Wallet Hooks
 // ============================================
 
 class AndarBaharFullGame {
     constructor(canvas, ctx) {
+        // ============================================
+        // CANVAS & RENDERING CONTEXT
+        // ============================================
         this.canvas = canvas;
         this.ctx = ctx;
-        
-        // Canvas display dimensions
-        this.w = 500;
-        this.h = 600;
-        
-        // Game state
-        this.bet = 50;
-        this.chips = 1000;
-        this.betSide = 'andar';
+        this.dpr = window.devicePixelRatio || 1;
+        this.w = 0;
+        this.h = 0;
+
+        // ============================================
+        // PILLAR 4: RTP CONFIGURATION
+        // ============================================
+        this.RTP_CONFIG = {
+            targetRTP: 0.945,           // 94.5% Return to Player
+            houseEdge: 0.055,           // 5.5% House Edge
+            andarFirstProbability: 0.515, // Andar gets first card (slight edge)
+            payoutMultiplier: 1.9,       // 1.9x payout (built-in house edge)
+            deckCount: 6                 // 6-deck shoe
+        };
+
+        // ============================================
+        // PILLAR 4: PROVABLY FAIR SEED STRUCTURE
+        // ============================================
+        this.provablyFair = {
+            serverSeed: null,
+            clientSeed: null,
+            nonce: 0,
+            combinedHash: null,
+            deckOrder: null,
+            jokerCardIndex: null
+        };
+
+        // ============================================
+        // PILLAR 3: FINITE STATE MACHINE (FSM)
+        // ============================================
+        this.FSM_STATES = {
+            IDLE: 'IDLE',
+            PLACING_BET: 'PLACING_BET',
+            GAME_START: 'GAME_START',
+            DEALING_JOKER: 'DEALING_JOKER',
+            DEALING_CARDS: 'DEALING_CARDS',
+            ANIMATING_CARD: 'ANIMATING_CARD',
+            DETERMINING_OUTCOME: 'DETERMINING_OUTCOME',
+            PAYOUT_TRIGGER: 'PAYOUT_TRIGGER',
+            CLEANUP: 'CLEANUP'
+        };
+
+        this.currentState = this.FSM_STATES.IDLE;
+        this.previousState = null;
+        this.stateTimer = 0;
+        this.stateTransitionLocked = false;
+
+        // ============================================
+        // GAME STATE VARIABLES
+        // ============================================
         this.jokerCard = null;
         this.andarCards = [];
         this.baharCards = [];
-        this.winner = null;
-        this.isPlaying = false;
-        this.isDealing = false;
-        this.showdown = false;
-        this.dealProgress = 0;
-        this.dealPhase = 'idle';
-        this.currentDealSide = 'andar';
+        this.winner = null;           // 'andar' | 'bahar'
+        this.dealSide = 'andar';      // Current dealing side
         this.dealIndex = 0;
-        
-        // Multiple bets
+        this.totalCardsDealt = 0;
+        this.matchFound = false;
+        this.roundNumber = 0;
+
+        // ============================================
+        // PILLAR 5: WALLET STATE (READ-ONLY DISPLAY)
+        // ============================================
+        this.walletState = {
+            balance: 1000.00,
+            currency: 'USD',
+            totalWagered: 0,
+            totalWon: 0,
+            isProcessing: false
+        };
+
+        // ============================================
+        // PILLAR 5: SECURE CALLBACK HOOKS
+        // ============================================
+        this.hooks = {
+            onBetPlaced: null,
+            onGameResultCalculated: null,
+            onError: null,
+            onStateChange: null
+        };
+
+        // ============================================
+        // BETTING SYSTEM
+        // ============================================
         this.bets = {
-            andar: 0,
-            bahar: 0
+            andar: { amount: 0, isActive: false },
+            bahar: { amount: 0, isActive: false }
         };
         this.totalBet = 0;
         this.winnings = 0;
-        
-        // Deck
-        this.deck = [];
-        this.cardsRemaining = 0;
-        
-        // Animation
-        this.cardSlideProgress = 0;
-        this.cardScaleProgress = 0;
-        this.confettiParticles = [];
-        this.winGlowAlpha = 0;
-        this.spotlightAlpha = 0;
-        this.spotlightTarget = 'andar';
-        
-        // Win cascade
-        this.winCascade = null;
-        if (typeof WinParticleCascade !== 'undefined') {
-            this.winCascade = new WinParticleCascade(ctx);
-        }
-        
-        // Table felt sparks
-        this.sparkles = [];
-        this.glowPulse = 0;
-        
-        // Colors - Real casino palette
+        this.betAmount = 50;
+
+        // ============================================
+        // PILLAR 2: CARD PHYSICS & ANIMATION
+        // ============================================
+        this.cardAnimation = {
+            active: false,
+            progress: 0,
+            startX: 0,
+            startY: 0,
+            targetX: 0,
+            targetY: 0,
+            scale: 1,
+            rotation: 0,
+            flipProgress: 0,
+            dealingCard: null,
+            dealingSide: null
+        };
+
+        // ============================================
+        // PILLAR 2: PARTICLE SYSTEMS
+        // ============================================
+        this.particles = {
+            cardDeal: [],        // Sparkles on card deal
+            confetti: [],        // Win celebration
+            jokerGlow: [],       // Joker reveal particles
+            spotlight: []        // Winner spotlight particles
+        };
+
+        // ============================================
+        // VISUAL EFFECTS STATE
+        // ============================================
+        this.effects = {
+            jokerRevealProgress: 0,
+            jokerRevealed: false,
+            winnerGlowAlpha: 0,
+            winnerSpotlightAlpha: 0,
+            spotlightTarget: null,
+            tablePulsePhase: 0
+        };
+
+        // ============================================
+        // PILLAR 1: PREMIUM COLOR PALETTE
+        // ============================================
         this.colors = {
-            felt: '#0d5e2e',
+            // Deep luxury backgrounds
+            bgDeep: '#050508',
+            bgMid: '#0a0a12',
+            bgLight: '#0f0f1a',
+
+            // Gold accents
+            gold: '#D4AF37',
+            goldLight: '#F0D060',
+            goldDark: '#8B6914',
+            goldGlow: 'rgba(212, 175, 55, 0.6)',
+
+            // Table colors
+            feltGreen: '#0d5e2e',
             feltDark: '#0a4a24',
             feltLight: '#0f6b35',
             woodLight: '#c48b5c',
             woodDark: '#8b5a3c',
             woodBorder: '#6b3a1f',
-            gold: '#d4a843',
-            goldLight: '#f0d078',
-            goldDark: '#b8942e',
+
+            // Andar (Left) colors
             andar: '#00e676',
-            andarGlow: '#33ff88',
+            andarGlow: 'rgba(0, 230, 118, 0.6)',
+            andarHighlight: 'rgba(0, 230, 118, 0.15)',
+
+            // Bahar (Right) colors
             bahar: '#4488ff',
-            baharGlow: '#66aaff',
-            joker: '#ff4444',
-            jokerGlow: '#ff6666',
-            cardBg: '#f5f5f0',
-            cardBorder: '#cccccc',
-            textPrimary: '#f0e8d8',
-            textSecondary: 'rgba(240,232,216,0.7)',
-            textDim: 'rgba(240,232,216,0.4)',
-            white: '#ffffff',
-            black: '#1a1a1a',
-            red: '#cc0000'
+            baharGlow: 'rgba(68, 136, 255, 0.6)',
+            baharHighlight: 'rgba(68, 136, 255, 0.15)',
+
+            // Joker colors
+            joker: '#ff1744',
+            jokerGlow: 'rgba(255, 23, 68, 0.6)',
+            jokerHighlight: 'rgba(255, 23, 68, 0.1)',
+
+            // Card colors
+            cardWhite: '#f8f8f5',
+            cardBorder: '#d0d0d0',
+            cardShadow: 'rgba(0, 0, 0, 0.4)',
+            suitRed: '#cc0000',
+            suitBlack: '#1a1a1a',
+
+            // UI text
+            textPrimary: '#ffffff',
+            textSecondary: 'rgba(255, 255, 255, 0.7)',
+            textMuted: 'rgba(255, 255, 255, 0.4)',
+            textGold: '#D4AF37'
         };
-        
-        // Card dimensions
-        this.cardWidth = 48;
-        this.cardHeight = 68;
-        this.jokerCardWidth = 60;
-        this.jokerCardHeight = 86;
-    }
-    
-    // ============================================
-    // INITIALIZATION
-    // ============================================
-    
-    init() {
-        if (this.canvas) {
-            const styleWidth = parseFloat(this.canvas.style.width);
-            const styleHeight = parseFloat(this.canvas.style.height);
-            if (styleWidth && styleHeight) {
-                this.w = styleWidth;
-                this.h = styleHeight;
+
+        // ============================================
+        // CARD DIMENSIONS
+        // ============================================
+        this.cardWidth = 44;
+        this.cardHeight = 62;
+        this.jokerCardWidth = 58;
+        this.jokerCardHeight = 82;
+
+        // ============================================
+        // PILLAR 1: EASING FUNCTIONS
+        // ============================================
+        this.easing = {
+            easeOutQuint: (t) => 1 - Math.pow(1 - t, 5),
+            easeOutCubic: (t) => 1 - Math.pow(1 - t, 3),
+            easeOutBack: (t) => {
+                const c1 = 1.70158;
+                const c3 = c1 + 1;
+                return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+            },
+            easeOutBounce: (t) => {
+                const n1 = 7.5625;
+                const d1 = 2.75;
+                if (t < 1 / d1) return n1 * t * t;
+                else if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
+                else if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
+                else return n1 * (t -= 2.625 / d1) * t + 0.984375;
             }
-        }
-        
-        this.generateSparkles();
-        this.resetGame();
-        this.drawFullTable();
+        };
+
+        // ============================================
+        // ANIMATION FRAME REFERENCE
+        // ============================================
+        this.animationFrameId = null;
+        this.lastTimestamp = 0;
+        this.dealIntervalId = null;
+        this.cleanupTimeoutId = null;
     }
-    
-    resize() {
-        if (this.canvas) {
-            const styleWidth = parseFloat(this.canvas.style.width);
-            const styleHeight = parseFloat(this.canvas.style.height);
-            if (styleWidth && styleHeight) {
-                this.w = styleWidth;
-                this.h = styleHeight;
-            }
-        }
-        this.drawFullTable();
-    }
-    
-    generateSparkles() {
-        this.sparkles = [];
-        for (let i = 0; i < 25; i++) {
-            this.sparkles.push({
-                x: Math.random() * this.w,
-                y: Math.random() * this.h,
-                size: Math.random() * 1.2 + 0.3,
-                speed: Math.random() * 0.015 + 0.003,
-                opacity: Math.random() * 0.3 + 0.05,
-                phase: Math.random() * Math.PI * 2
-            });
-        }
-    }
-    
-    resetGame() {
-        this.jokerCard = null;
-        this.andarCards = [];
-        this.baharCards = [];
-        this.winner = null;
-        this.isPlaying = false;
-        this.isDealing = false;
-        this.showdown = false;
-        this.dealProgress = 0;
-        this.dealPhase = 'idle';
-        this.currentDealSide = 'andar';
-        this.dealIndex = 0;
-        this.winnings = 0;
-        this.cardSlideProgress = 0;
-        this.cardScaleProgress = 0;
-        this.winGlowAlpha = 0;
-        this.spotlightAlpha = 0;
-        this.confettiParticles = [];
-        this.bets = { andar: 0, bahar: 0 };
-        this.totalBet = 0;
-    }
-    
+
     // ============================================
-    // DECK OPERATIONS
+    // PILLAR 3: FSM STATE MANAGEMENT
     // ============================================
-    
+
+    transitionTo(newState) {
+        const validTransitions = {
+            [this.FSM_STATES.IDLE]: [this.FSM_STATES.PLACING_BET],
+            [this.FSM_STATES.PLACING_BET]: [this.FSM_STATES.GAME_START, this.FSM_STATES.IDLE],
+            [this.FSM_STATES.GAME_START]: [this.FSM_STATES.DEALING_JOKER],
+            [this.FSM_STATES.DEALING_JOKER]: [this.FSM_STATES.DEALING_CARDS],
+            [this.FSM_STATES.DEALING_CARDS]: [this.FSM_STATES.ANIMATING_CARD, this.FSM_STATES.DETERMINING_OUTCOME],
+            [this.FSM_STATES.ANIMATING_CARD]: [this.FSM_STATES.DEALING_CARDS, this.FSM_STATES.DETERMINING_OUTCOME],
+            [this.FSM_STATES.DETERMINING_OUTCOME]: [this.FSM_STATES.PAYOUT_TRIGGER],
+            [this.FSM_STATES.PAYOUT_TRIGGER]: [this.FSM_STATES.CLEANUP],
+            [this.FSM_STATES.CLEANUP]: [this.FSM_STATES.PLACING_BET, this.FSM_STATES.IDLE]
+        };
+
+        if (this.stateTransitionLocked) {
+            console.warn('[FSM] Transition locked:', this.currentState, '->', newState);
+            return false;
+        }
+
+        if (!validTransitions[this.currentState]?.includes(newState)) {
+            console.warn('[FSM] Invalid transition:', this.currentState, '->', newState);
+            return false;
+        }
+
+        this.previousState = this.currentState;
+        this.currentState = newState;
+        this.stateTimer = performance.now();
+
+        if (this.hooks.onStateChange) {
+            this.hooks.onStateChange(this.previousState, this.currentState);
+        }
+
+        console.log('[FSM]', this.previousState, '->', this.currentState);
+        return true;
+    }
+
+    lockTransitions() { this.stateTransitionLocked = true; }
+    unlockTransitions() { this.stateTransitionLocked = false; }
+
+    // ============================================
+    // PILLAR 4: RTP-CONTROLLED DECK & OUTCOME
+    // ============================================
+
+    generateDeckOrder(serverSeed, clientSeed, nonce) {
+        this.provablyFair.serverSeed = serverSeed || this.generateHexSeed(32);
+        this.provablyFair.clientSeed = clientSeed || this.generateHexSeed(16);
+        this.provablyFair.nonce = nonce || ++this.roundNumber;
+
+        const combinedSeed = this.provablyFair.serverSeed + ':' +
+                            this.provablyFair.clientSeed + ':' +
+                            this.provablyFair.nonce;
+        this.provablyFair.combinedHash = this.simpleHash(combinedSeed);
+
+        // Create deck
+        const deck = this.createDeck();
+        const deckCount = this.RTP_CONFIG.deckCount;
+        const fullShoe = [];
+        for (let d = 0; d < deckCount; d++) {
+            fullShoe.push(...deck.map(c => ({ ...c })));
+        }
+
+        // Fisher-Yates shuffle with deterministic seed
+        this.seededShuffle(fullShoe, this.provablyFair.combinedHash);
+        this.provablyFair.deckOrder = fullShoe;
+
+        return fullShoe;
+    }
+
     createDeck() {
-        const deck = [];
         const suits = ['S', 'H', 'D', 'C'];
         const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        for (let d = 0; d < 6; d++) {
-            for (const suit of suits) {
-                for (const rank of ranks) {
-                    deck.push({ suit, rank });
-                }
+        const deck = [];
+        for (const suit of suits) {
+            for (const rank of ranks) {
+                deck.push({ suit, rank });
             }
         }
         return deck;
     }
-    
-    shuffleDeck(deck) {
-        for (let i = deck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [deck[i], deck[j]] = [deck[j], deck[i]];
+
+    seededShuffle(array, seed) {
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+            hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+            hash |= 0;
+        }
+
+        for (let i = array.length - 1; i > 0; i--) {
+            hash = ((hash << 5) - hash) + i;
+            hash |= 0;
+            const j = Math.abs(hash) % (i + 1);
+            [array[i], array[j]] = [array[j], array[i]];
         }
     }
-    
+
+    generateHexSeed(length) {
+        const chars = '0123456789abcdef';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars[Math.floor(Math.random() * 16)];
+        }
+        return result;
+    }
+
+    simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash).toString(16).padStart(8, '0');
+    }
+
+    calibrateRTP(isAndarWin) {
+        // Adjust Andar win probability based on RTP target
+        const targetRTP = this.RTP_CONFIG.targetRTP;
+        const adjustment = (targetRTP - 0.90) / 0.10; // Normalize
+        const andarBias = 0.48 + adjustment * 0.07; // Range: 0.48 - 0.55
+        return Math.random() < andarBias ? 'andar' : 'bahar';
+    }
+
     // ============================================
-    // GAME LOGIC
+    // PILLAR 5: SECURE WALLET HOOKS
     // ============================================
-    
-    setSide(side) {
-        if (this.isPlaying || this.isDealing) return;
-        
-        if (this.bets[side] > 0) {
-            this.totalBet -= this.bets[side];
-            this.bets[side] = 0;
+
+    registerHooks(hooks) {
+        if (hooks.onBetPlaced) this.hooks.onBetPlaced = hooks.onBetPlaced;
+        if (hooks.onGameResultCalculated) this.hooks.onGameResultCalculated = hooks.onGameResultCalculated;
+        if (hooks.onError) this.hooks.onError = hooks.onError;
+        if (hooks.onStateChange) this.hooks.onStateChange = hooks.onStateChange;
+    }
+
+    async placeBet(side) {
+        if (this.currentState !== this.FSM_STATES.PLACING_BET) return false;
+        if (this.stateTransitionLocked) return false;
+
+        const bet = this.bets[side];
+        if (!bet || bet.isActive) return false;
+        if (this.betAmount <= 0) return false;
+
+        this.lockTransitions();
+
+        try {
+            if (this.hooks.onBetPlaced) {
+                const betData = {
+                    side,
+                    amount: this.betAmount,
+                    roundNumber: this.roundNumber,
+                    timestamp: Date.now()
+                };
+                const success = await this.hooks.onBetPlaced(this.betAmount, betData);
+                if (!success) return false;
+            }
+
+            bet.amount = this.betAmount;
+            bet.isActive = true;
+            this.totalBet += this.betAmount;
+            return true;
+
+        } catch (error) {
+            console.error('[WALLET] Bet error:', error);
+            if (this.hooks.onError) this.hooks.onError({ type: 'BET_ERROR', message: error.message });
+            return false;
+        } finally {
+            this.unlockTransitions();
+        }
+    }
+
+    async processPayout() {
+        const playerWon = this.winner === this.betSide;
+        const betAmount = this.bets[this.betSide]?.amount || 0;
+
+        if (playerWon && betAmount > 0) {
+            this.winnings = Math.floor(betAmount * this.RTP_CONFIG.payoutMultiplier);
+
+            if (this.hooks.onGameResultCalculated) {
+                const outcomeData = {
+                    gameType: 'andar-bahar',
+                    winner: this.winner,
+                    betSide: this.betSide,
+                    betAmount,
+                    winnings: this.winnings,
+                    jokerCard: this.jokerCard,
+                    andarCardsCount: this.andarCards.length,
+                    baharCardsCount: this.baharCards.length,
+                    roundNumber: this.roundNumber,
+                    timestamp: Date.now()
+                };
+                const newState = await this.hooks.onGameResultCalculated(outcomeData);
+                if (newState) this.walletState = { ...this.walletState, ...newState };
+            }
         } else {
-            this.bets[side] = this.bet;
-            this.totalBet += this.bet;
+            this.winnings = 0;
         }
-        
-        this.betSide = side;
-        this.drawFullTable();
+
+        return this.winnings;
     }
-    
-    clearAllBets() {
-        if (this.isPlaying || this.isDealing) return;
-        this.bets = { andar: 0, bahar: 0 };
-        this.totalBet = 0;
-        this.drawFullTable();
+
+    // ============================================
+    // GAME LIFECYCLE
+    // ============================================
+
+    init() {
+        this.calculateDimensions();
+        this.transitionTo(this.FSM_STATES.PLACING_BET);
+        this.startGameLoop();
     }
-    
-    play(bet) {
-        if (this.isPlaying || this.isDealing) return;
-        
+
+    calculateDimensions() {
+        if (this.canvas) {
+            const rect = this.canvas.parentElement?.getBoundingClientRect() || { width: 500, height: 620 };
+            this.w = rect.width || 500;
+            this.h = rect.height || 620;
+        }
+        this.canvas.width = this.w * this.dpr;
+        this.canvas.height = this.h * this.dpr;
+        this.canvas.style.width = this.w + 'px';
+        this.canvas.style.height = this.h + 'px';
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+        // Adjust card sizes
+        this.cardWidth = Math.max(36, this.w * 0.085);
+        this.cardHeight = this.cardWidth * 1.4;
+        this.jokerCardWidth = this.cardWidth * 1.3;
+        this.jokerCardHeight = this.cardHeight * 1.3;
+    }
+
+    async play(bet) {
+        if (this.currentState !== this.FSM_STATES.PLACING_BET) return;
+        if (this.stateTransitionLocked) return;
+
+        if (bet) this.betAmount = bet;
+
+        // Auto-place bet on andar if no bets placed
         if (this.totalBet === 0) {
-            this.bets.andar = bet || this.bet;
-            this.totalBet = this.bets.andar;
+            await this.placeBet('andar');
             this.betSide = 'andar';
         }
-        
-        this.bet = bet || this.bet;
-        this.isPlaying = true;
-        this.isDealing = true;
-        this.showdown = false;
+
+        if (!this.transitionTo(this.FSM_STATES.GAME_START)) return;
+
+        this.roundNumber++;
+        this.matchFound = false;
         this.winner = null;
         this.winnings = 0;
-        this.confettiParticles = [];
-        this.spotlightAlpha = 0;
-        
-        this.deck = this.createDeck();
-        this.shuffleDeck(this.deck);
-        this.cardsRemaining = this.deck.length;
-        
-        // Draw Joker
-        this.jokerCard = this.deck.pop();
-        this.cardsRemaining = this.deck.length;
         this.andarCards = [];
         this.baharCards = [];
-        
-        // Deal cards until match found
-        this.currentDealSide = 'andar';
+        this.dealSide = 'andar';
         this.dealIndex = 0;
-        this.dealPhase = 'dealing';
-        this.cardSlideProgress = 0;
-        
-        this.continueDealing();
+        this.effects = {
+            jokerRevealProgress: 0,
+            jokerRevealed: false,
+            winnerGlowAlpha: 0,
+            winnerSpotlightAlpha: 0,
+            spotlightTarget: null,
+            tablePulsePhase: 0
+        };
+
+        // Generate deck with provably fair seed
+        const shoe = this.generateDeckOrder();
+        this.jokerCard = shoe.pop();
+
+        // Deal joker
+        this.transitionTo(this.FSM_STATES.DEALING_JOKER);
+        await this.animateJokerReveal();
+
+        // Start dealing cards
+        this.transitionTo(this.FSM_STATES.DEALING_CARDS);
+        this.dealNextCard(shoe);
     }
-    
-    continueDealing() {
-        if (this.deck.length === 0) {
-            this.deck = this.createDeck();
-            this.shuffleDeck(this.deck);
-            this.cardsRemaining = this.deck.length;
+
+    async animateJokerReveal() {
+        return new Promise(resolve => {
+            const startTime = performance.now();
+            const duration = 800;
+
+            const animate = (ts) => {
+                const elapsed = ts - startTime;
+                const progress = Math.min(1, elapsed / duration);
+                this.effects.jokerRevealProgress = this.easing.easeOutBack(progress);
+
+                // Spawn joker particles at 80% progress
+                if (progress > 0.8 && !this.effects.jokerRevealed) {
+                    this.effects.jokerRevealed = true;
+                    this.spawnJokerGlowParticles();
+                }
+
+                if (progress >= 1) {
+                    this.effects.jokerRevealProgress = 1;
+                    resolve();
+                } else {
+                    requestAnimationFrame(animate);
+                }
+            };
+            requestAnimationFrame(animate);
+        });
+    }
+
+    dealNextCard(shoe) {
+        if (this.matchFound) return;
+
+        if (shoe.length === 0) {
+            // Reshuffle
+            const newDeck = this.generateDeckOrder();
+            shoe.push(...newDeck);
         }
-        
-        const card = this.deck.pop();
-        this.cardsRemaining = this.deck.length;
-        
-        if (this.currentDealSide === 'andar') {
+
+        const card = shoe.pop();
+        const targetSide = this.dealSide;
+
+        // Store card
+        if (targetSide === 'andar') {
             this.andarCards.push(card);
-            this.currentDealSide = 'bahar';
         } else {
             this.baharCards.push(card);
-            this.currentDealSide = 'andar';
         }
-        
+
         this.dealIndex++;
-        this.cardSlideProgress = 0;
-        this.animateCardDeal();
-        
-        // Check match
-        if (card.rank === this.jokerCard.rank) {
-            this.winner = this.currentDealSide === 'andar' ? 'bahar' : 'andar';
-            
-            setTimeout(() => {
-                this.isDealing = false;
-                this.showdown = true;
-                this.spotlightAlpha = 1;
-                this.spotlightTarget = this.winner;
-                this.resolveGame();
-            }, 700);
-            return;
-        }
-        
-        // Continue dealing after delay
-        setTimeout(() => {
-            if (this.isDealing) {
-                this.continueDealing();
+
+        // Animate card deal
+        this.transitionTo(this.FSM_STATES.ANIMATING_CARD);
+        this.cardAnimation = {
+            active: true,
+            progress: 0,
+            dealingCard: card,
+            dealingSide: targetSide,
+            startX: this.w / 2,
+            startY: this.h * 0.08,
+            targetX: targetSide === 'andar' ? this.w * 0.25 : this.w * 0.75,
+            targetY: this.h * 0.42 + (targetSide === 'andar' ? this.andarCards.length : this.baharCards.length) * 0.02 * this.h
+        };
+
+        // Spawn deal particles
+        this.spawnCardDealParticles(
+            this.cardAnimation.startX,
+            this.cardAnimation.startY,
+            targetSide
+        );
+
+        // Animate
+        const startTime = performance.now();
+        const duration = 350;
+
+        const animate = (ts) => {
+            const elapsed = ts - startTime;
+            const progress = Math.min(1, elapsed / duration);
+            this.cardAnimation.progress = this.easing.easeOutCubic(progress);
+
+            if (progress >= 1) {
+                this.cardAnimation.active = false;
+                this.cardAnimation.progress = 1;
+
+                // Check match
+                if (card.rank === this.jokerCard.rank) {
+                    this.matchFound = true;
+                    this.winner = targetSide === 'andar' ? 'bahar' : 'andar';
+                    // Switch to the side that WAS dealt to (the card matched)
+                    this.winner = this.dealSide === 'andar' ? 'bahar' : 'andar';
+                    // Actually: the side where the match card lands is the LOSING side
+                    // The OTHER side wins. So if card dealt to andar matches joker, bahar wins
+                    this.winner = targetSide === 'andar' ? 'bahar' : 'andar';
+
+                    this.transitionTo(this.FSM_STATES.DETERMINING_OUTCOME);
+                    this.resolveGame();
+                    return;
+                }
+
+                // Switch sides and continue
+                this.dealSide = targetSide === 'andar' ? 'bahar' : 'andar';
+                this.transitionTo(this.FSM_STATES.DEALING_CARDS);
+
+                // Small delay between deals
+                setTimeout(() => this.dealNextCard(shoe), 200);
+            } else {
+                requestAnimationFrame(animate);
             }
-        }, 500);
+        };
+        requestAnimationFrame(animate);
     }
-    
-    animateCardDeal() {
-        const dealInterval = setInterval(() => {
-            this.cardSlideProgress += 0.06;
-            
-            this.drawFullTable();
-            
-            if (this.cardSlideProgress >= 1) {
-                clearInterval(dealInterval);
-            }
-        }, 20);
-    }
-    
-    resolveGame() {
-        this.winnings = 0;
-        const playerWon = this.winner === this.betSide;
-        const resultDisplay = document.getElementById('game-info-overlay');
-        
-        if (playerWon) {
-            if (this.bets[this.winner] > 0) {
-                this.winnings += Math.floor(this.bets[this.winner] * 1.9);
-            }
-        } else if (this.bets[this.winner] > 0) {
-            this.winnings += 0;
-        }
-        
-        this.chips += this.winnings;
-        
+
+    async resolveGame() {
+        // Process payout through secure hook
+        await this.processPayout();
+
+        // Visual effects
         if (this.winnings > 0) {
-            this.generateConfetti();
-            this.winGlowAlpha = 1.0;
-            
-            if (window.GameLoaderSystem) {
-                GameLoaderSystem.showWinOverlay(this.winnings);
-                GameLoaderSystem.updateBalance(this.chips);
-            }
-            
-            if (this.winCascade) {
-                const cascadeX = this.winner === 'andar' ? this.w * 0.3 : this.w * 0.7;
-                this.winCascade.spawn(cascadeX, this.h * 0.5, 70);
-            }
-        } else if (this.totalBet > 0 && this.winnings === 0) {
-            if (window.GameLoaderSystem) {
-                GameLoaderSystem.showLoseOverlay(this.totalBet);
-                GameLoaderSystem.updateBalance(this.chips);
-            }
+            this.effects.winnerGlowAlpha = 1;
+            this.effects.winnerSpotlightAlpha = 1;
+            this.effects.spotlightTarget = this.winner;
+            this.spawnConfetti(this.w * 0.5, this.h * 0.45, 80);
         }
-        
-        if (resultDisplay) {
-            const winnerName = this.winner === 'andar' ? 'ANDAR' : 'BAHAR';
-            if (this.winnings > 0) {
-                resultDisplay.innerHTML = '<div class="info-badge" style="color:#00e676;font-size:14px;">WIN! ' + winnerName + ' +' + this.winnings + '</div>';
-            } else if (this.totalBet > 0) {
-                resultDisplay.innerHTML = '<div class="info-badge" style="color:#ff6666;font-size:14px;">' + winnerName + ' - Lost ' + this.totalBet + '</div>';
-            }
-        }
-        
-        this.drawFullTable();
-        
-        setTimeout(() => {
-            this.showdown = false;
-            this.winGlowAlpha = 0;
-            this.spotlightAlpha = 0;
-            this.confettiParticles = [];
-            if (resultDisplay) resultDisplay.innerHTML = '';
-            this.resetGame();
-            this.drawFullTable();
-        }, 5000);
+
+        this.transitionTo(this.FSM_STATES.PAYOUT_TRIGGER);
+
+        // Schedule cleanup
+        this.cleanupTimeoutId = setTimeout(() => {
+            this.transitionTo(this.FSM_STATES.CLEANUP);
+            this.cleanupRound();
+        }, 4000);
     }
-    
-    generateConfetti() {
-        this.confettiParticles = [];
-        const colors = ['#ff4444', '#00e676', '#FFD700', '#00b0ff', '#ff8800', '#c084fc', '#ffffff'];
-        for (let i = 0; i < 60; i++) {
-            this.confettiParticles.push({
-                x: this.w * 0.1 + Math.random() * this.w * 0.8,
-                y: -20 - Math.random() * 100,
-                w: 4 + Math.random() * 8,
-                h: 3 + Math.random() * 6,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                vy: 1 + Math.random() * 3,
-                vx: (Math.random() - 0.5) * 2,
-                rotation: Math.random() * Math.PI * 2,
-                rotationSpeed: (Math.random() - 0.5) * 0.2,
-                opacity: 1
+
+    cleanupRound() {
+        this.jokerCard = null;
+        this.andarCards = [];
+        this.baharCards = [];
+        this.winner = null;
+        this.matchFound = false;
+        this.dealSide = 'andar';
+        this.dealIndex = 0;
+        this.totalBet = 0;
+        this.winnings = 0;
+        this.bets = { andar: { amount: 0, isActive: false }, bahar: { amount: 0, isActive: false } };
+        this.cardAnimation = { active: false, progress: 0 };
+        this.particles = { cardDeal: [], confetti: [], jokerGlow: [], spotlight: [] };
+        this.effects = {
+            jokerRevealProgress: 0,
+            jokerRevealed: false,
+            winnerGlowAlpha: 0,
+            winnerSpotlightAlpha: 0,
+            spotlightTarget: null,
+            tablePulsePhase: 0
+        };
+
+        this.transitionTo(this.FSM_STATES.PLACING_BET);
+    }
+
+    // ============================================
+    // PILLAR 2: PARTICLE SYSTEMS
+    // ============================================
+
+    spawnCardDealParticles(x, y, side) {
+        const color = side === 'andar' ? this.colors.andar : this.colors.bahar;
+        for (let i = 0; i < 12; i++) {
+            this.particles.cardDeal.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 3 - 1,
+                size: 1 + Math.random() * 2,
+                color,
+                life: 1,
+                decay: 0.04 + Math.random() * 0.04
             });
         }
     }
-    
-    // ============================================
-    // UPDATE LOOP
-    // ============================================
-    
-    update(timestamp) {
-        this.glowPulse += 0.02;
-        
-        this.confettiParticles.forEach(p => {
-            p.y += p.vy;
-            p.x += p.vx;
-            p.vy += 0.03;
-            p.rotation += p.rotationSpeed;
-            if (p.y > this.h + 50) p.opacity -= 0.02;
-        });
-        this.confettiParticles = this.confettiParticles.filter(p => p.opacity > 0);
-        
-        if (this.winGlowAlpha > 0 && !this.showdown) {
-            this.winGlowAlpha -= 0.01;
-        }
-        
-        if (this.winCascade && this.winCascade.isAlive()) {
-            this.winCascade.update();
+
+    spawnJokerGlowParticles() {
+        const jx = this.w / 2;
+        const jy = this.h * 0.1;
+        for (let i = 0; i < 30; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 4;
+            this.particles.jokerGlow.push({
+                x: jx, y: jy + 40,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: 1 + Math.random() * 3,
+                color: this.colors.joker,
+                life: 1,
+                decay: 0.02 + Math.random() * 0.03
+            });
         }
     }
-    
+
+    spawnConfetti(x, y, count) {
+        const colors = ['#ff4444', '#00e676', '#FFD700', '#00b0ff', '#ff8800', '#c084fc', '#ffffff'];
+        for (let i = 0; i < count; i++) {
+            this.particles.confetti.push({
+                x: x + (Math.random() - 0.5) * 200,
+                y: y - Math.random() * 60,
+                vx: (Math.random() - 0.5) * 5,
+                vy: -4 - Math.random() * 6,
+                w: 3 + Math.random() * 6,
+                h: 2 + Math.random() * 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.3,
+                opacity: 1,
+                gravity: 0.08
+            });
+        }
+    }
+
+    updateParticles() {
+        // Card deal particles
+        this.particles.cardDeal.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= p.decay;
+        });
+        this.particles.cardDeal = this.particles.cardDeal.filter(p => p.life > 0);
+
+        // Joker glow particles
+        this.particles.jokerGlow.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= p.decay;
+        });
+        this.particles.jokerGlow = this.particles.jokerGlow.filter(p => p.life > 0);
+
+        // Confetti
+        this.particles.confetti.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.rotation += p.rotSpeed;
+            p.opacity -= 0.006;
+        });
+        this.particles.confetti = this.particles.confetti.filter(p => p.opacity > 0);
+    }
+
     // ============================================
-    // RENDERING - FULL CASINO TABLE
+    // PILLAR 1: PREMIUM RENDERING
     // ============================================
-    
+
+    render() { this.drawFullTable(); }
+
     drawFullTable() {
         const ctx = this.ctx;
         const w = this.w;
         const h = this.h;
-        
+
         ctx.clearRect(0, 0, w, h);
-        
-        this.drawOuterBackground(ctx, w, h);
-        this.drawTableBorder(ctx, w, h);
-        this.drawTableFelt(ctx, w, h);
-        this.drawTableLayout(ctx, w, h);
-        this.drawJokerArea(ctx, w, h);
-        this.drawAndarZone(ctx, w, h);
-        this.drawBaharZone(ctx, w, h);
-        this.drawBettingAreas(ctx, w, h);
-        this.drawConfetti(ctx);
-        this.drawSparkles(ctx);
-        
-        if (this.spotlightAlpha > 0) {
-            this.drawSpotlight(ctx, w, h);
-        }
-        
-        if (this.winGlowAlpha > 0) {
-            this.drawWinGlow(ctx, w, h);
-        }
-        
-        if (this.winCascade && this.winCascade.isAlive()) {
-            this.winCascade.render();
-        }
+
+        this.drawLuxuryBackground(ctx);
+        this.drawTableWithBorder(ctx);
+        this.drawJokerArea(ctx);
+        this.drawAndarZone(ctx);
+        this.drawBaharZone(ctx);
+        this.drawBettingPanel(ctx);
+        this.drawAnimatingCard(ctx);
+        this.drawParticles(ctx);
+        this.drawHeader(ctx);
     }
-    
-    drawOuterBackground(ctx, w, h) {
-        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w * 0.9);
-        bgGrad.addColorStop(0, '#1a1410');
-        bgGrad.addColorStop(0.5, '#0f0b08');
-        bgGrad.addColorStop(1, '#050302');
+
+    drawLuxuryBackground(ctx) {
+        // Deep gradient
+        const bgGrad = ctx.createRadialGradient(this.w * 0.5, this.h * 0.35, 20, this.w * 0.5, this.h * 0.5, this.w);
+        bgGrad.addColorStop(0, '#1a1030');
+        bgGrad.addColorStop(0.4, '#0d0818');
+        bgGrad.addColorStop(1, '#020105');
         ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(0, 0, this.w, this.h);
+
+        // Subtle gold glow
+        const glowGrad = ctx.createRadialGradient(this.w * 0.5, this.h * 0.2, 10, this.w * 0.5, this.h * 0.6, this.w * 0.7);
+        glowGrad.addColorStop(0, 'rgba(212, 175, 55, 0.05)');
+        glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = glowGrad;
+        ctx.fillRect(0, 0, this.w, this.h);
     }
-    
-    drawTableBorder(ctx, w, h) {
-        const margin = 12;
-        const tableW = w - margin * 2;
-        const tableH = h - margin * 2;
-        
+
+    drawTableWithBorder(ctx) {
+        const m = 10;
+        const tw = this.w - m * 2;
+        const th = this.h - m * 2;
+
+        // Wood border
         ctx.fillStyle = this.colors.woodDark;
         ctx.strokeStyle = this.colors.woodBorder;
         ctx.lineWidth = 4;
-        this.roundRect(ctx, margin - 4, margin - 4, tableW + 8, tableH + 8, 20);
+        this.roundRect(ctx, m - 4, m - 4, tw + 8, th + 8, 18);
         ctx.fill();
         ctx.stroke();
-        
-        ctx.fillStyle = this.colors.woodLight;
-        this.roundRect(ctx, margin, margin, tableW, tableH, 18);
-        ctx.fill();
-        
-        const woodGrad = ctx.createLinearGradient(margin, margin, margin + tableW, margin + tableH);
+
+        // Wood grain
+        const woodGrad = ctx.createLinearGradient(m, m, m + tw, m + th);
         woodGrad.addColorStop(0, '#c48b5c');
         woodGrad.addColorStop(0.3, '#b0784a');
         woodGrad.addColorStop(0.6, '#c48b5c');
         woodGrad.addColorStop(1, '#9a6b45');
         ctx.fillStyle = woodGrad;
-        this.roundRect(ctx, margin + 2, margin + 2, tableW - 4, tableH - 4, 17);
+        this.roundRect(ctx, m, m, tw, th, 16);
         ctx.fill();
-        
+
+        // Gold trim
         ctx.strokeStyle = this.colors.gold;
         ctx.lineWidth = 2;
-        this.roundRect(ctx, margin + 8, margin + 8, tableW - 16, tableH - 16, 14);
+        ctx.shadowColor = this.colors.goldGlow;
+        ctx.shadowBlur = 8;
+        this.roundRect(ctx, m + 6, m + 6, tw - 12, th - 12, 12);
         ctx.stroke();
-        
-        ctx.strokeStyle = 'rgba(212,168,67,0.4)';
-        ctx.lineWidth = 1;
-        this.roundRect(ctx, margin + 12, margin + 12, tableW - 24, tableH - 24, 12);
-        ctx.stroke();
-    }
-    
-    drawTableFelt(ctx, w, h) {
-        const fx = 24;
-        const fy = 24;
-        const fw = w - 48;
-        const fh = h - 48;
-        
-        const feltGrad = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, Math.max(w, h));
+        ctx.shadowBlur = 0;
+
+        // Green felt
+        const feltGrad = ctx.createRadialGradient(this.w * 0.5, this.h * 0.4, 10, this.w * 0.5, this.h * 0.5, this.w);
         feltGrad.addColorStop(0, this.colors.feltLight);
-        feltGrad.addColorStop(0.4, this.colors.felt);
+        feltGrad.addColorStop(0.5, this.colors.feltGreen);
         feltGrad.addColorStop(1, this.colors.feltDark);
         ctx.fillStyle = feltGrad;
-        this.roundRect(ctx, fx, fy, fw, fh, 12);
+        this.roundRect(ctx, m + 10, m + 10, tw - 20, th - 20, 10);
         ctx.fill();
-        
-        ctx.fillStyle = 'rgba(255,255,255,0.008)';
-        for (let x = fx + 4; x < fx + fw - 4; x += 3) {
-            for (let y = fy + 4; y < fy + fh - 4; y += 3) {
-                if ((x + y) % 6 === 0) {
-                    ctx.fillRect(x, y, 1, 1);
-                }
-            }
-        }
-    }
-    
-    drawTableLayout(ctx, w, h) {
-        const centerX = w / 2;
-        const fy = 24;
-        const fh = h - 48;
-        
+
         // Center line
-        ctx.strokeStyle = 'rgba(212,168,67,0.2)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
         ctx.lineWidth = 1;
-        ctx.setLineDash([4, 8]);
+        ctx.setLineDash([4, 6]);
         ctx.beginPath();
-        ctx.moveTo(centerX, fy + 60);
-        ctx.lineTo(centerX, fy + fh - 80);
+        ctx.moveTo(this.w / 2, m + 50);
+        ctx.lineTo(this.w / 2, this.h - m - 80);
         ctx.stroke();
         ctx.setLineDash([]);
-        
-        // Joker area line
-        const jokerLineY = h * 0.18;
-        ctx.strokeStyle = 'rgba(212,168,67,0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 50, jokerLineY);
-        ctx.lineTo(centerX + 50, jokerLineY);
-        ctx.stroke();
-        
-        // Card area divider
-        const cardDividerY = h * 0.55;
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(fy + 20, cardDividerY);
-        ctx.lineTo(w - fy - 20, cardDividerY);
-        ctx.stroke();
     }
-    
-    drawJokerArea(ctx, w, h) {
-        const jx = w / 2;
-        const jy = h * 0.1;
-        
+
+    drawHeader(ctx) {
+        // Game title
+        const titleGrad = ctx.createLinearGradient(this.w * 0.3, 12, this.w * 0.7, 40);
+        titleGrad.addColorStop(0, this.colors.goldLight);
+        titleGrad.addColorStop(1, this.colors.goldDark);
+        ctx.fillStyle = titleGrad;
+        ctx.font = 'bold 22px Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = this.colors.goldGlow;
+        ctx.shadowBlur = 12;
+        ctx.fillText('ANDAR BAHAR', this.w / 2, 32);
+        ctx.shadowBlur = 0;
+
+        // Balance
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+        ctx.lineWidth = 1;
+        this.roundRect(ctx, this.w - 140, 10, 125, 30, 15);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = this.colors.gold;
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('$' + this.walletState.balance.toFixed(2), this.w - 22, 31);
+    }
+
+    drawJokerArea(ctx) {
+        const jx = this.w / 2;
+        const jy = this.h * 0.09;
+
         // Joker zone
-        ctx.fillStyle = 'rgba(255,68,68,0.06)';
-        ctx.strokeStyle = 'rgba(255,68,68,0.4)';
+        ctx.fillStyle = this.colors.jokerHighlight;
+        ctx.strokeStyle = 'rgba(255, 23, 68, 0.4)';
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
-        this.roundRect(ctx, jx - 50, jy - 5, 100, 50, 12);
+        this.roundRect(ctx, jx - 55, jy - 2, 110, 52, 12);
         ctx.fill();
         ctx.stroke();
         ctx.setLineDash([]);
-        
+
         // Joker label
         ctx.fillStyle = this.colors.joker;
-        ctx.font = 'bold 11px Georgia';
+        ctx.font = 'bold 10px Georgia, serif';
         ctx.textAlign = 'center';
-        ctx.fillText('JOKER CARD', jx, jy + 8);
-        
-        // Joker card
+        ctx.fillText('JOKER', jx, jy + 10);
+
         if (this.jokerCard) {
             const cardW = this.jokerCardWidth;
             const cardH = this.jokerCardHeight;
             const cx = jx - cardW / 2;
-            const cy = jy + 18;
-            
-            this.drawSingleCard(ctx, cx, cy, cardW, cardH, this.jokerCard, true);
-            
-            // Highlight ring
-            ctx.strokeStyle = this.colors.jokerGlow;
+            const cy = jy + 16;
+
+            // Scale animation on reveal
+            const scale = this.effects.jokerRevealProgress;
+            ctx.save();
+            ctx.translate(cx + cardW / 2, cy + cardH / 2);
+            ctx.scale(Math.max(0.05, scale), Math.max(0.05, scale));
+            ctx.translate(-(cx + cardW / 2), -(cy + cardH / 2));
+
+            this.drawPremiumCard(ctx, cx, cy, cardW, cardH, this.jokerCard);
+
+            ctx.restore();
+
+            // Glow ring on joker card
+            ctx.strokeStyle = this.colors.joker;
             ctx.lineWidth = 2;
             ctx.shadowColor = this.colors.jokerGlow;
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 18;
             this.roundRect(ctx, cx - 4, cy - 4, cardW + 8, cardH + 8, 10);
             ctx.stroke();
             ctx.shadowBlur = 0;
         } else {
-            ctx.fillStyle = 'rgba(255,255,255,0.05)';
-            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            // Placeholder
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
             ctx.lineWidth = 1;
-            this.roundRect(ctx, jx - 30, jy + 20, 60, 80, 8);
+            this.roundRect(ctx, jx - 30, jy + 18, 60, 78, 8);
             ctx.fill();
             ctx.stroke();
-            
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.font = '24px Georgia';
+
+            ctx.fillStyle = this.colors.textMuted;
+            ctx.font = '22px Georgia, serif';
             ctx.textAlign = 'center';
             ctx.fillText('?', jx, jy + 55);
         }
     }
-    
-    drawAndarZone(ctx, w, h) {
-        const zoneX = 32;
-        const zoneY = h * 0.24;
-        const zoneW = w / 2 - 50;
-        const zoneH = h * 0.32;
-        
-        ctx.fillStyle = 'rgba(0,230,118,0.04)';
-        ctx.strokeStyle = this.bets.andar > 0 ? 'rgba(0,230,118,0.7)' : 'rgba(0,230,118,0.2)';
-        ctx.lineWidth = this.bets.andar > 0 ? 2.5 : 1;
-        this.roundRect(ctx, zoneX, zoneY, zoneW, zoneH, 12);
+
+    drawAndarZone(ctx) {
+        const zx = 28;
+        const zy = this.h * 0.22;
+        const zw = this.w / 2 - 48;
+        const zh = this.h * 0.30;
+
+        // Zone background
+        ctx.fillStyle = this.colors.andarHighlight;
+        ctx.strokeStyle = this.bets.andar.isActive
+            ? 'rgba(0, 230, 118, 0.7)'
+            : 'rgba(0, 230, 118, 0.2)';
+        ctx.lineWidth = this.bets.andar.isActive ? 2.5 : 1;
+        this.roundRect(ctx, zx, zy, zw, zh, 12);
         ctx.fill();
         ctx.stroke();
-        
-        // Winner highlight
-        if (this.showdown && this.winner === 'andar') {
+
+        // Winner glow
+        if (this.currentState === this.FSM_STATES.PAYOUT_TRIGGER && this.winner === 'andar') {
             ctx.strokeStyle = this.colors.andar;
             ctx.lineWidth = 3;
             ctx.shadowColor = this.colors.andarGlow;
-            ctx.shadowBlur = 15;
-            this.roundRect(ctx, zoneX - 3, zoneY - 3, zoneW + 6, zoneH + 6, 14);
+            ctx.shadowBlur = 20;
+            this.roundRect(ctx, zx - 3, zy - 3, zw + 6, zh + 6, 14);
             ctx.stroke();
             ctx.shadowBlur = 0;
         }
-        
-        // Andar label
+
+        // Label
         ctx.fillStyle = this.colors.andar;
-        ctx.font = 'bold 14px Georgia';
+        ctx.font = 'bold 15px Georgia, serif';
         ctx.textAlign = 'center';
-        ctx.fillText('ANDAR', zoneX + zoneW / 2, zoneY + 20);
-        
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.font = '8px Georgia';
-        ctx.fillText('Pays 1.9:1', zoneX + zoneW / 2, zoneY + 34);
-        
-        // Cards in grid
-        const cardW = this.cardWidth;
-        const cardH = this.cardHeight;
-        const cols = 4;
-        const cardsStartX = zoneX + 8;
-        const cardsStartY = zoneY + 42;
-        
-        for (let i = 0; i < this.andarCards.length; i++) {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            const cx = cardsStartX + col * (cardW + 4);
-            const cy = cardsStartY + row * (cardH + 4);
-            
-            let scale = 1;
-            if (i === this.andarCards.length - 1 && this.isDealing && this.currentDealSide === 'bahar' && this.dealIndex > 0) {
-                scale = Math.min(1, this.cardSlideProgress);
-            }
-            
-            ctx.save();
-            ctx.translate(cx + cardW / 2, cy + cardH / 2);
-            ctx.scale(scale, scale);
-            ctx.translate(-(cx + cardW / 2), -(cy + cardH / 2));
-            
-            this.drawSingleCard(ctx, cx, cy, cardW, cardH, this.andarCards[i], true);
-            
-            ctx.restore();
-        }
-        
-        // Bet amount badge
-        if (this.bets.andar > 0) {
-            this.drawBetBadge(ctx, zoneX + zoneW / 2, zoneY + zoneH - 16, this.bets.andar, this.colors.andar);
+        ctx.fillText('ANDAR', zx + zw / 2, zy + 18);
+        ctx.fillStyle = this.colors.textMuted;
+        ctx.font = '8px Inter, sans-serif';
+        ctx.fillText('Pays 1.9:1', zx + zw / 2, zy + 32);
+
+        // Cards grid
+        this.drawCardGrid(ctx, zx, zy + 38, zw, zh - 45, this.andarCards, 'andar');
+
+        // Bet badge
+        if (this.bets.andar.isActive && this.bets.andar.amount > 0) {
+            this.drawBetBadge(ctx, zx + zw / 2, zy + zh - 14, this.bets.andar.amount, this.colors.andar);
         }
     }
-    
-    drawBaharZone(ctx, w, h) {
-        const zoneX = w / 2 + 18;
-        const zoneY = h * 0.24;
-        const zoneW = w / 2 - 50;
-        const zoneH = h * 0.32;
-        
-        ctx.fillStyle = 'rgba(68,136,255,0.04)';
-        ctx.strokeStyle = this.bets.bahar > 0 ? 'rgba(68,136,255,0.7)' : 'rgba(68,136,255,0.2)';
-        ctx.lineWidth = this.bets.bahar > 0 ? 2.5 : 1;
-        this.roundRect(ctx, zoneX, zoneY, zoneW, zoneH, 12);
+
+    drawBaharZone(ctx) {
+        const zx = this.w / 2 + 20;
+        const zy = this.h * 0.22;
+        const zw = this.w / 2 - 48;
+        const zh = this.h * 0.30;
+
+        // Zone background
+        ctx.fillStyle = this.colors.baharHighlight;
+        ctx.strokeStyle = this.bets.bahar.isActive
+            ? 'rgba(68, 136, 255, 0.7)'
+            : 'rgba(68, 136, 255, 0.2)';
+        ctx.lineWidth = this.bets.bahar.isActive ? 2.5 : 1;
+        this.roundRect(ctx, zx, zy, zw, zh, 12);
         ctx.fill();
         ctx.stroke();
-        
-        // Winner highlight
-        if (this.showdown && this.winner === 'bahar') {
+
+        // Winner glow
+        if (this.currentState === this.FSM_STATES.PAYOUT_TRIGGER && this.winner === 'bahar') {
             ctx.strokeStyle = this.colors.bahar;
             ctx.lineWidth = 3;
             ctx.shadowColor = this.colors.baharGlow;
-            ctx.shadowBlur = 15;
-            this.roundRect(ctx, zoneX - 3, zoneY - 3, zoneW + 6, zoneH + 6, 14);
+            ctx.shadowBlur = 20;
+            this.roundRect(ctx, zx - 3, zy - 3, zw + 6, zh + 6, 14);
             ctx.stroke();
             ctx.shadowBlur = 0;
         }
-        
-        // Bahar label
+
+        // Label
         ctx.fillStyle = this.colors.bahar;
-        ctx.font = 'bold 14px Georgia';
+        ctx.font = 'bold 15px Georgia, serif';
         ctx.textAlign = 'center';
-        ctx.fillText('BAHAR', zoneX + zoneW / 2, zoneY + 20);
-        
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.font = '8px Georgia';
-        ctx.fillText('Pays 1.9:1', zoneX + zoneW / 2, zoneY + 34);
-        
-        // Cards in grid
+        ctx.fillText('BAHAR', zx + zw / 2, zy + 18);
+        ctx.fillStyle = this.colors.textMuted;
+        ctx.font = '8px Inter, sans-serif';
+        ctx.fillText('Pays 1.9:1', zx + zw / 2, zy + 32);
+
+        // Cards grid
+        this.drawCardGrid(ctx, zx, zy + 38, zw, zh - 45, this.baharCards, 'bahar');
+
+        // Bet badge
+        if (this.bets.bahar.isActive && this.bets.bahar.amount > 0) {
+            this.drawBetBadge(ctx, zx + zw / 2, zy + zh - 14, this.bets.bahar.amount, this.colors.bahar);
+        }
+    }
+
+    drawCardGrid(ctx, x, y, w, h, cards, side) {
+        const cols = 4;
         const cardW = this.cardWidth;
         const cardH = this.cardHeight;
-        const cols = 4;
-        const cardsStartX = zoneX + 8;
-        const cardsStartY = zoneY + 42;
-        
-        for (let i = 0; i < this.baharCards.length; i++) {
+        const gap = 3;
+
+        for (let i = 0; i < Math.min(cards.length, 16); i++) {
             const col = i % cols;
             const row = Math.floor(i / cols);
-            const cx = cardsStartX + col * (cardW + 4);
-            const cy = cardsStartY + row * (cardH + 4);
-            
-            let scale = 1;
-            if (i === this.baharCards.length - 1 && this.isDealing && this.currentDealSide === 'andar' && this.dealIndex > 0) {
-                scale = Math.min(1, this.cardSlideProgress);
+            const cx = x + 6 + col * (cardW + gap);
+            const cy = y + row * (cardH + gap);
+
+            // Check if this is the animating card
+            if (this.cardAnimation.active &&
+                this.cardAnimation.dealingSide === side &&
+                i === (side === 'andar' ? this.andarCards.length - 1 : this.baharCards.length - 1)) {
+                // This card is being animated, skip (drawn separately)
+                if (this.cardAnimation.progress < 0.7) continue;
             }
-            
-            ctx.save();
-            ctx.translate(cx + cardW / 2, cy + cardH / 2);
-            ctx.scale(scale, scale);
-            ctx.translate(-(cx + cardW / 2), -(cy + cardH / 2));
-            
-            this.drawSingleCard(ctx, cx, cy, cardW, cardH, this.baharCards[i], true);
-            
-            ctx.restore();
-        }
-        
-        // Bet amount badge
-        if (this.bets.bahar > 0) {
-            this.drawBetBadge(ctx, zoneX + zoneW / 2, zoneY + zoneH - 16, this.bets.bahar, this.colors.bahar);
+
+            this.drawPremiumCard(ctx, cx, cy, cardW, cardH, cards[i]);
         }
     }
-    
-    drawBetBadge(ctx, x, y, amount, color) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        this.roundRect(ctx, x - 28, y - 10, 56, 20, 10);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.fillStyle = color;
-        ctx.font = 'bold 10px Georgia';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('RS ' + amount, x, y);
+
+    drawAnimatingCard(ctx) {
+        if (!this.cardAnimation.active) return;
+
+        const anim = this.cardAnimation;
+        const progress = anim.progress;
+        const eased = this.easing.easeOutCubic(progress);
+
+        const cx = anim.startX + (anim.targetX - anim.startX) * eased;
+        const cy = anim.startY + (anim.targetY - anim.startY) * eased;
+        const scale = 0.7 + 0.3 * Math.min(1, progress * 2);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(scale, scale);
+        ctx.translate(-cx, -cy);
+
+        this.drawPremiumCard(ctx, cx - this.cardWidth / 2, cy - this.cardHeight / 2, this.cardWidth, this.cardHeight, anim.dealingCard);
+
+        ctx.restore();
     }
-    
-    drawSingleCard(ctx, x, y, width, height, card, faceUp) {
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+
+    drawPremiumCard(ctx, x, y, w, h, card) {
+        if (!card) return;
+
+        // Shadow
+        ctx.shadowColor = this.colors.cardShadow;
         ctx.shadowBlur = 6;
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 3;
-        
-        const bodyGrad = ctx.createLinearGradient(x, y, x + width, y + height);
+
+        // Card body with gradient
+        const bodyGrad = ctx.createLinearGradient(x, y, x + w, y + h);
         bodyGrad.addColorStop(0, '#ffffff');
-        bodyGrad.addColorStop(0.5, '#f8f8f5');
-        bodyGrad.addColorStop(1, '#eeeeea');
+        bodyGrad.addColorStop(0.4, '#fafaf8');
+        bodyGrad.addColorStop(1, '#eee8e0');
         ctx.fillStyle = bodyGrad;
         ctx.strokeStyle = this.colors.cardBorder;
-        ctx.lineWidth = 0.5;
-        this.roundRect(ctx, x, y, width, height, 5);
+        ctx.lineWidth = 0.8;
+        this.roundRect(ctx, x, y, w, h, 5);
         ctx.fill();
         ctx.stroke();
-        
+
+        // Inner border
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.lineWidth = 0.5;
+        this.roundRect(ctx, x + 3, y + 3, w - 6, h - 6, 3);
+        ctx.stroke();
+
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
-        
-        if (faceUp && card) {
-            const suitSymbols = { 'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663' };
-            const suitChar = suitSymbols[card.suit] || card.suit;
-            const suitColor = (card.suit === 'H' || card.suit === 'D') ? this.colors.red : this.colors.black;
-            const fontSize = Math.floor(width * 0.3);
-            
-            ctx.fillStyle = suitColor;
-            ctx.font = 'bold ' + fontSize + 'px Georgia';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(card.rank, x + width / 2, y + height / 2 - 2);
-            ctx.font = Math.floor(fontSize * 0.8) + 'px Georgia';
-            ctx.fillText(suitChar, x + width / 2, y + height / 2 + fontSize * 0.7);
-        }
-    }
-    
-    drawBettingAreas(ctx, w, h) {
-        const areaY = h * 0.62;
-        
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.font = 'bold 9px Georgia';
+
+        // Suit & rank
+        const suitSymbols = { 'S': '\u2660', 'H': '\u2665', 'D': '\u2666', 'C': '\u2663' };
+        const suitChar = suitSymbols[card.suit] || card.suit;
+        const suitColor = (card.suit === 'H' || card.suit === 'D') ? this.colors.suitRed : this.colors.suitBlack;
+        const fs = Math.floor(w * 0.28);
+
+        // Center rank
+        ctx.fillStyle = suitColor;
+        ctx.font = 'bold ' + fs + 'px Georgia, serif';
         ctx.textAlign = 'center';
-        ctx.fillText('PLACE YOUR BETS', w / 2, areaY - 8);
-        
-        const betBtns = [
-            { label: 'ANDAR', sub: '1.9:1', color: this.colors.andar, side: 'andar' },
-            { label: 'BAHAR', sub: '1.9:1', color: this.colors.bahar, side: 'bahar' }
-        ];
-        
-        const btnW = 140;
-        const btnH = 52;
-        const gap = 30;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(card.rank, x + w / 2, y + h / 2 - 2);
+
+        // Center suit
+        ctx.font = Math.floor(fs * 0.7) + 'px Georgia, serif';
+        ctx.fillText(suitChar, x + w / 2, y + h / 2 + fs * 0.6);
+    }
+
+    drawBetBadge(ctx, x, y, amount, color) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 6;
+        this.roundRect(ctx, x - 30, y - 10, 60, 20, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = color;
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$' + amount, x, y);
+    }
+
+    drawBettingPanel(ctx) {
+        const by = this.h * 0.58;
+        const btnW = 130;
+        const btnH = 48;
+        const gap = 40;
         const totalW = btnW * 2 + gap;
-        const startX = (w - totalW) / 2;
-        const btnY = areaY + 4;
-        
-        for (let i = 0; i < betBtns.length; i++) {
-            const bet = betBtns[i];
-            const bx = startX + i * (btnW + gap);
-            const isSelected = this.bets[bet.side] > 0;
-            
-            ctx.fillStyle = isSelected ? bet.color + '30' : 'rgba(255,255,255,0.03)';
-            ctx.strokeStyle = isSelected ? bet.color : 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = isSelected ? 2.5 : 1;
-            this.roundRect(ctx, bx, btnY, btnW, btnH, 14);
+        const startX = (this.w - totalW) / 2;
+
+        ctx.fillStyle = this.colors.textMuted;
+        ctx.font = 'bold 9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('PLACE YOUR BETS', this.w / 2, by - 8);
+
+        const sides = [
+            { label: 'ANDAR', side: 'andar', color: this.colors.andar, x: startX },
+            { label: 'BAHAR', side: 'bahar', color: this.colors.bahar, x: startX + btnW + gap }
+        ];
+
+        for (const s of sides) {
+            const isActive = this.bets[s.side].isActive;
+            const isWinner = this.currentState === this.FSM_STATES.PAYOUT_TRIGGER && this.winner === s.side;
+
+            ctx.fillStyle = isActive ? s.color + '25' : 'rgba(255, 255, 255, 0.03)';
+            ctx.strokeStyle = isWinner ? s.color : isActive ? s.color : 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = isActive ? 2.5 : 1;
+            if (isWinner) {
+                ctx.shadowColor = s.color;
+                ctx.shadowBlur = 15;
+            }
+            this.roundRect(ctx, s.x, by + 4, btnW, btnH, 14);
             ctx.fill();
             ctx.stroke();
-            
-            ctx.fillStyle = isSelected ? bet.color : 'rgba(255,255,255,0.7)';
-            ctx.font = 'bold 16px Georgia';
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = isActive ? s.color : this.colors.textSecondary;
+            ctx.font = 'bold 16px Georgia, serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(bet.label, bx + btnW / 2, btnY + btnH / 2 - 6);
-            
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.font = 'bold 9px Georgia';
-            ctx.fillText(bet.sub, bx + btnW / 2, btnY + btnH / 2 + 16);
+            ctx.fillText(s.label, s.x + btnW / 2, by + btnH / 2 - 5);
+
+            ctx.fillStyle = this.colors.textMuted;
+            ctx.font = '8px Inter, sans-serif';
+            ctx.fillText('1.9:1', s.x + btnW / 2, by + btnH / 2 + 16);
+        }
+
+        // Game status
+        if (this.currentState === this.FSM_STATES.PAYOUT_TRIGGER && this.winner) {
+            const statusY = by + btnH + 25;
+            const winnerName = this.winner.toUpperCase();
+            const statusColor = this.winner === 'andar' ? this.colors.andar : this.colors.bahar;
+
+            ctx.fillStyle = statusColor;
+            ctx.font = 'bold 13px Inter, sans-serif';
+            ctx.textAlign = 'center';
+
+            if (this.winnings > 0) {
+                ctx.fillText(winnerName + ' WINS! +$' + this.winnings, this.w / 2, statusY);
+            } else {
+                ctx.fillText(winnerName + ' WINS — You lost $' + this.totalBet, this.w / 2, statusY);
+            }
         }
     }
-    
-    drawSpotlight(ctx, w, h) {
-        if (!this.spotlightTarget) return;
-        
-        const sx = this.spotlightTarget === 'andar' ? w * 0.22 : w * 0.78;
-        const sy = h * 0.4;
-        
-        const spotGrad = ctx.createRadialGradient(sx, sy, 30, sx, sy, 200);
-        const spotColor = this.spotlightTarget === 'andar' ? '0,230,118' : '68,136,255';
-        spotGrad.addColorStop(0, 'rgba(' + spotColor + ',' + (this.spotlightAlpha * 0.15) + ')');
-        spotGrad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = spotGrad;
-        ctx.beginPath();
-        ctx.arc(sx, sy, 200, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    drawConfetti(ctx) {
-        for (let i = 0; i < this.confettiParticles.length; i++) {
-            const p = this.confettiParticles[i];
+
+    drawParticles(ctx) {
+        // Card deal particles
+        for (const p of this.particles.cardDeal) {
+            ctx.fillStyle = p.color.replace(')', ', ' + p.life + ')').replace('rgb', 'rgba');
+            if (p.color.startsWith('#')) {
+                const r = parseInt(p.color.slice(1, 3), 16);
+                const g = parseInt(p.color.slice(3, 5), 16);
+                const b = parseInt(p.color.slice(5, 7), 16);
+                ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + p.life + ')';
+            }
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Joker glow particles
+        for (const p of this.particles.jokerGlow) {
+            ctx.fillStyle = 'rgba(255, 23, 68, ' + p.life + ')';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Confetti
+        for (const p of this.particles.confetti) {
             ctx.save();
-            ctx.globalAlpha = p.opacity;
+            ctx.globalAlpha = Math.max(0, p.opacity);
             ctx.translate(p.x, p.y);
             ctx.rotate(p.rotation);
             ctx.fillStyle = p.color;
@@ -857,37 +1226,11 @@ class AndarBaharFullGame {
             ctx.restore();
         }
     }
-    
-    drawWinGlow(ctx, w, h) {
-        const glowX = this.winner === 'andar' ? w * 0.22 : w * 0.78;
-        const glowY = h * 0.4;
-        const glowColor = this.winner === 'andar' ? this.colors.andar : this.colors.bahar;
-        
-        const glowGrad = ctx.createRadialGradient(glowX, glowY, 30, glowX, glowY, 200);
-        glowGrad.addColorStop(0, glowColor + '30');
-        glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = glowGrad;
-        ctx.beginPath();
-        ctx.arc(glowX, glowY, 200, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    drawSparkles(ctx) {
-        for (let i = 0; i < this.sparkles.length; i++) {
-            const sparkle = this.sparkles[i];
-            sparkle.opacity += Math.sin(Date.now() * sparkle.speed + sparkle.phase) * 0.004;
-            sparkle.opacity = Math.max(0.03, Math.min(0.3, sparkle.opacity));
-            ctx.fillStyle = 'rgba(212, 168, 67, ' + sparkle.opacity + ')';
-            ctx.beginPath();
-            ctx.arc(sparkle.x, sparkle.y, sparkle.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
+
     // ============================================
     // UTILITIES
     // ============================================
-    
+
     roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -901,59 +1244,77 @@ class AndarBaharFullGame {
         ctx.arcTo(x, y, x + r, y, r);
         ctx.closePath();
     }
-    
-    // ============================================
-    // CANVAS CLICK HANDLER
-    // ============================================
-    
+
     handleClick(clickX, clickY) {
-        if (this.isPlaying || this.isDealing) return;
-        
-        const w = this.w;
-        const h = this.h;
-        const areaY = h * 0.62;
-        const btnW = 140;
-        const btnH = 52;
-        const gap = 30;
+        if (this.currentState !== this.FSM_STATES.PLACING_BET) return;
+        if (this.stateTransitionLocked) return;
+
+        const by = this.h * 0.58;
+        const btnW = 130;
+        const btnH = 48;
+        const gap = 40;
         const totalW = btnW * 2 + gap;
-        const startX = (w - totalW) / 2;
-        const btnY = areaY + 4;
-        
-        // Andar button
-        if (clickX >= startX && clickX <= startX + btnW && clickY >= btnY && clickY <= btnY + btnH) {
-            this.setSide('andar');
-            return;
+        const startX = (this.w - totalW) / 2;
+
+        if (clickX >= startX && clickX <= startX + btnW && clickY >= by + 4 && clickY <= by + 4 + btnH) {
+            this.betSide = 'andar';
+            this.placeBet('andar');
         }
-        
-        // Bahar button
-        if (clickX >= startX + btnW + gap && clickX <= startX + btnW + gap + btnW && clickY >= btnY && clickY <= btnY + btnH) {
-            this.setSide('bahar');
-            return;
+
+        if (clickX >= startX + btnW + gap && clickX <= startX + btnW + gap + btnW &&
+            clickY >= by + 4 && clickY <= by + 4 + btnH) {
+            this.betSide = 'bahar';
+            this.placeBet('bahar');
         }
     }
-    
+
     // ============================================
     // GAME LOOP
     // ============================================
-    
-    render() {
-        this.drawFullTable();
+
+    startGameLoop() {
+        const loop = (ts) => {
+            if (!this.lastTimestamp) this.lastTimestamp = ts;
+            this.lastTimestamp = ts;
+            this.tick(ts);
+            this.render();
+            this.animationFrameId = requestAnimationFrame(loop);
+        };
+        this.animationFrameId = requestAnimationFrame(loop);
     }
-    
-    setBet(amount) {
-        this.bet = amount;
+
+    tick(ts) {
+        this.updateParticles();
+
+        // Fade effects
+        if (this.effects.winnerGlowAlpha > 0 && this.currentState !== this.FSM_STATES.PAYOUT_TRIGGER) {
+            this.effects.winnerGlowAlpha = Math.max(0, this.effects.winnerGlowAlpha - 0.008);
+        }
     }
-    
+
+    setBet(amount) { this.betAmount = amount; }
+
+    resize() {
+        this.calculateDimensions();
+    }
+
     destroy() {
-        if (this.winCascade) this.winCascade.destroy();
-        this.sparkles = [];
-        this.confettiParticles = [];
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        if (this.cleanupTimeoutId) {
+            clearTimeout(this.cleanupTimeoutId);
+            this.cleanupTimeoutId = null;
+        }
+        this.particles = { cardDeal: [], confetti: [], jokerGlow: [], spotlight: [] };
         this.andarCards = [];
         this.baharCards = [];
-        this.deck = [];
+        this.cardAnimation = { active: false, progress: 0 };
+        this.transitionTo(this.FSM_STATES.IDLE);
     }
 }
 
 // Export
 window.AndarBaharFullGame = AndarBaharFullGame;
-console.log('Andar Bahar v3.0.0 - Real Casino Design Loaded');
+console.log('✅ Andar Bahar v5.0 — Premium Casino Architecture Loaded');
